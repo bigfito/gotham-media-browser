@@ -135,6 +135,7 @@ sequenceDiagram
 ```
 
 Public IA details: [`frontend-information-architecture.md`](./frontend-information-architecture.md).
+
 ## Docker Compose topology (local)
 
 ```text
