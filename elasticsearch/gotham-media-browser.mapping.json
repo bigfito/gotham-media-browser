@@ -16,9 +16,32 @@
     "_meta": {
       "index": "gotham-media-browser",
       "search_capabilities": {
-        "article": ["full_text", "semantic", "hybrid"],
-        "journalist": ["full_text", "semantic", "hybrid"],
-        "multimedia": ["full_text", "semantic", "hybrid", "vector"]
+        "article": [
+          "full_text",
+          "semantic",
+          "hybrid"
+        ],
+        "journalist": [
+          "full_text",
+          "semantic",
+          "hybrid"
+        ],
+        "multimedia": [
+          "full_text",
+          "semantic",
+          "hybrid",
+          "vector"
+        ]
+      },
+      "embedding": {
+        "provider": "meta-imagebind",
+        "dims": 1024,
+        "fields": {
+          "article": "article_embedding",
+          "journalist": "journalist_embedding",
+          "multimedia": "multimedia.asset_vector"
+        },
+        "note": "No Elastic managed inference / semantic_text; embeddings supplied by ImageBind helper"
       }
     },
     "properties": {
@@ -28,7 +51,9 @@
       "title": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text", "article_semantic"],
+        "copy_to": [
+          "article_search_text"
+        ],
         "fields": {
           "keyword": {
             "type": "keyword",
@@ -39,17 +64,23 @@
       "subtitle": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text", "article_semantic"]
+        "copy_to": [
+          "article_search_text"
+        ]
       },
       "summary": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text", "article_semantic"]
+        "copy_to": [
+          "article_search_text"
+        ]
       },
       "body": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text", "article_semantic"]
+        "copy_to": [
+          "article_search_text"
+        ]
       },
       "slug": {
         "type": "keyword"
@@ -75,7 +106,9 @@
           "text": {
             "type": "text",
             "analyzer": "gotham_english",
-            "copy_to": ["article_search_text", "article_semantic"]
+            "copy_to": [
+              "article_search_text"
+            ]
           }
         }
       },
@@ -85,7 +118,9 @@
           "text": {
             "type": "text",
             "analyzer": "gotham_english",
-            "copy_to": ["article_search_text", "article_semantic"]
+            "copy_to": [
+              "article_search_text"
+            ]
           }
         }
       },
@@ -95,7 +130,9 @@
           "text": {
             "type": "text",
             "analyzer": "gotham_english",
-            "copy_to": ["article_search_text", "article_semantic"]
+            "copy_to": [
+              "article_search_text"
+            ]
           }
         }
       },
@@ -111,17 +148,23 @@
       "seo_title": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text", "article_semantic"]
+        "copy_to": [
+          "article_search_text"
+        ]
       },
       "seo_description": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text", "article_semantic"]
+        "copy_to": [
+          "article_search_text"
+        ]
       },
       "seo_keywords": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["article_search_text"]
+        "copy_to": [
+          "article_search_text"
+        ]
       },
       "canonical_url": {
         "type": "keyword",
@@ -130,7 +173,9 @@
       "journalist_names": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["journalist_search_text", "journalist_semantic"],
+        "copy_to": [
+          "journalist_search_text"
+        ],
         "fields": {
           "keyword": {
             "type": "keyword",
@@ -141,12 +186,16 @@
       "journalist_bios": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["journalist_search_text", "journalist_semantic"]
+        "copy_to": [
+          "journalist_search_text"
+        ]
       },
       "multimedia_text": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["multimedia_search_text", "multimedia_semantic"]
+        "copy_to": [
+          "multimedia_search_text"
+        ]
       },
       "journalists": {
         "type": "nested",
@@ -281,7 +330,7 @@
           },
           "asset_vector": {
             "type": "dense_vector",
-            "dims": 768,
+            "dims": 1024,
             "index": true,
             "similarity": "cosine",
             "index_options": {
@@ -296,54 +345,34 @@
         "type": "text",
         "analyzer": "gotham_english"
       },
-      "article_semantic": {
-        "type": "semantic_text",
-        "inference_id": "gotham-media-browser-inference",
-        "chunking_settings": {
-          "strategy": "word",
-          "max_chunk_size": 250,
-          "overlap": 50
-        },
-        "index_options": {
-          "dense_vector": {
-            "type": "int8_hnsw"
-          }
-        }
-      },
       "journalist_search_text": {
         "type": "text",
         "analyzer": "gotham_english"
-      },
-      "journalist_semantic": {
-        "type": "semantic_text",
-        "inference_id": "gotham-media-browser-inference",
-        "chunking_settings": {
-          "strategy": "word",
-          "max_chunk_size": 120,
-          "overlap": 40
-        },
-        "index_options": {
-          "dense_vector": {
-            "type": "int8_hnsw"
-          }
-        }
       },
       "multimedia_search_text": {
         "type": "text",
         "analyzer": "gotham_english"
       },
-      "multimedia_semantic": {
-        "type": "semantic_text",
-        "inference_id": "gotham-media-browser-inference",
-        "chunking_settings": {
-          "strategy": "word",
-          "max_chunk_size": 120,
-          "overlap": 40
-        },
+      "article_embedding": {
+        "type": "dense_vector",
+        "dims": 1024,
+        "index": true,
+        "similarity": "cosine",
         "index_options": {
-          "dense_vector": {
-            "type": "int8_hnsw"
-          }
+          "type": "int8_hnsw",
+          "m": 16,
+          "ef_construction": 100
+        }
+      },
+      "journalist_embedding": {
+        "type": "dense_vector",
+        "dims": 1024,
+        "index": true,
+        "similarity": "cosine",
+        "index_options": {
+          "type": "int8_hnsw",
+          "m": 16,
+          "ef_construction": 100
         }
       }
     }
