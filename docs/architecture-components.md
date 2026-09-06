@@ -1,177 +1,133 @@
 # Gotham News & Media Browser — Component Architecture
 
 **Status:** Locked for prototype (local Docker Compose)  
-**Date:** 2026-09-06
+**Date:** 2026-09-06  
+**Persistence:** Elastic Cloud Serverless + Google Cloud Storage only (no RDBMS)
 
 ## Decisions locked
 
 | Topic | Decision |
 |-------|----------|
-| Search persistence | **Elastic Cloud Serverless** only (no RDBMS) |
+| Logical ER | Design aid only — **not** a physical database |
+| Persistence | **Elastic Cloud Serverless** + **GCS** only |
+| Document IDs | **Elasticsearch auto `_id`** for top-level docs |
+| Journalist master data | Index **`gotham-journalists`** (feeds article nested authors) |
+| Article / media search index | **`gotham-media-browser`** (one doc per article) |
 | Auth to ES | API key |
-| Object storage | **Google Cloud Storage** (service account to be provided) |
-| Embeddings | **Meta ImageBind** (open source), self-hosted Docker helper |
-| Embedding dims | **1024** (ImageBind huge `out_embed_dim`) |
-| ImageBind call pattern | Synchronous HTTP from Spring Boot |
-| Modalities | Image, audio, video (+ text queries via ImageBind text encoder) |
-| App stack | Java 25 · Spring Boot 4.1.1 · Maven 3.9.x · Thymeleaf · Elasticsearch Java API Client (Boot-managed, 9.4.x) |
-| UI | Server-rendered Thymeleaf only; search mode **tabs** (UX priority) |
-| Landing | `/` — **two panels**: article search · multimedia search |
-| Admin | `/admin` — CRUD for journalists & articles (+ metadata / media) |
-| Results | `/results` — entity-scoped hits with filters, sorting, pagination |
-| Runtime | Local **Docker Compose** |
-| Users / auth | Out of scope (single-user demo; `/admin` open) |
+| Object storage | **GCS public bucket objects** (no signed URLs) |
+| Embeddings | Meta ImageBind (OSS), Docker helper, sync HTTP, **1024-d** |
+| Modalities | Image, audio, video (+ text queries via ImageBind text) |
+| App stack | Java 25 · Spring Boot 4.1.1 · Maven 3.9.x · Thymeleaf · ES Java API Client 9.4.x |
+| Landing | `/` — two panels: articles · multimedia |
+| Admin | `/admin` — CRUD journalists & articles (status: DRAFT / PUBLISHED / ARCHIVED) |
+| Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
+| Journalist UI search | **No** dedicated journalist search UI |
+| Journalist as search param | **Yes** — article full-text accepts `journalist` filter/param |
+| Runtime | Local Docker Compose |
+| Users / auth | Out of scope (`/admin` open) |
 
 ## System context
 
 ```mermaid
 flowchart LR
-  U[Browser user] --> WEB[Gotham Web App<br/>Spring Boot 4.1.1 + Thymeleaf]
-  WEB --> ES[(Elastic Cloud Serverless<br/>index: gotham-media-browser)]
-  WEB --> IB[ImageBind Helper<br/>Docker · sync HTTP]
-  WEB --> GCS[(Google Cloud Storage<br/>media binaries)]
-  IB -.model weights.-> IB
+  U[Browser] --> WEB[Gotham Web<br/>Spring Boot 4.1.1 + Thymeleaf]
+  WEB --> JI[(gotham-journalists)]
+  WEB --> AI[(gotham-media-browser)]
+  WEB --> IB[ImageBind Helper]
+  WEB --> GCS[(GCS public bucket)]
+  JI -.->|denormalize on write| AI
 ```
+
+## Identity strategy (validated)
+
+| Entity | ID | Notes |
+|--------|----|-------|
+| Journalist | ES auto `_id` on `gotham-journalists` | Returned after index; stored on article as `journalists.journalist_id` (`keyword`) |
+| Article | ES auto `_id` on `gotham-media-browser` | Used in routes `/articles/{id}` |
+| Multimedia element | **App-assigned** `multimedia_element_id` (`keyword`) | Nested objects have no ES `_id`; required for admin delete/update of a single asset |
+
+Flow:
+1. Admin creates journalist → ES generates `_id` → keep for bylines.  
+2. Admin creates/updates article → resolve journalists by `_id` from `gotham-journalists` → nest snapshot + ids on article doc → ES auto `_id` for article.  
+3. Media upload → app generates `multimedia_element_id` → GCS object key includes article `_id` + element id → ImageBind → nest on article → reindex article (same `_id`).
 
 ## Components
 
-### 1. `gotham-web` — Spring Boot web application
-- **Role:** Frontend + backend in one deployable.
-- **UI routes (see [`frontend-information-architecture.md`](./frontend-information-architecture.md)):**
-  - `GET /` — landing with **two search panels** (articles vs multimedia; methods per entity)  
-  - `GET /results` — **entity-scoped** results with **filters**, **sorting**, **pagination**  
-  - `GET /articles/{id}` — article detail  
-  - `/admin/**` — **CRUD** for **journalists** and **articles** (metadata + multimedia upload)
-- **Search methods by panel:**
-  - Articles: Full-text · Semantic · Hybrid  
-  - Multimedia: Full-text · Semantic · Hybrid · Vector
-- **API/MVC:** Controllers for pages + form posts; services for ES, GCS, ImageBind.
-- **ES access:** Official Elasticsearch Java API Client via Spring Boot auto-config (`spring.elasticsearch.*` + API key).
-- **Secrets (local):** env vars / Compose secrets — `ELASTIC_ENDPOINT`, `ELASTIC_API_KEY`, `GCS_*` / service-account JSON path, `IMAGEBIND_BASE_URL`.
+### 1. `gotham-web`
+- Dual-panel landing; entity-scoped `/results`; `/admin` CRUD  
+- Articles panel methods: Full-text · Semantic · Hybrid  
+- Multimedia panel methods: Full-text · Semantic · Hybrid · Vector  
+- Article FTS supports query params: `q`, `mode`, `status`, `section`, `language`, **`journalist`** (id or name), dates, sort, page  
+- Services: ES (both indexes), GCS (public URLs), ImageBind  
 
-### 2. `imagebind-service` — Meta ImageBind helper (Docker)
-- **Role:** Create 1024-d embeddings for ingest and query time.
-- **Source:** Official Meta ImageBind research code, wrapped in a thin FastAPI/Flask (or similar) HTTP API.
-- **Endpoints (proposed):**
-  - `POST /v1/embed/text` → `{ vector: float[1024] }`
-  - `POST /v1/embed/image` (multipart) → vector
-  - `POST /v1/embed/audio` (multipart) → vector
-  - `POST /v1/embed/video` (multipart) → vector
-- **Sync:** Web app waits for embedding before indexing / before search knn.
-- **Hardware note:** CPU works for prototype; GPU optional if the test machine has one.
+### 2. `imagebind-service`
+- Sync embed text / image / audio / video → `float[1024]`  
 
-### 3. Elastic Cloud Serverless
-- **Index:** `gotham-media-browser`
-- **Stores:** Denormalized article documents (journalists + multimedia nested).
-- **Does not** run Elastic managed inference / `semantic_text` for this prototype — all embeddings come from ImageBind.
+### 3. Elastic indexes
+| Index | Grain | Role |
+|-------|-------|------|
+| `gotham-journalists` | 1 journalist | Master data for admin + article bylines |
+| `gotham-media-browser` | 1 article | Public browse/search; nested journalists + multimedia |
 
-### 4. Google Cloud Storage
-- **Stores:** Physical multimedia files (image / audio / video).
-- **ES stores:** `storage_uri` + metadata + `asset_vector`, not the binary.
-- **Auth:** GCP service account JSON mounted into `gotham-web`.
+### 4. GCS
+- Public objects; ES stores `storage_uri` (e.g. `https://storage.googleapis.com/...` or `gs://...` resolved to public HTTPS in UI)  
+- No signed URLs  
 
-## Search semantics (how tabs map to engines)
+## Local media limits (prototype)
 
-ImageBind uses **one joint embedding space**. That drives a clean split:
+Chosen for **local CPU** synchronous ImageBind:
 
-| UX tab | Article | Journalist | Multimedia |
-|--------|---------|------------|------------|
-| **Full-text** | BM25 on `article_search_text` | BM25 on `journalist_search_text` | BM25 on `multimedia_search_text` |
-| **Semantic** | kNN on `article_embedding` (query text → ImageBind) | kNN on `journalist_embedding` | kNN on `multimedia.asset_vector` (query **text** → ImageBind) |
-| **Hybrid** | RRF(BM25, article kNN) | RRF(BM25, journalist kNN) | RRF(BM25, asset kNN) |
-| **Vector** | *Not offered* | *Not offered* | kNN on `multimedia.asset_vector` (query **image/audio/video** → ImageBind) |
+| Media | Max size | Max duration |
+|-------|----------|--------------|
+| IMAGE | **10 MiB** | — |
+| AUDIO | **20 MiB** | **5 minutes** |
+| VIDEO | **50 MiB** | **90 seconds** |
 
-So for multimedia, **Semantic** and **Vector** both knn against `asset_vector`; they differ by **query modality** (text vs media upload).
+Reject uploads over limit in admin with clear validation messages.
 
-## Embedding fields in ES (aligned to ImageBind)
+## Article status
 
-| Field | dims | Produced by | Used for |
-|-------|------|-------------|----------|
-| `article_embedding` | 1024 | ImageBind **text** over article title/summary/body (indexer) | Article semantic + hybrid |
-| `journalist_embedding` | 1024 | ImageBind **text** over names/bios (indexer) | Journalist semantic + hybrid |
-| `multimedia.asset_vector` | 1024 | ImageBind **image/audio/video** of the asset | Multimedia semantic, vector, hybrid |
+`DRAFT` | `PUBLISHED` | `ARCHIVED`
 
-No root article/journalist “vector search” field is exposed in the UX.
+- Admin CRUD must set/change status.  
+- Public `/` and `/results` **can return all statuses**; results expose a **status** filter (default may show all or PUBLISHED — UI should offer all three).
 
-## Ingest flow (synchronous)
+## Search semantics
 
-```mermaid
-sequenceDiagram
-  actor Editor
-  participant UI as Thymeleaf UI
-  participant App as gotham-web
-  participant GCS as Cloud Storage
-  participant IB as imagebind-service
-  participant ES as Elastic Serverless
+| Tab | Articles | Multimedia |
+|-----|----------|------------|
+| Full-text | BM25 + filters (`status`, `journalist`, …) | BM25 on media text + filters |
+| Semantic | kNN `article_embedding` (text→ImageBind) | kNN nested `asset_vector` (text→ImageBind) |
+| Hybrid | RRF(BM25, article kNN) | RRF(BM25, asset kNN) |
+| Vector | — | kNN `asset_vector` (media→ImageBind) |
 
-  Editor->>UI: Create article + upload media
-  UI->>App: multipart form
-  App->>GCS: put object(s)
-  App->>IB: embed text (article / journalists)
-  App->>IB: embed each media file
-  IB-->>App: float[1024] vectors
-  App->>ES: index denormalized article doc
-  App-->>UI: redirect to article detail
-```
+Journalist: **not** a results entity. On article full-text, `journalist` param filters by nested `journalist_id` or `full_name`.
 
-## Query flow (search tabs)
+## Write paths
 
-```mermaid
-sequenceDiagram
-  actor User
-  participant UI as Thymeleaf UI
-  participant App as gotham-web
-  participant IB as imagebind-service
-  participant ES as Elastic Serverless
+### Journalist CRUD
+- Create/Update/Delete on `gotham-journalists`  
+- On update/delete: find articles with that `journalists.journalist_id` and reindex (or block delete if referenced)
 
-  User->>UI: / or /results — query + tab + filters/sort/page
-  alt Full-text
-    App->>ES: multi_match / BM25 + filters + sort + from/size
-  else Semantic / Hybrid / Vector
-    App->>IB: embed query (text or media)
-    IB-->>App: query vector
-    App->>ES: knn and/or RRF + filters + sort + from/size
-  end
-  ES-->>App: hits + total
-  App-->>UI: /results page (filters · sort · pagination)
-```
+### Article CRUD
+- Load journalists from `gotham-journalists` by id  
+- Upload media to public GCS  
+- ImageBind article text + each media file  
+- Index/update `gotham-media-browser` with auto `_id` (create) or existing `_id` (update)
 
-Public IA details: [`frontend-information-architecture.md`](./frontend-information-architecture.md).
-
-## Docker Compose topology (local)
+## Docker Compose
 
 ```text
 services:
-  gotham-web          # Spring Boot :8080
-  imagebind-service   # ImageBind HTTP :8081 (example)
+  gotham-web           # :8080
+  imagebind-service    # :8081
 
 external:
-  Elastic Cloud Serverless  (URL + API key)
-  Google Cloud Storage      (bucket + SA)
+  Elastic Cloud Serverless  (URL + API key)  → indexes gotham-journalists, gotham-media-browser
+  GCS public bucket         (SA for write; public read)
 ```
 
-Compose does **not** run Elasticsearch or GCS locally.
-
-## Software stack pins
-
-| Layer | Choice |
-|-------|--------|
-| Language | Java **25** |
-| Framework | Spring Boot **4.1.1** (`spring-boot-starter-web`, `thymeleaf`, `elasticsearch` / `data-elasticsearch` as needed) |
-| Build | Maven **3.9.x** + `spring-boot-maven-plugin` 4.1.1 |
-| ES client | `co.elastic.clients:elasticsearch-java` via Boot BOM (**9.4.x**) |
-| UI | Thymeleaf (Boot-managed latest) |
-| GCS SDK | Google Cloud Storage Java client |
-| ImageBind | Meta open-source + thin REST wrapper image |
-
-## Out of scope for prototype
-- User login / roles
-- Async queues / workers
-- HA, multi-region, ILM
-- Elastic managed inference endpoints
-- Separate SPA frontend
-
 ## Follow-ups when credentials arrive
-1. Elastic Cloud Serverless endpoint + API key  
-2. GCS bucket name + service account JSON  
-3. Confirm ImageBind runtime (CPU vs GPU) on the test machine  
+1. ES endpoint + API key  
+2. GCS bucket name + write-capable SA (objects public-readable)  
+3. Confirm CPU-only ImageBind on the lab machine  

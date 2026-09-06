@@ -21,11 +21,6 @@
           "semantic",
           "hybrid"
         ],
-        "journalist": [
-          "full_text",
-          "semantic",
-          "hybrid"
-        ],
         "multimedia": [
           "full_text",
           "semantic",
@@ -38,16 +33,23 @@
         "dims": 1024,
         "fields": {
           "article": "article_embedding",
-          "journalist": "journalist_embedding",
           "multimedia": "multimedia.asset_vector"
         },
         "note": "No Elastic managed inference / semantic_text; embeddings supplied by ImageBind helper"
+      },
+      "id_strategy": "elasticsearch_auto_id",
+      "companion_index": "gotham-journalists",
+      "notes": "Article documents use ES auto _id. Nested journalists.journalist_id stores gotham-journalists _id. Nested multimedia.multimedia_element_id is app-assigned keyword (nested docs have no ES _id). Public search includes status DRAFT|PUBLISHED|ARCHIVED; filterable. Journalist is not a UI search entity; article FTS accepts journalist query param.",
+      "media_limits_local_prototype": {
+        "image_max_bytes": 10485760,
+        "audio_max_bytes": 20971520,
+        "audio_max_duration_seconds": 300,
+        "video_max_bytes": 52428800,
+        "video_max_duration_seconds": 90,
+        "rationale": "Local CPU ImageBind synchronous embedding"
       }
     },
     "properties": {
-      "article_id": {
-        "type": "long"
-      },
       "title": {
         "type": "text",
         "analyzer": "gotham_english",
@@ -201,7 +203,7 @@
         "type": "nested",
         "properties": {
           "journalist_id": {
-            "type": "long"
+            "type": "keyword"
           },
           "first_name": {
             "type": "text",
@@ -252,7 +254,7 @@
         "type": "nested",
         "properties": {
           "multimedia_element_id": {
-            "type": "long"
+            "type": "keyword"
           },
           "media_type": {
             "type": "keyword"
@@ -354,17 +356,6 @@
         "analyzer": "gotham_english"
       },
       "article_embedding": {
-        "type": "dense_vector",
-        "dims": 1024,
-        "index": true,
-        "similarity": "cosine",
-        "index_options": {
-          "type": "int8_hnsw",
-          "m": 16,
-          "ef_construction": 100
-        }
-      },
-      "journalist_embedding": {
         "type": "dense_vector",
         "dims": 1024,
         "index": true,

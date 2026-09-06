@@ -1,234 +1,102 @@
-# Gotham News & Media Browser — Elasticsearch Denormalized Model
+# Gotham News & Media Browser — Elasticsearch Indexes
 
-**Index name:** `gotham-media-browser`  
-**Target:** Elastic Cloud Serverless (Elasticsearch 9.x API)  
-**Source of truth (logical):** Relational ER in [`er-design.md`](./er-design.md) (approved artifact)  
-**Runtime persistence:** **Elasticsearch only** (no RDBMS). Binaries in **GCS**.  
-**Embeddings:** **Meta ImageBind** helper (1024-d), not Elastic managed inference  
-**Document grain:** one search document per **Article**  
-**Architecture:** [`architecture-components.md`](./architecture-components.md)  
-**Diagram:** [`elasticsearch-denormalized-diagram.md`](./elasticsearch-denormalized-diagram.md)
+**Persistence:** Elastic Cloud Serverless only (+ GCS for binaries)  
+**IDs:** Elasticsearch **auto `_id`** for top-level documents  
+**Logical ER:** [`er-design.md`](./er-design.md) (design aid only)
 
-## Entity search capabilities (authoritative)
+## Indexes
 
-| Entity | Full-text (BM25) | Semantic | Hybrid (RRF) | Vector (kNN) |
-|--------|:----------------:|:--------:|:------------:|:------------:|
-| **Article** | Yes | Yes | Yes | **No** (no Vector tab) |
-| **Journalist** | Yes | Yes | Yes | **No** (no Vector tab) |
-| **Multimedia asset** | Yes | Yes | Yes | **Yes** |
+| Index | Document | Mapping |
+|-------|----------|---------|
+| `gotham-journalists` | One journalist | [`gotham-journalists.mapping.json`](../elasticsearch/gotham-journalists.mapping.json) |
+| `gotham-media-browser` | One article (+ nested journalists & multimedia) | [`gotham-media-browser.mapping.json`](../elasticsearch/gotham-media-browser.mapping.json) |
 
-### How semantic / vector work with ImageBind
+`gotham-journalists` is the **master source** that feeds nested `journalists[]` on article documents at write time.
 
-ImageBind uses **one joint embedding space** (1024-d). The Spring app calls the ImageBind container synchronously.
+## Identity
 
-| UX tab | Mechanism |
-|--------|-----------|
-| **Full-text** | BM25 on `*_search_text` |
-| **Semantic** | Query **text** → ImageBind → kNN on entity embedding field |
-| **Hybrid** | RRF(BM25, semantic kNN) |
-| **Vector** (multimedia only) | Query **image/audio/video** → ImageBind → kNN on `multimedia.asset_vector` |
+| Entity | Identifier | Type |
+|--------|------------|------|
+| Journalist | ES `_id` | string (auto) |
+| Article | ES `_id` | string (auto) |
+| Multimedia element | `multimedia.multimedia_element_id` | `keyword`, **app-assigned** (nested has no `_id`) |
 
-For multimedia, Semantic and Vector both knn against `asset_vector`; they differ by **query modality**.
+Article nested field `journalists.journalist_id` **must** equal a `gotham-journalists` `_id`.
 
-## Design goals
+## Search capabilities
 
-| Capability | Article | Journalist | Multimedia |
-|------------|---------|------------|------------|
-| **Full-text** | `article_search_text` | `journalist_search_text` | `multimedia_search_text` + nested text |
-| **Semantic** | kNN `article_embedding` | kNN `journalist_embedding` | kNN `multimedia.asset_vector` (text query) |
-| **Hybrid** | RRF(BM25, article kNN) | RRF(BM25, journalist kNN) | RRF(BM25, asset kNN) |
-| **Vector** | — | — | kNN `multimedia.asset_vector` (media query) |
+| Entity | UI search | FTS | Semantic | Hybrid | Vector |
+|--------|-----------|:---:|:--------:|:------:|:------:|
+| Article | Landing panel 1 | ✓ | ✓ | ✓ | ✗ |
+| Multimedia | Landing panel 2 | ✓ | ✓ | ✓ | ✓ |
+| Journalist | **No UI** | as **`journalist` param** on article FTS only | ✗ | ✗ | ✗ |
 
-## Denormalized document shape
+### Article FTS journalist parameter
+- Query param `journalist` = journalist `_id` (preferred) or name token  
+- Implemented as nested filter / match on `journalists.journalist_id` or `journalists.full_name`
+
+### Status
+Articles carry `status`: `DRAFT` | `PUBLISHED` | `ARCHIVED`.  
+Public search may return all; filter via `status`.
+
+## Embeddings (ImageBind 1024-d)
+
+| Field | Index | Source modality |
+|-------|-------|-----------------|
+| `article_embedding` | `gotham-media-browser` | Article text |
+| `multimedia.asset_vector` | nested on article | IMAGE / AUDIO / VIDEO bytes |
+
+No Elastic managed inference / `semantic_text`.  
+No journalist embedding (no journalist semantic UI).
+
+## Article document shape
 
 ```text
-Article document
-├── identity & editorial fields
-├── flat article metadata
-├── journalist_names / journalist_bios     ← indexer-flattened
-├── multimedia_text                        ← indexer-flattened media text
-├── journalists[] nested
-├── multimedia[] nested
-│   ├── ... metadata ...
-│   ├── storage_uri                        ← GCS object URI
-│   └── asset_vector (dense_vector 1024) ← ImageBind image/audio/video
-├── article_search_text                    ← FTS
-├── journalist_search_text                 ← FTS
-├── multimedia_search_text                 ← FTS
-├── article_embedding (dense_vector 1024)  ← ImageBind text (semantic/hybrid)
-└── journalist_embedding (dense_vector 1024) ← ImageBind text (semantic/hybrid)
+_id  (ES auto)
+├── title, subtitle, summary, body, slug, status, language, dates
+├── section, tags, location, source, seo_*
+├── journalist_names, journalist_bios, journalist_search_text
+├── multimedia_text, multimedia_search_text, article_search_text
+├── journalists[] nested { journalist_id, names, email, bio, byline_order, role }
+├── multimedia[] nested { multimedia_element_id, media_type, storage_uri, …, asset_vector }
+└── article_embedding
 ```
 
-### Indexer responsibilities
-- Flatten `journalist_names`, `journalist_bios`, `multimedia_text`.
-- Upload binaries to GCS; store `storage_uri` on each multimedia element.
-- Call ImageBind for article text → `article_embedding`.
-- Call ImageBind for journalist text → `journalist_embedding`.
-- Call ImageBind for each media file → `multimedia[].asset_vector`.
-- Do **not** use Elastic `semantic_text` / inference endpoints in this prototype.
+## Journalist document shape
 
-## Field type strategy
-
-| Concern | ES type | Notes |
-|---------|---------|-------|
-| Identity / facets | `keyword` / `long` / `integer` / `date` | Filters, sorting |
-| Prose | `text` (`gotham_english`) | Full-text |
-| Article / journalist semantic | `dense_vector` dims **1024** | App-supplied ImageBind text embeddings |
-| Multimedia vector / semantic | `dense_vector` dims **1024** on `asset_vector` | App-supplied ImageBind media embeddings |
-| Nested journalists / media | `nested` | Filter-safe child queries |
-
-## Mapping reference
-
-Ready-to-apply definition: [`elasticsearch/gotham-media-browser.mapping.json`](../elasticsearch/gotham-media-browser.mapping.json)
-
-### Search projection fields
-
-| Field | Type | Role |
-|-------|------|------|
-| `article_search_text` | `text` | Article BM25 |
-| `journalist_search_text` | `text` | Journalist BM25 |
-| `multimedia_search_text` | `text` | Multimedia BM25 |
-| `article_embedding` | `dense_vector` (1024) | Article semantic / hybrid |
-| `journalist_embedding` | `dense_vector` (1024) | Journalist semantic / hybrid |
-| `multimedia.asset_vector` | `dense_vector` (1024) | Multimedia semantic / vector / hybrid |
-| `multimedia.storage_uri` | `keyword` | GCS URI (non-indexed payload OK) |
-
-## Sample document (excerpt)
-
-```json
-{
-  "article_id": 1001,
-  "title": "Gotham Transit Expansion Clears Final Vote",
-  "summary": "City council approved funding for the cross-river line.",
-  "body": "Full article body...",
-  "slug": "gotham-transit-expansion-clears-final-vote",
-  "status": "PUBLISHED",
-  "language": "en",
-  "journalist_names": ["Lois Lane", "Clark Kent"],
-  "journalist_bios": "City hall correspondent. Investigative reporter.",
-  "multimedia_text": "Council chamber after the vote",
-  "journalists": [
-    {
-      "journalist_id": 12,
-      "first_name": "Lois",
-      "last_name": "Lane",
-      "full_name": "Lois Lane",
-      "bio": "City hall correspondent.",
-      "byline_order": 1,
-      "contribution_role": "AUTHOR"
-    }
-  ],
-  "multimedia": [
-    {
-      "multimedia_element_id": 501,
-      "media_type": "IMAGE",
-      "storage_uri": "gs://gotham-media-browser/articles/1001/hero.jpg",
-      "mime_type": "image/jpeg",
-      "position": 1,
-      "caption": "Council chamber after the vote",
-      "title": "Council chamber",
-      "width": 1920,
-      "height": 1080,
-      "asset_vector": [0.01, 0.02]
-    }
-  ],
-  "article_embedding": [0.01, 0.02],
-  "journalist_embedding": [0.03, 0.04]
-}
+```text
+_id  (ES auto)
+├── first_name, last_name, full_name
+├── email, bio
+└── created_at, updated_at
 ```
 
-Vectors are length **1024** at runtime (truncated above).
+## Local media limits
 
-## Query patterns (illustrative)
+| Type | Max size | Max duration |
+|------|----------|--------------|
+| IMAGE | 10 MiB | — |
+| AUDIO | 20 MiB | 5 min |
+| VIDEO | 50 MiB | 90 s |
 
-### Article — full-text
-```json
-{
-  "query": {
-    "multi_match": {
-      "query": "subway funding",
-      "fields": ["title^3", "summary^2", "body", "article_search_text"]
-    }
-  }
-}
-```
+## GCS
+- Public bucket objects  
+- `storage_uri` stored on each multimedia element; UI uses public HTTPS URL  
 
-### Article — semantic (ImageBind text → kNN)
-```json
-{
-  "knn": {
-    "field": "article_embedding",
-    "query_vector": [0.01, 0.02],
-    "k": 10,
-    "num_candidates": 50
-  }
-}
-```
-
-### Article — hybrid (RRF BM25 + kNN)
-```json
-{
-  "retriever": {
-    "rrf": {
-      "retrievers": [
-        {
-          "standard": {
-            "query": {
-              "multi_match": {
-                "query": "subway funding",
-                "fields": ["title^3", "summary^2", "body", "article_search_text"]
-              }
-            }
-          }
-        },
-        {
-          "knn": {
-            "field": "article_embedding",
-            "query_vector": [0.01, 0.02],
-            "k": 10,
-            "num_candidates": 50
-          }
-        }
-      ],
-      "rank_constant": 60,
-      "rank_window_size": 50
-    }
-  }
-}
-```
-
-### Multimedia — vector (media query → ImageBind → nested kNN)
-```json
-{
-  "query": {
-    "nested": {
-      "path": "multimedia",
-      "query": {
-        "knn": {
-          "field": "multimedia.asset_vector",
-          "query_vector": [0.01, 0.02],
-          "k": 10,
-          "num_candidates": 50
-        }
-      },
-      "inner_hits": {}
-    }
-  }
-}
-```
-
-## Sync / write path
+## Write / sync rules
 
 | Event | Actions |
 |-------|---------|
-| Article create/update | ImageBind text embed → upsert ES doc `_id = article_id` |
-| Media add/update | Upload GCS → ImageBind media embed → reindex parent article |
-| Media delete | Delete GCS object → reindex parent without element |
-| Journalist credit/profile change | Re-embed journalist text → reindex affected articles |
-| Article delete | Delete ES doc; delete related GCS objects |
+| Journalist create | Index `gotham-journalists` (auto `_id`) |
+| Journalist update | Update journalist doc; reindex all articles nesting that `journalist_id` |
+| Journalist delete | Block if referenced, or remove from articles + reindex, then delete journalist |
+| Article create | Resolve journalists by id; upload media; embed; index article (auto `_id`) |
+| Article update | Same; reuse article `_id` |
+| Media add/update/delete | GCS + embed + reindex parent article `_id` |
+| Article delete | Delete GCS objects; delete article doc |
 
 ## Out of scope
-- Elastic managed `semantic_text` / inference endpoints  
-- RDBMS system of record  
-- Async embedding workers (sync is required for local prototype)  
-- AuthN/AuthZ  
+- RDBMS  
+- Signed URLs  
+- Journalist search results page  
+- Elastic inference endpoints  

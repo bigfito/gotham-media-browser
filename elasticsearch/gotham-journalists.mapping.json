@@ -1,0 +1,69 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "gotham_english": {
+          "type": "standard",
+          "stopwords": "_english_"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "_meta": {
+      "index": "gotham-journalists",
+      "id_strategy": "elasticsearch_auto_id",
+      "role": "Source of journalist master data; feeds nested journalists on gotham-media-browser article documents",
+      "ui_search": false,
+      "notes": "No public journalist search UI. Journalist identity is used as a full-text filter parameter on article search."
+    },
+    "properties": {
+      "first_name": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 128
+          }
+        }
+      },
+      "last_name": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 128
+          }
+        }
+      },
+      "full_name": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "bio": {
+        "type": "text",
+        "analyzer": "gotham_english"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}
