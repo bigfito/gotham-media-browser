@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gotham News & Media Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">Gotham News <span>&amp;</span> Media Browser</div>
+        <div class="brand__tag">Prototype search desk</div>
+      </div>
+      <a class="nav-link" href="#admin">Admin</a>
+    </header>
+
+    <p class="hero-line">Search the desk in two lanes — articles for the story, multimedia for the asset.</p>
+
+    <section class="panels" aria-label="Search panels">
+      <!-- Articles -->
+      <form class="panel panel--articles" action="results-articles.html" method="get">
+        <div>
+          <div class="panel__eyebrow">Panel 1</div>
+          <h1 class="panel__title">Articles</h1>
+          <p class="panel__hint">Full-text, semantic, or hybrid. Vector search is not available here.</p>
+        </div>
+
+        <div class="methods" role="radiogroup" aria-label="Article search method">
+          <label><input type="radio" name="mode" value="fulltext" checked /><span>Full-text</span></label>
+          <label><input type="radio" name="mode" value="semantic" /><span>Semantic</span></label>
+          <label><input type="radio" name="mode" value="hybrid" /><span>Hybrid</span></label>
+        </div>
+
+        <div class="field">
+          <label for="article-q">Query</label>
+          <input id="article-q" type="search" name="q" placeholder="e.g. transit funding vote" />
+        </div>
+
+        <div class="field" id="journalist-field">
+          <label for="journalist">Journalist (full-text filter)</label>
+          <input id="journalist" type="text" name="journalist" placeholder="Name or id" />
+        </div>
+
+        <input type="hidden" name="entity" value="article" />
+
+        <div class="panel__footer">
+          <button class="btn btn-focus" type="submit">Search articles</button>
+        </div>
+      </form>
+
+      <!-- Multimedia -->
+      <form class="panel panel--media" action="results-multimedia.html" method="get" id="media-form">
+        <div>
+          <div class="panel__eyebrow">Panel 2</div>
+          <h1 class="panel__title">Multimedia</h1>
+          <p class="panel__hint">Full-text, semantic, hybrid, or vector with an image, audio, or video file.</p>
+        </div>
+
+        <div class="methods" role="radiogroup" aria-label="Multimedia search method" id="media-methods">
+          <label><input type="radio" name="mode" value="fulltext" checked /><span>Full-text</span></label>
+          <label><input type="radio" name="mode" value="semantic" /><span>Semantic</span></label>
+          <label><input type="radio" name="mode" value="hybrid" /><span>Hybrid</span></label>
+          <label><input type="radio" name="mode" value="vector" /><span>Vector</span></label>
+        </div>
+
+        <div class="field" id="media-query-field">
+          <label for="media-q">Query</label>
+          <input id="media-q" type="search" name="q" placeholder="e.g. council chamber after vote" />
+        </div>
+
+        <div class="drop" id="media-drop" aria-live="polite">
+          <strong>Drop media for vector search</strong>
+          Image ≤ 10&nbsp;MiB · Audio ≤ 20&nbsp;MiB / 5&nbsp;min · Video ≤ 50&nbsp;MiB / 90&nbsp;s
+          <div style="margin-top:0.65rem">
+            <input type="file" name="media" accept="image/*,audio/*,video/*" />
+          </div>
+        </div>
+
+        <input type="hidden" name="entity" value="multimedia" />
+
+        <div class="panel__footer">
+          <button class="btn btn-signal" type="submit">Search multimedia</button>
+        </div>
+      </form>
+    </section>
+
+    <p class="foot-note">Mockup · methods and filters match the locked frontend IA</p>
+  </div>
+
+  <script>
+    const mediaMethods = document.getElementById("media-methods");
+    const drop = document.getElementById("media-drop");
+    const mediaForm = document.getElementById("media-form");
+    const queryField = document.getElementById("media-query-field");
+
+    function syncMediaMode() {
+      const mode = mediaMethods.querySelector('input[name="mode"]:checked')?.value;
+      const isVector = mode === "vector";
+      drop.classList.toggle("is-visible", isVector);
+      mediaForm.method = isVector ? "post" : "get";
+      queryField.style.opacity = isVector ? "0.45" : "1";
+    }
+
+    mediaMethods.addEventListener("change", syncMediaMode);
+    syncMediaMode();
+
+    const articleMethods = document.querySelector(".panel--articles .methods");
+    const journalistField = document.getElementById("journalist-field");
+    function syncArticleMode() {
+      const mode = articleMethods.querySelector('input[name="mode"]:checked')?.value;
+      journalistField.style.display = mode === "fulltext" ? "flex" : "none";
+    }
+    articleMethods.addEventListener("change", syncArticleMode);
+    syncArticleMode();
+  </script>
+</body>
+</html>
