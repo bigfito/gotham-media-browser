@@ -16,8 +16,11 @@
 | Modalities | Image, audio, video (+ text queries via ImageBind text encoder) |
 | App stack | Java 25 · Spring Boot 4.1.1 · Maven 3.9.x · Thymeleaf · Elasticsearch Java API Client (Boot-managed, 9.4.x) |
 | UI | Server-rendered Thymeleaf only; search mode **tabs** (UX priority) |
+| Landing | `/` — articles & multimedia browser |
+| Admin | `/admin` — CRUD for journalists & articles (+ metadata / media) |
+| Results | `/results` — filters, sorting, pagination for all search hits |
 | Runtime | Local **Docker Compose** |
-| Users / auth | Out of scope (single-user demo) |
+| Users / auth | Out of scope (single-user demo; `/admin` open) |
 
 ## System context
 
@@ -34,12 +37,13 @@ flowchart LR
 
 ### 1. `gotham-web` — Spring Boot web application
 - **Role:** Frontend + backend in one deployable.
-- **UI:** Thymeleaf templates — browse, article detail, ingest/admin upload, search results with tabs:
-  - Full-text
-  - Semantic
-  - Hybrid
-  - Vector *(multimedia only)*
-- **API/MVC:** Controllers for pages + form posts; services for ES and GCS.
+- **UI routes (see [`frontend-information-architecture.md`](./frontend-information-architecture.md)):**
+  - `GET /` — landing **articles & multimedia browser** + search tabs  
+  - `GET /results` — **all search results** with **filters**, **sorting**, **pagination**  
+  - `GET /articles/{id}` — article detail  
+  - `/admin/**` — **CRUD** for **journalists** and **articles** (metadata + multimedia upload)
+- **Search tabs:** Full-text · Semantic · Hybrid · Vector *(multimedia only)*
+- **API/MVC:** Controllers for pages + form posts; services for ES, GCS, ImageBind.
 - **ES access:** Official Elasticsearch Java API Client via Spring Boot auto-config (`spring.elasticsearch.*` + API key).
 - **Secrets (local):** env vars / Compose secrets — `ELASTIC_ENDPOINT`, `ELASTIC_API_KEY`, `GCS_*` / service-account JSON path, `IMAGEBIND_BASE_URL`.
 
@@ -118,18 +122,19 @@ sequenceDiagram
   participant IB as imagebind-service
   participant ES as Elastic Serverless
 
-  User->>UI: Enter query + choose tab
+  User->>UI: / or /results — query + tab + filters/sort/page
   alt Full-text
-    App->>ES: multi_match / BM25
+    App->>ES: multi_match / BM25 + filters + sort + from/size
   else Semantic / Hybrid / Vector
     App->>IB: embed query (text or media)
     IB-->>App: query vector
-    App->>ES: knn and/or RRF hybrid
+    App->>ES: knn and/or RRF + filters + sort + from/size
   end
-  ES-->>App: hits
-  App-->>UI: results page
+  ES-->>App: hits + total
+  App-->>UI: /results page (filters · sort · pagination)
 ```
 
+Public IA details: [`frontend-information-architecture.md`](./frontend-information-architecture.md).
 ## Docker Compose topology (local)
 
 ```text
