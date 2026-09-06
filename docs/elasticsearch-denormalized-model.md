@@ -3,7 +3,8 @@
 **Index name:** `gotham-media-browser`  
 **Target:** Elasticsearch 9.x  
 **Source of truth:** Relational ER in [`er-design.md`](./er-design.md) (approved artifact)  
-**Document grain:** one search document per **Article**
+**Document grain:** one search document per **Article**  
+**Diagram:** [`elasticsearch-denormalized-diagram.md`](./elasticsearch-denormalized-diagram.md) · [`../diagrams/gotham-media-browser-denormalized.svg`](../diagrams/gotham-media-browser-denormalized.svg)
 
 ## Design goals
 
