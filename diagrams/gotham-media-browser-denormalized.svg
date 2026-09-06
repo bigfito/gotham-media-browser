@@ -1,122 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="860" viewBox="0 0 1280 860" role="img" aria-labelledby="title desc">
-  <title id="title">Gotham Media Browser denormalized Elasticsearch document</title>
-  <desc id="desc">Graphical representation of the gotham-media-browser article document with editorial fields, metadata, nested journalists and multimedia, and search projections.</desc>
-  <defs>
-    <style>
-      .bg { fill: #F8FAFC; }
-      .frame { fill: #FFFFFF; stroke: #0F172A; stroke-width: 2; }
-      .title { font: 700 22px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #0F172A; }
-      .subtitle { font: 400 13px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #475569; }
-      .band-label { font: 700 13px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #FFFFFF; }
-      .field { font: 400 12px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #0F172A; }
-      .chip { fill: #FFFFFF; stroke-width: 1.2; }
-      .small { font: 400 11px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #334155; }
-      .legend { font: 600 12px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #0F172A; }
-      .arrow { stroke: #64748B; stroke-width: 1.5; stroke-dasharray: 4 3; fill: none; marker-end: url(#arrow); }
-      .arrow-label { font: 600 10px 'Segoe UI', Helvetica, Arial, sans-serif; fill: #64748B; }
-    </style>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
-    </marker>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="920" viewBox="0 0 1360 920" role="img">
+  <title>Gotham Media Browser denormalized ES model — entity search capabilities</title>
+  <rect width="1360" height="920" fill="#F8FAFC"/>
+  <text x="40" y="40" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#0F172A">Gotham News &amp; Media Browser — Denormalized ES Model</text>
+  <text x="40" y="62" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#475569">Index: gotham-media-browser · entity-scoped search · Elasticsearch 9.x</text>
 
-  <rect class="bg" width="1280" height="860"/>
-  <text class="title" x="40" y="42">Gotham News &amp; Media Browser — Denormalized ES Model</text>
-  <text class="subtitle" x="40" y="64">Index: gotham-media-browser · one document per Article · Elasticsearch 9.x</text>
+  <!-- Capability matrix -->
+  <rect x="40" y="85" width="400" height="110" rx="10" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="56" y="110" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#064E3B">Article</text>
+  <text x="56" y="132" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#065F46">Full-text · Semantic · Hybrid</text>
+  <text x="56" y="154" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">Vector: not enabled</text>
+  <text x="56" y="176" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#047857">article_search_text + article_semantic</text>
 
-  <rect class="frame" x="30" y="90" width="1220" height="680" rx="14"/>
-  <text class="title" x="50" y="124" style="font-size:16px">Article Document  (_id = article_id)</text>
+  <rect x="460" y="85" width="400" height="110" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="2"/>
+  <text x="476" y="110" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#7C2D12">Journalist</text>
+  <text x="476" y="132" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#9A3412">Full-text · Semantic · Hybrid</text>
+  <text x="476" y="154" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">Vector: not enabled</text>
+  <text x="476" y="176" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#C2410C">journalist_search_text + journalist_semantic</text>
 
-  <!-- Editorial -->
-  <rect x="50" y="145" width="1180" height="100" rx="8" fill="#0F766E"/>
-  <text class="band-label" x="66" y="168">1 · Editorial</text>
-  <g transform="translate(66,182)">
-    <rect class="chip" x="0" y="0" width="90" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="10" y="17">article_id</text>
-    <rect class="chip" x="100" y="0" width="70" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="110" y="17">title</text>
-    <rect class="chip" x="180" y="0" width="80" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="190" y="17">subtitle</text>
-    <rect class="chip" x="270" y="0" width="80" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="280" y="17">summary</text>
-    <rect class="chip" x="360" y="0" width="60" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="370" y="17">body</text>
-    <rect class="chip" x="430" y="0" width="60" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="440" y="17">slug</text>
-    <rect class="chip" x="500" y="0" width="70" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="510" y="17">status</text>
-    <rect class="chip" x="580" y="0" width="85" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="590" y="17">language</text>
-    <rect class="chip" x="675" y="0" width="100" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="685" y="17">published_at</text>
-    <rect class="chip" x="785" y="0" width="90" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="795" y="17">created_at</text>
-    <rect class="chip" x="885" y="0" width="95" height="26" rx="6" stroke="#99F6E4"/><text class="field" x="895" y="17">updated_at</text>
-  </g>
-  <text class="small" x="66" y="232" fill="#CCFBF1">types: long · text · keyword · date</text>
+  <rect x="880" y="85" width="440" height="110" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+  <text x="896" y="110" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#1E3A8A">Multimedia asset</text>
+  <text x="896" y="132" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">Full-text · Semantic · Hybrid · Vector</text>
+  <text x="896" y="154" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#2563EB">Vector: enabled (asset_vector)</text>
+  <text x="896" y="176" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#1D4ED8">multimedia_* + multimedia.asset_vector</text>
 
-  <!-- Metadata -->
-  <rect x="50" y="260" width="1180" height="90" rx="8" fill="#1D4ED8"/>
-  <text class="band-label" x="66" y="283">2 · Article metadata (flattened)</text>
-  <g transform="translate(66,297)">
-    <rect class="chip" x="0" y="0" width="75" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="10" y="17">section</text>
-    <rect class="chip" x="85" y="0" width="55" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="95" y="17">tags</text>
-    <rect class="chip" x="150" y="0" width="80" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="160" y="17">location</text>
-    <rect class="chip" x="240" y="0" width="70" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="250" y="17">source</text>
-    <rect class="chip" x="320" y="0" width="85" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="330" y="17">seo_title</text>
-    <rect class="chip" x="415" y="0" width="120" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="425" y="17">seo_description</text>
-    <rect class="chip" x="545" y="0" width="110" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="555" y="17">seo_keywords</text>
-    <rect class="chip" x="665" y="0" width="115" height="26" rx="6" stroke="#BFDBFE"/><text class="field" x="675" y="17">canonical_url</text>
-  </g>
+  <rect x="40" y="220" width="1280" height="620" rx="14" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
+  <text x="60" y="250" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0F172A">Article Document  (_id = article_id)</text>
 
-  <!-- Nested -->
-  <rect x="50" y="365" width="580" height="175" rx="8" fill="#7C2D12"/>
-  <text class="band-label" x="66" y="388">3a · journalists[]  nested</text>
-  <text class="small" x="66" y="410" fill="#FED7AA">journalist_id, first_name, last_name, full_name,</text>
-  <text class="small" x="66" y="428" fill="#FED7AA">email, bio, byline_order, contribution_role</text>
-  <rect x="66" y="445" width="530" height="70" rx="6" fill="#FFF7ED" stroke="#FDBA74"/>
-  <text class="field" x="80" y="470">Also flattened to root: journalist_names</text>
-  <text class="small" x="80" y="492">Used for byline filters + nested queries; names copied into search projections by indexer</text>
+  <rect x="60" y="270" width="1240" height="70" rx="8" fill="#0F766E"/>
+  <text x="76" y="295" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">1 · Editorial + metadata</text>
+  <text x="76" y="318" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#CCFBF1">title, subtitle, summary, body, slug, status, language, dates, section, tags, location, source, seo_*</text>
 
-  <rect x="650" y="365" width="580" height="175" rx="8" fill="#9A3412"/>
-  <text class="band-label" x="666" y="388">3b · multimedia[]  nested</text>
-  <text class="small" x="666" y="410" fill="#FFEDD5">multimedia_element_id, media_type, mime_type, position,</text>
-  <text class="small" x="666" y="428" fill="#FFEDD5">caption, credit, title, description, alt_text, technical attrs</text>
-  <rect x="666" y="445" width="540" height="70" rx="6" fill="#FFF7ED" stroke="#FDBA74"/>
-  <text class="field" x="680" y="470">Also flattened to root: multimedia_text</text>
-  <text class="small" x="680" y="492">IMAGE | AUDIO | VIDEO metadata denormalized into each nested object</text>
+  <rect x="60" y="355" width="600" height="130" rx="8" fill="#7C2D12"/>
+  <text x="76" y="380" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2a · journalists[] nested</text>
+  <text x="76" y="404" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#FED7AA">Names, bios, byline_order, contribution_role</text>
+  <text x="76" y="426" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#FED7AA">Root helpers: journalist_names, journalist_bios</text>
+  <text x="76" y="456" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FDBA74">No dense_vector on journalists</text>
 
-  <!-- Search projections -->
-  <rect x="50" y="555" width="1180" height="190" rx="8" fill="#14532D"/>
-  <text class="band-label" x="66" y="578">4 · Search projections</text>
+  <rect x="680" y="355" width="620" height="130" rx="8" fill="#1D4ED8"/>
+  <text x="696" y="380" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2b · multimedia[] nested</text>
+  <text x="696" y="404" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#BFDBFE">IMAGE | AUDIO | VIDEO + metadata text fields</text>
+  <text x="696" y="426" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#BFDBFE">Root helper: multimedia_text</text>
+  <rect x="696" y="440" width="280" height="28" rx="6" fill="#DBEAFE" stroke="#93C5FD"/>
+  <text x="708" y="459" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#1E3A8A">asset_vector : dense_vector(768)</text>
 
-  <rect x="66" y="595" width="250" height="120" rx="8" fill="#FEF3C7" stroke="#D97706"/>
-  <text class="field" x="82" y="620" style="font-weight:700">search_text</text>
-  <text class="small" x="82" y="642">type: text</text>
-  <text class="small" x="82" y="660">Full-text / BM25</text>
-  <text class="small" x="82" y="678">copy_to target</text>
-  <text class="small" x="82" y="696">gotham_english analyzer</text>
+  <rect x="60" y="505" width="400" height="140" rx="8" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="76" y="530" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#78350F">Article projections</text>
+  <text x="76" y="555" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#92400E">article_search_text (text)</text>
+  <text x="76" y="575" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#92400E">article_semantic (semantic_text)</text>
+  <text x="76" y="605" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#059669">FTS · Semantic · Hybrid</text>
+  <text x="76" y="625" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">No vector field</text>
 
-  <rect x="336" y="595" width="250" height="120" rx="8" fill="#D1FAE5" stroke="#059669"/>
-  <text class="field" x="352" y="620" style="font-weight:700">content_semantic</text>
-  <text class="small" x="352" y="642">type: semantic_text</text>
-  <text class="small" x="352" y="660">Semantic + hybrid</text>
-  <text class="small" x="352" y="678">inference + chunking</text>
-  <text class="small" x="352" y="696">int8_hnsw</text>
+  <rect x="480" y="505" width="400" height="140" rx="8" fill="#FFEDD5" stroke="#EA580C"/>
+  <text x="496" y="530" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#7C2D12">Journalist projections</text>
+  <text x="496" y="555" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#9A3412">journalist_search_text (text)</text>
+  <text x="496" y="575" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#9A3412">journalist_semantic (semantic_text)</text>
+  <text x="496" y="605" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#059669">FTS · Semantic · Hybrid</text>
+  <text x="496" y="625" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">No vector field</text>
 
-  <rect x="606" y="595" width="270" height="120" rx="8" fill="#A7F3D0" stroke="#047857"/>
-  <text class="field" x="622" y="620" style="font-weight:700">multimedia_semantic</text>
-  <text class="small" x="622" y="642">type: semantic_text</text>
-  <text class="small" x="622" y="660">Media-focused semantic</text>
-  <text class="small" x="622" y="678">from multimedia_text</text>
-  <text class="small" x="622" y="696">copy_to target</text>
+  <rect x="900" y="505" width="400" height="140" rx="8" fill="#DBEAFE" stroke="#2563EB"/>
+  <text x="916" y="530" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#1E3A8A">Multimedia projections</text>
+  <text x="916" y="555" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">multimedia_search_text (text)</text>
+  <text x="916" y="575" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">multimedia_semantic (semantic_text)</text>
+  <text x="916" y="595" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">multimedia.asset_vector (dense_vector)</text>
+  <text x="916" y="625" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#1D4ED8">FTS · Semantic · Hybrid · Vector</text>
 
-  <rect x="896" y="595" width="310" height="120" rx="8" fill="#DBEAFE" stroke="#2563EB"/>
-  <text class="field" x="912" y="620" style="font-weight:700">content_vector</text>
-  <text class="small" x="912" y="642">type: dense_vector</text>
-  <text class="small" x="912" y="660">Vector / kNN search</text>
-  <text class="small" x="912" y="678">dims=768 · cosine</text>
-  <text class="small" x="912" y="696">int8_hnsw · pipeline-supplied</text>
+  <text x="60" y="680" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#475569">copy_to: editorial/metadata → article_* · journalist helpers → journalist_* · multimedia_text → multimedia_*</text>
+  <text x="60" y="705" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#475569">Hybrid article/journalist = RRF(FTS, semantic). Hybrid multimedia = RRF(FTS, semantic, knn asset_vector).</text>
 
-  <!-- Legend -->
-  <rect x="30" y="790" width="18" height="18" rx="3" fill="#FEF3C7" stroke="#D97706"/>
-  <text class="legend" x="56" y="804">Full-text</text>
-  <rect x="150" y="790" width="18" height="18" rx="3" fill="#D1FAE5" stroke="#059669"/>
-  <text class="legend" x="176" y="804">Semantic</text>
-  <rect x="280" y="790" width="18" height="18" rx="3" fill="#DBEAFE" stroke="#2563EB"/>
-  <text class="legend" x="306" y="804">Vector / kNN</text>
-  <rect x="430" y="790" width="18" height="18" rx="3" fill="#E2E8F0" stroke="#475569"/>
-  <text class="legend" x="456" y="804">Hybrid = RRF(full-text + semantic [+ knn])</text>
-  <text class="subtitle" x="820" y="804">Relational ER remains source of truth</text>
+  <rect x="60" y="740" width="18" height="18" rx="3" fill="#D1FAE5" stroke="#059669"/>
+  <text x="86" y="754" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#0F172A">FTS / Semantic / Hybrid</text>
+  <rect x="280" y="740" width="18" height="18" rx="3" fill="#DBEAFE" stroke="#2563EB"/>
+  <text x="306" y="754" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#0F172A">Vector (multimedia only)</text>
+  <rect x="520" y="740" width="18" height="18" rx="3" fill="#F1F5F9" stroke="#94A3B8"/>
+  <text x="546" y="754" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#0F172A">Vector disabled for article &amp; journalist</text>
 </svg>

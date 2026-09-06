@@ -13,6 +13,14 @@
   },
   "mappings": {
     "dynamic": "strict",
+    "_meta": {
+      "index": "gotham-media-browser",
+      "search_capabilities": {
+        "article": ["full_text", "semantic", "hybrid"],
+        "journalist": ["full_text", "semantic", "hybrid"],
+        "multimedia": ["full_text", "semantic", "hybrid", "vector"]
+      }
+    },
     "properties": {
       "article_id": {
         "type": "long"
@@ -20,7 +28,7 @@
       "title": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"],
+        "copy_to": ["article_search_text", "article_semantic"],
         "fields": {
           "keyword": {
             "type": "keyword",
@@ -31,17 +39,17 @@
       "subtitle": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"]
+        "copy_to": ["article_search_text", "article_semantic"]
       },
       "summary": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"]
+        "copy_to": ["article_search_text", "article_semantic"]
       },
       "body": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"]
+        "copy_to": ["article_search_text", "article_semantic"]
       },
       "slug": {
         "type": "keyword"
@@ -67,7 +75,7 @@
           "text": {
             "type": "text",
             "analyzer": "gotham_english",
-            "copy_to": ["search_text", "content_semantic"]
+            "copy_to": ["article_search_text", "article_semantic"]
           }
         }
       },
@@ -77,7 +85,7 @@
           "text": {
             "type": "text",
             "analyzer": "gotham_english",
-            "copy_to": ["search_text", "content_semantic"]
+            "copy_to": ["article_search_text", "article_semantic"]
           }
         }
       },
@@ -87,7 +95,7 @@
           "text": {
             "type": "text",
             "analyzer": "gotham_english",
-            "copy_to": ["search_text", "content_semantic"]
+            "copy_to": ["article_search_text", "article_semantic"]
           }
         }
       },
@@ -103,17 +111,17 @@
       "seo_title": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"]
+        "copy_to": ["article_search_text", "article_semantic"]
       },
       "seo_description": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"]
+        "copy_to": ["article_search_text", "article_semantic"]
       },
       "seo_keywords": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text"]
+        "copy_to": ["article_search_text"]
       },
       "canonical_url": {
         "type": "keyword",
@@ -122,7 +130,7 @@
       "journalist_names": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic"],
+        "copy_to": ["journalist_search_text", "journalist_semantic"],
         "fields": {
           "keyword": {
             "type": "keyword",
@@ -130,10 +138,15 @@
           }
         }
       },
+      "journalist_bios": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["journalist_search_text", "journalist_semantic"]
+      },
       "multimedia_text": {
         "type": "text",
         "analyzer": "gotham_english",
-        "copy_to": ["search_text", "content_semantic", "multimedia_semantic"]
+        "copy_to": ["multimedia_search_text", "multimedia_semantic"]
       },
       "journalists": {
         "type": "nested",
@@ -265,14 +278,25 @@
           },
           "channels": {
             "type": "integer"
+          },
+          "asset_vector": {
+            "type": "dense_vector",
+            "dims": 768,
+            "index": true,
+            "similarity": "cosine",
+            "index_options": {
+              "type": "int8_hnsw",
+              "m": 16,
+              "ef_construction": 100
+            }
           }
         }
       },
-      "search_text": {
+      "article_search_text": {
         "type": "text",
         "analyzer": "gotham_english"
       },
-      "content_semantic": {
+      "article_semantic": {
         "type": "semantic_text",
         "inference_id": "gotham-media-browser-inference",
         "chunking_settings": {
@@ -286,7 +310,11 @@
           }
         }
       },
-      "multimedia_semantic": {
+      "journalist_search_text": {
+        "type": "text",
+        "analyzer": "gotham_english"
+      },
+      "journalist_semantic": {
         "type": "semantic_text",
         "inference_id": "gotham-media-browser-inference",
         "chunking_settings": {
@@ -300,15 +328,22 @@
           }
         }
       },
-      "content_vector": {
-        "type": "dense_vector",
-        "dims": 768,
-        "index": true,
-        "similarity": "cosine",
+      "multimedia_search_text": {
+        "type": "text",
+        "analyzer": "gotham_english"
+      },
+      "multimedia_semantic": {
+        "type": "semantic_text",
+        "inference_id": "gotham-media-browser-inference",
+        "chunking_settings": {
+          "strategy": "word",
+          "max_chunk_size": 120,
+          "overlap": 40
+        },
         "index_options": {
-          "type": "int8_hnsw",
-          "m": 16,
-          "ef_construction": 100
+          "dense_vector": {
+            "type": "int8_hnsw"
+          }
         }
       }
     }
