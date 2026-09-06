@@ -1,7 +1,9 @@
 # Gotham News & Media Browser — ER Design
 
 **Version:** 1.3  
-**Scope:** Single-brand online news & articles prototype. No authentication or user management.
+**Status:** Approved artifact (relational source of truth)  
+**Scope:** Single-brand online news & articles prototype. No authentication or user management.  
+**Related:** Denormalized Elasticsearch model in [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md).
 
 ## Entity-relationship diagram
 

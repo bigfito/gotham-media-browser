@@ -1,0 +1,316 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "gotham_english": {
+          "type": "standard",
+          "stopwords": "_english_"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "article_id": {
+        "type": "long"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"],
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "subtitle": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"]
+      },
+      "summary": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"]
+      },
+      "body": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"]
+      },
+      "slug": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "language": {
+        "type": "keyword"
+      },
+      "published_at": {
+        "type": "date"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "section": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "copy_to": ["search_text", "content_semantic"]
+          }
+        }
+      },
+      "tags": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "copy_to": ["search_text", "content_semantic"]
+          }
+        }
+      },
+      "location": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "copy_to": ["search_text", "content_semantic"]
+          }
+        }
+      },
+      "source": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "gotham_english"
+          }
+        }
+      },
+      "seo_title": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"]
+      },
+      "seo_description": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"]
+      },
+      "seo_keywords": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text"]
+      },
+      "canonical_url": {
+        "type": "keyword",
+        "index": false
+      },
+      "journalist_names": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic"],
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "multimedia_text": {
+        "type": "text",
+        "analyzer": "gotham_english",
+        "copy_to": ["search_text", "content_semantic", "multimedia_semantic"]
+      },
+      "journalists": {
+        "type": "nested",
+        "properties": {
+          "journalist_id": {
+            "type": "long"
+          },
+          "first_name": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 128
+              }
+            }
+          },
+          "last_name": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 128
+              }
+            }
+          },
+          "full_name": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "email": {
+            "type": "keyword"
+          },
+          "bio": {
+            "type": "text",
+            "analyzer": "gotham_english"
+          },
+          "byline_order": {
+            "type": "integer"
+          },
+          "contribution_role": {
+            "type": "keyword"
+          }
+        }
+      },
+      "multimedia": {
+        "type": "nested",
+        "properties": {
+          "multimedia_element_id": {
+            "type": "long"
+          },
+          "media_type": {
+            "type": "keyword"
+          },
+          "storage_uri": {
+            "type": "keyword",
+            "index": false
+          },
+          "mime_type": {
+            "type": "keyword"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "caption": {
+            "type": "text",
+            "analyzer": "gotham_english"
+          },
+          "credit": {
+            "type": "text",
+            "analyzer": "gotham_english",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "title": {
+            "type": "text",
+            "analyzer": "gotham_english"
+          },
+          "description": {
+            "type": "text",
+            "analyzer": "gotham_english"
+          },
+          "alt_text": {
+            "type": "text",
+            "analyzer": "gotham_english"
+          },
+          "original_filename": {
+            "type": "keyword",
+            "ignore_above": 512
+          },
+          "file_size_bytes": {
+            "type": "long"
+          },
+          "checksum": {
+            "type": "keyword",
+            "index": false
+          },
+          "width": {
+            "type": "integer"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "duration_ms": {
+            "type": "long"
+          },
+          "codec": {
+            "type": "keyword"
+          },
+          "bitrate_kbps": {
+            "type": "integer"
+          },
+          "frame_rate": {
+            "type": "float"
+          },
+          "sample_rate_hz": {
+            "type": "integer"
+          },
+          "channels": {
+            "type": "integer"
+          }
+        }
+      },
+      "search_text": {
+        "type": "text",
+        "analyzer": "gotham_english"
+      },
+      "content_semantic": {
+        "type": "semantic_text",
+        "inference_id": "gotham-media-browser-inference",
+        "chunking_settings": {
+          "strategy": "word",
+          "max_chunk_size": 250,
+          "overlap": 50
+        },
+        "index_options": {
+          "dense_vector": {
+            "type": "int8_hnsw"
+          }
+        }
+      },
+      "multimedia_semantic": {
+        "type": "semantic_text",
+        "inference_id": "gotham-media-browser-inference",
+        "chunking_settings": {
+          "strategy": "word",
+          "max_chunk_size": 120,
+          "overlap": 40
+        },
+        "index_options": {
+          "dense_vector": {
+            "type": "int8_hnsw"
+          }
+        }
+      },
+      "content_vector": {
+        "type": "dense_vector",
+        "dims": 768,
+        "index": true,
+        "similarity": "cosine",
+        "index_options": {
+          "type": "int8_hnsw",
+          "m": 16,
+          "ef_construction": 100
+        }
+      }
+    }
+  }
+}
