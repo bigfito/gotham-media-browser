@@ -21,23 +21,33 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 3. Claim: status=in_progress, claimed_by=<you>, started_at=<UTC>
 4. Implement ONLY that task
 5. Run the task Verification steps
-6. Commit with message including task id (e.g. "P3-T02 Journalist list UI")
+6. Commit once with message including task id (e.g. "P3-T02 Journalist list UI")
 7. Mark task done in implementation-state.md; update Last updated + phase counts
 ```
+
+## Project shape (IntelliJ)
+
+- Open **parent** `pom.xml` in IntelliJ IDEA Ultimate as a **Maven multi-module** project.  
+- Modules: `gotham-common`, `gotham-web`.  
+- `imagebind-service/` is in-repo Docker/Python — not a Maven module.
 
 ## Hard constraints
 
 - No RDBMS · No `/admin` · No Elastic `semantic_text` · No auth  
 - CRUD routes: `/journalist/**` and `/article/**` only  
-- Embeddings: ImageBind **1024-d**  
+- Journalist delete: **cascade-strip** nested bylines + reindex articles  
+- Embeddings: ImageBind **1024-d**, built **in-repo**  
 - Pagination: `size` ∈ {25, 50, 100} → ES `from`/`size`  
-- Java 25 · Spring Boot 4.1.1 · Thymeleaf · Maven  
+- Java 25 · Spring Boot 4.1.1 · Thymeleaf · multi-module Maven  
+- Package: `com.gotham.newsmediabrowser`  
+- ES endpoint + API key: hardcoded in `application.properties`  
+- GCS SA JSON: **secret file** under `secrets/` (never commit real key)
 
 ## Do not
 
 - Skip updating the state file  
 - Mark done without verification  
-- Invent production credentials  
+- Commit real `secrets/*.json` keys  
 - Rewrite the design docs unless a task says to  
 
 ## UI reference

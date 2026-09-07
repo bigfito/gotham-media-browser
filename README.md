@@ -22,7 +22,15 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 ## Locked stack
 
-Java 25 · Spring Boot 4.1.1 · Thymeleaf · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`) · ImageBind 1024-d
+Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web`) · ES Java client · Docker Compose (`gotham-web` + in-repo `imagebind-service`) · ImageBind 1024-d
+
+Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
+
+## Credentials (prototype)
+
+- Elasticsearch endpoint + API key: hardcoded in `gotham-web` `application.properties`  
+- GCS bucket/project: hardcoded in `application.properties`  
+- GCS service account JSON: **secret file** under `secrets/` (gitignored)
 
 ## Routes
 

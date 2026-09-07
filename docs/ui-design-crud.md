@@ -14,7 +14,7 @@
 | List | `GET /journalist` |
 | New | `GET /journalist/new` · `POST /journalist` |
 | Edit | `GET /journalist/{id}` · `POST /journalist/{id}` |
-| Delete | `POST /journalist/{id}/delete` |
+| Delete | `POST /journalist/{id}/delete` (**cascade-strip** bylines on articles, then delete) |
 
 Fields: `first_name`, `last_name`, `email`, `bio` (+ read-only ES `_id`, timestamps).
 

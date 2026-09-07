@@ -3,7 +3,9 @@
 **Status:** Reviewed & synced (2026-09-07)  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
-**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · Elasticsearch Java API Client · Docker Compose  
+**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web`) · Elasticsearch Java API Client · Docker Compose  
+
+Open parent `pom.xml` in IntelliJ IDEA Ultimate.
 
 This is the **canonical architecture overview**. Detail specs live in linked docs.
 

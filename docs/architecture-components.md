@@ -110,7 +110,8 @@ Journalist: **not** a results entity. On article full-text, `journalist` param f
 
 ### Journalist CRUD
 - Create/Update/Delete on `gotham-journalists`  
-- On update/delete: find articles with that `journalists.journalist_id` and reindex (or block delete if referenced)
+- On update: find articles with that `journalists.journalist_id` and reindex nested snapshots  
+- On delete: **cascade-strip** nested bylines from all referencing articles, rebuild projections, reindex, then delete journalist
 
 ### Article CRUD
 - Load journalists from `gotham-journalists` by id  

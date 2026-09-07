@@ -15,7 +15,7 @@
 | `GET /journalist/{id}` | Edit journalist (`{id}` = ES `_id`) |
 | `POST /journalist` | Create journalist |
 | `POST /journalist/{id}` | Update journalist |
-| `POST /journalist/{id}/delete` | Delete journalist (block if referenced) |
+| `POST /journalist/{id}/delete` | Delete journalist (**cascade-strip** nested bylines on articles, then delete master) |
 | `GET /article` | List articles (`gotham-media-browser`) |
 | `GET /article/new` | Create article form (denormalized doc) |
 | `GET /article/{id}` | Edit / view article (`{id}` = ES `_id`) |
@@ -91,7 +91,7 @@ Total page count = `ceil(hits.total.value / size)`. Changing `size` resets `page
 | `bio` | Optional text |
 | `_id` | Elasticsearch auto-id (read-only in UI) |
 
-Delete: block if any article nests this `journalist_id`, or cascade-strip + reindex articles (product choice; mock shows block).
+Delete: **cascade-strip** — remove this `journalist_id` from all nesting articles, rebuild journalist projections, reindex those articles, then delete the `gotham-journalists` document.
 
 ## 4. Article CRUD (`/article`) → `gotham-media-browser`
 
