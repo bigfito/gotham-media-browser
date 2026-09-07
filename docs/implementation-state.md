@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T22:35:00Z  
-**Active phase:** P4 (in progress — P4-T01 done)  
+**Last updated:** 2026-09-07T23:05:00Z  
+**Active phase:** P4 (in progress — P4-T01, P4-T02 done)  
 **Prototype status:** `in_progress`  
-**Next task:** `P4-T02` (Article repository — deps P4-T01, P2-T02 done)
+**Next task:** `P4-T03` (Journalist edit + cascade-strip delete — deps P4-T02, P3-T03 done)
 
 ---
 
@@ -58,7 +58,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P1 | Config, health, ES client, error pages | 4/4 | done |
 | P2 | Index bootstrap | 2/2 | done |
 | P3 | `/journalist` — list + create + edit form | 3/3 | done |
-| P4 | `/article` CRUD + journalist cascade-strip delete | 1/5 | in progress |
+| P4 | `/article` CRUD + journalist cascade-strip delete | 2/5 | in progress |
 | P5 | GCS + multimedia | 0/3 | pending |
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 15 / **42** tasks done
+**Totals:** 16 / **42** tasks done
 
 ---
 
@@ -91,7 +91,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P3-T02 | P3 | Journalist list UI (GET /journalist) | done | P3-T01, P0-T04, P1-T04 | JavaMentor | 2026-09-07T21:15:00Z | 2026-09-07T21:35:00Z | JournalistController GET /journalist: page/size params (size in {25,50,100}, else 25; page clamped >=1; from=(page-1)*size), calls JournalistRepository.findAll, maps to JournalistRow(id,fullName,email,updated formatted MMM d yyyy UTC). Thymeleaf journalist/list.html ported from ui-mockups/journalist.html: chrome fragments + crud-hero + size select (GET form, resets to page 1) + data-table + Prev/Next pagination + empty-state; edit/delete actions target id routes (wired in P4-T03). Added .empty-state CSS. JournalistControllerTest (5 @WebMvcTest slice: non-empty+chrome+paging meta, empty state, from-offset on page2/size50, invalid size fallback, page<=0 clamp). mvn test green (47). LIVE: seeded 2 journalists into real ES -> list shows 2 newest-first with formatted dates + delete routes; size=50 respected; size=7 -> 25; empty state before/after (seeds cleaned up). Chrome extension offline so no screenshot; curl-verified render. |
 | P3-T03 | P3 | Journalist create | done | P3-T02 | JavaMentor | 2026-09-07T21:45:00Z | 2026-09-07T22:05:00Z | GET /journalist/new + POST /journalist on JournalistController. JournalistForm (Bean Validation: firstName/lastName @NotBlank+@Size, email @NotBlank+@Email, bio @Size; trims + toNewJournalist()). Valid -> repository.create -> PRG redirect:/journalist + flash "Created <name>."; invalid -> redisplay journalist/new with in-form field errors (never the global error page), no persist. journalist/new.html ported from ui-mockups/journalist-new.html (th:object/th:field/#fields errors). Added spring-boot-starter-validation to gotham-web. Added .field-error + .flash CSS; flash banner on list; fixed list Edit link to design route /journalist/{id}. Tests: JournalistCreateControllerTest (@WebMvcTest, 3: empty form+chrome, valid->redirect+flash+create, invalid->in-form errors+no persist). mvn test green (50). LIVE vs real Serverless: GET form renders 4 fields; POST valid -> 302 /journalist, doc created and shown; flash banner "Created Clark Kent." after redirect; Edit links carry real ES _id (=> _id on edit); POST invalid -> 200 in-form errors, no persist. Demo docs cleaned up. |
 | P4-T01 | P4 | Article domain + projection helpers | done | P3-T01 | JavaMentor | 2026-09-07T22:15:00Z | 2026-09-07T22:35:00Z | gotham-common article package: ArticleStatus{DRAFT,PUBLISHED,ARCHIVED} + ContributionRole{AUTHOR,CO_AUTHOR,CONTRIBUTING} enums (lenient fromValue; role optional->null). ArticleJournalist nested byline snapshot (fromJournalist(j,order,role); fullName() derived). ArticleMetadata (section/tags/location/source/seo*/canonicalUrl; empty(); never-null tags). Article aggregate (core + metadata + journalists; newArticle factory, withId/withTimestamps/withJournalists; never-null collections; projections NOT stored to avoid drift). ArticleProjections stateless helper: orderedByByline, journalistNames, journalistBios (feed journalist_names/bios -> copy_to journalist_search_text; multimedia_text deferred to P5). No repository/media yet. Tests: ArticleEnumsTest(4), ArticleProjectionsTest(4), ArticleTest(3). mvn test green (61). |
-| P4-T02 | P4 | Article repository | pending | P4-T01, P2-T02 | | | | |
+| P4-T02 | P4 | Article repository | done | P4-T01, P2-T02 | JavaMentor | 2026-09-07T22:45:00Z | 2026-09-07T23:05:00Z | ArticleRepository (@Repository) over gotham-media-browser: create/findById/update/deleteById/findAll(status?,journalistId?,from,size newest-first, trackTotalHits) + findByJournalistId (sweeps all pages via nested query, for cascade-strip P4-T03). Doc via Map<String,Object>: flattens metadata, writes status enum name + ISO dates, rebuilds journalist_names/journalist_bios projections + ordered nested journalists[] each write (no drift). fromSource round-trips incl. nested bylines (ordered) + roles. Query DSL verified via javap: bool.filter([term status, nested journalists.journalist_id]) else match_all; sort created_at desc. Refresh.True; ES failure -> DependencyException(503). ArticlePage(items,total). Unit ArticleRepositoryTest (3: toDocument projections+ordered nested, round-trip, null-role/empty-bylines). Live ArticleRepositoryIT (@Tag integration, assumeTrue): create->read->update(DRAFT->PUBLISHED)->status filter->nested journalist query->delete PASSED vs real Serverless (auto-clean). mvn test green (64; IT excluded). |
 | P4-T03 | P4 | Journalist edit + cascade-strip delete | pending | P4-T02, P3-T03 | | | | |
 | P4-T04 | P4 | Article list + create/edit (text + metadata + bylines) | pending | P4-T02, P3-T03, P0-T04, P1-T04 | | | | |
 | P4-T05 | P4 | Article delete | pending | P4-T04 | | | | |
