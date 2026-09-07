@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!--
+  Shared chrome fragments ported from ui-mockups/ (chrome.js headerHtml/footerHtml).
+  In the mockups the header/footer were injected by JS; here they are server-rendered
+  Thymeleaf fragments. The live health-legend probe is wired later in P1-T03.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:fragment="head(pageTitle)">
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${pageTitle}">Gotham News &amp; Media Browser</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap"/>
+    <link rel="stylesheet" th:href="@{/css/styles.css}" href="/css/styles.css"/>
+</head>
+
+<body>
+
+<!-- One availability legend (ImageBind / Elasticsearch). state ∈ {up, down, checking}. -->
+<span th:fragment="serviceStatus(id, label, state)"
+      th:id="${id}"
+      class="service-status"
+      th:classappend="'service-status--' + ${state}"
+      role="status" aria-live="polite">
+    <span class="service-status__dot" aria-hidden="true"></span>
+    <span class="service-status__label" th:text="${label}">Service</span>
+    <span class="service-status__state"
+          th:text="${state == 'up' ? 'Available' : (state == 'down' ? 'Unavailable' : 'Checking…')}">Checking…</span>
+</span>
+
+<!-- Header chrome. Reads model attributes: activePage, imagebindStatus, elasticsearchStatus. -->
+<header th:fragment="header" class="site-header">
+    <div class="site-header__inner">
+        <div class="brand">
+            <a class="brand__mark" th:href="@{/}" href="/">Gotham News <span>&amp;</span> Media Browser</a>
+            <div class="brand__tag">Prototype search desk</div>
+        </div>
+        <div class="header-aside">
+            <div class="service-legends" aria-label="Dependency availability">
+                <th:block th:replace="~{fragments/chrome :: serviceStatus('status-imagebind', 'ImageBind', ${imagebindStatus} ?: 'checking')}"/>
+                <th:block th:replace="~{fragments/chrome :: serviceStatus('status-elasticsearch', 'Elasticsearch', ${elasticsearchStatus} ?: 'checking')}"/>
+            </div>
+            <nav class="header-nav" aria-label="Primary">
+                <a class="nav-link" th:classappend="${activePage == 'search'} ? ' is-active' : ''"
+                   th:href="@{/}" href="/">Search</a>
+                <a class="nav-link" th:classappend="${activePage == 'results-articles'} ? ' is-active' : ''"
+                   th:href="@{/results(entity='article')}" href="/results?entity=article">Article results</a>
+                <a class="nav-link" th:classappend="${activePage == 'results-multimedia'} ? ' is-active' : ''"
+                   th:href="@{/results(entity='multimedia')}" href="/results?entity=multimedia">Media results</a>
+                <a class="nav-link" th:classappend="${activePage == 'journalist'} ? ' is-active' : ''"
+                   th:href="@{/journalist}" href="/journalist">Journalists</a>
+                <a class="nav-link" th:classappend="${activePage == 'article'} ? ' is-active' : ''"
+                   th:href="@{/article}" href="/article">Articles</a>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<!-- Footer chrome: copyright lineage + MIT license (year 2026). -->
+<footer th:fragment="footer" class="site-footer">
+    <div class="site-footer__inner">
+        <div class="site-footer__legal">
+            <p class="site-footer__copy">
+                Copyright &copy; 2020 Packt.
+                Copyright &copy; 2026 Gotham News &amp; Media Browser contributors.
+                All rights reserved where applicable.
+            </p>
+            <p class="site-footer__license">
+                This project is licensed under the
+                <a href="https://opensource.org/licenses/MIT" rel="license">MIT License</a>
+                (see repository <code>LICENSE</code>).
+                Year <time datetime="2026">2026</time>.
+            </p>
+        </div>
+        <div class="site-footer__nav">
+            <a th:href="@{/}" href="/">Search</a> ·
+            <a th:href="@{/journalist}" href="/journalist">Journalists</a> ·
+            <a th:href="@{/article}" href="/article">Articles</a> ·
+            <a href="https://opensource.org/licenses/MIT" rel="license">MIT</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

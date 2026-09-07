@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T13:30:00Z  
+**Last updated:** 2026-09-07T13:45:00Z  
 **Active phase:** P0  
 **Prototype status:** `in_progress`  
-**Next task:** `P0-T04` (Shared Thymeleaf layout from mockups — dep P0-T01 done) or `P0-T05` (Secrets scaffolding — dep P0-T01 done)
+**Next task:** `P0-T05` (Secrets scaffolding — dep P0-T01 done) — **last task of P0; compact context after it**
 
 ---
 
@@ -54,7 +54,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 
 | Phase | Title | Tasks done | Status |
 |-------|-------|------------|--------|
-| P0 | Scaffold & agent harness | 3/5 | in_progress |
+| P0 | Scaffold & agent harness | 4/5 | in_progress |
 | P1 | Config, health, ES client, error pages | 0/4 | pending |
 | P2 | Index bootstrap | 0/2 | pending |
 | P3 | `/journalist` — list + create + edit form | 0/3 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 3 / **42** tasks done
+**Totals:** 4 / **42** tasks done
 
 ---
 
@@ -79,7 +79,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P0-T01 | P0 | Parent POM + gotham-common + gotham-web skeleton | done | — | JavaMentor | 2026-09-07T13:05:00Z | 2026-09-07T13:10:00Z | Parent (Boot 4.1.1, Java 25) + gotham-common + gotham-web. `mvn test` green (2 unit tests, JDK 25); `mvn -DskipTests package` builds boot jar. |
 | P0-T02 | P0 | Docker Compose skeleton | done | P0-T01 | JavaMentor | 2026-09-07T13:15:00Z | 2026-09-07T13:20:00Z | compose: gotham-web (build, :8080, secrets ro mount, optional .env) + imagebind-service placeholder (:8081, /health, healthcheck). No datagen profile (P10). `docker compose config` valid; placeholder /health → 200 verified. Full image build deferred (heavy). Added Maven Wrapper. |
 | P0-T03 | P0 | Agent entrypoints | done | — | JavaMentor | 2026-09-07T13:25:00Z | 2026-09-07T13:30:00Z | AGENTS.md: added Build & verify (JDK 25) + Source-of-truth note. Verified all markdown links resolve and all 42 task IDs match between plan headers and state board. |
-| P0-T04 | P0 | Shared Thymeleaf layout from mockups | pending | P0-T01 | | | | |
+| P0-T04 | P0 | Shared Thymeleaf layout from mockups | done | P0-T01 | JavaMentor | 2026-09-07T13:35:00Z | 2026-09-07T13:45:00Z | Ported chrome to templates/fragments/chrome.html (head/header legends/footer MIT) + static/css/styles.css; HomeController GET / -> index. @WebMvcTest renders chrome (200). Boot 4 note: @WebMvcTest moved to org.springframework.boot.webmvc.test.autoconfigure (added spring-boot-starter-webmvc-test + thymeleaf-test). |
 | P0-T05 | P0 | Secrets scaffolding | pending | P0-T01 | | | | |
 | P1-T01 | P1 | @ConfigurationProperties bound to application.properties | pending | P0-T01, P0-T05 | | | | |
 | P1-T02 | P1 | Elasticsearch Java client bean | pending | P1-T01 | | | | |
