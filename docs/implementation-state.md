@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T20:35:00Z  
-**Active phase:** P3 (P2 complete — **compact context now** before starting P3)  
+**Last updated:** 2026-09-07T21:05:00Z  
+**Active phase:** P3 (in progress — P3-T01 done)  
 **Prototype status:** `in_progress`  
-**Next task:** `P3-T01` (Journalist domain + repository — dep P2-T02 done)
+**Next task:** `P3-T02` (Journalist list UI GET /journalist — deps P3-T01, P0-T04, P1-T04 done)
 
 ---
 
@@ -57,7 +57,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P0 | Scaffold & agent harness | 5/5 | done |
 | P1 | Config, health, ES client, error pages | 4/4 | done |
 | P2 | Index bootstrap | 2/2 | done |
-| P3 | `/journalist` — list + create + edit form | 0/3 | pending |
+| P3 | `/journalist` — list + create + edit form | 1/3 | in progress |
 | P4 | `/article` CRUD + journalist cascade-strip delete | 0/5 | pending |
 | P5 | GCS + multimedia | 0/3 | pending |
 | P6 | ImageBind + embeddings | 0/3 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 11 / **42** tasks done
+**Totals:** 12 / **42** tasks done
 
 ---
 
@@ -87,7 +87,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P1-T04 | P1 | Global fault tolerance & user error pages | done | P0-T04, P1-T01 | JavaMentor | 2026-09-07T14:55:00Z | 2026-09-07T15:20:00Z | Domain exceptions (NotFound/Dependency/MediaLimit) in gotham-common; @ControllerAdvice + ErrorViewFactory (status/title/reason/reference id, stack logged server-side only) + GothamErrorController (/error) + branded error.html; Whitelabel off. Framework MVC exceptions keep their status via ErrorResponse. 8 tests. Live: unknown route -> 404 branded (no stack/Whitelabel). |
 | P2-T01 | P2 | Mapping JSON on classpath | done | P0-T01 | JavaMentor | 2026-09-07T19:45:00Z | 2026-09-07T19:55:00Z | Single source of truth kept at repo-root elasticsearch/*.mapping.json (docs still link there); gotham-common pom adds ../elasticsearch as a resource dir (targetPath elasticsearch, *.mapping.json) so both mappings ship on the classpath. IndexDefinition enum (JOURNALISTS, MEDIA_BROWSER) resolves resource path + loadMappingJson() (fail-fast if absent) — reused by P2-T02. IndexDefinitionTest (5 cases: parametrized load+valid JSON+_meta.index match, path convention, 1024-d vectors, missing-resource contract). mvn -pl gotham-common test green (14). Verified mappings present in target/classes and packaged jar under elasticsearch/. |
 | P2-T02 | P2 | Idempotent index bootstrap | done | P1-T02, P2-T01 | JavaMentor | 2026-09-07T20:05:00Z | 2026-09-07T20:35:00Z | IndexBootstrapper (gotham-common, @Component): per IndexDefinition exists()->skip / create() from mapping JSON; never deletes/modifies. Feeds settings+mappings separately via withJson(Reader) (CreateIndexRequest.Builder has no raw-JSON setter; transport JacksonJsonpMapper.jsonProvider() throws, so use standalone parsson provider). serverlessSafe() strips number_of_shards/number_of_replicas (Serverless rejects them; mapping files keep them for portability). IndexBootstrapRunner (gotham-web, ApplicationRunner) runs at startup and degrades (logs ERROR, app keeps running) if ES down — verified live: contextLoads + placeholder boot start despite failure. IndexBootstrapperTest (4: create-all, skip-all + never-delete, serverlessSafe strip, failure wraps in IndexBootstrapException naming index). mvn test green (35). LIVE against real Serverless: boot#1 {JOURNALISTS=ALREADY_EXISTS(from earlier run), MEDIA_BROWSER=CREATED}; boot#2 both ALREADY_EXISTS (idempotent). Both indexes GET 200; article_embedding + asset_vector dims=1024. FIXED real mapping bug in gotham-media-browser.mapping.json: copy_to was inside multi-field .text subfields (section/tags/location/source) which ES forbids — moved copy_to to the parent keyword field. |
-| P3-T01 | P3 | Journalist domain + repository | pending | P2-T02 | | | | |
+| P3-T01 | P3 | Journalist domain + repository | done | P2-T02 | JavaMentor | 2026-09-07T20:45:00Z | 2026-09-07T21:05:00Z | Journalist record (gotham-common: first/last/email/bio/createdAt/updatedAt; derived fullName() joining non-blank parts; id = ES auto _id, null until persisted; withId/withTimestamps). JournalistPage(items,total) for pagination. JournalistRepository (@Repository): create/findById/update/deleteById/findAll(from,size, newest-first, trackTotalHits). Document mapping via Map<String,Object> (snake_case, ISO-8601 dates, full_name written, id never in strict _source) — mapper-agnostic, no jackson annotations. Refresh.True on writes for immediate consistency. ES failures -> DependencyException(503). Unit tests: JournalistTest (4, fullName edge cases) + JournalistRepositoryTest (3, toDocument/fromSource round-trip). Live JournalistRepositoryIT (@Tag integration, assumeTrue on ES_ENDPOINT/ES_API_KEY + reachability; runnable via -Dtest=JournalistRepositoryIT): create->read->update->search->delete round-trip PASSED against real Serverless (auto-cleans its doc). mvn test green (42; IT excluded by *IT naming). |
 | P3-T02 | P3 | Journalist list UI (GET /journalist) | pending | P3-T01, P0-T04, P1-T04 | | | | |
 | P3-T03 | P3 | Journalist create | pending | P3-T02 | | | | |
 | P4-T01 | P4 | Article domain + projection helpers | pending | P3-T01 | | | | |
