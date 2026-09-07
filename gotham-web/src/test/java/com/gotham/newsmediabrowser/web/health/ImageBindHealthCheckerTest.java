@@ -29,7 +29,8 @@ class ImageBindHealthCheckerTest {
 
     @BeforeEach
     void setUp() {
-        checker = new ImageBindHealthChecker(httpClient, new ImageBindProperties("http://imagebind-service:8081"));
+        checker = new ImageBindHealthChecker(httpClient,
+                new ImageBindProperties("http://imagebind-service:8081", false, java.time.Duration.ofSeconds(60)));
     }
 
     @Test

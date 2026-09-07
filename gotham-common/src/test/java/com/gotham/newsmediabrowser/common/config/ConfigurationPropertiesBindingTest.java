@@ -59,8 +59,24 @@ class ConfigurationPropertiesBindingTest {
                     assertThat(gcs.bucket()).isEqualTo("my-bucket");
                     assertThat(gcs.credentialsFile()).isEqualTo("secrets/gcp-sa.json");
                     assertThat(gcs.isConfigured()).isTrue();
-                    assertThat(context.getBean(ImageBindProperties.class).baseUrl())
-                            .isEqualTo("http://imagebind-service:8081");
+                    ImageBindProperties imagebind = context.getBean(ImageBindProperties.class);
+                    assertThat(imagebind.baseUrl()).isEqualTo("http://imagebind-service:8081");
+                    // Sensible defaults when only the base URL is set.
+                    assertThat(imagebind.stub()).isFalse();
+                    assertThat(imagebind.requestTimeout()).isEqualTo(Duration.ofSeconds(60));
+                });
+    }
+
+    @Test
+    void bindsImageBindStubFlag() {
+        runner.withPropertyValues(
+                        "gotham.imagebind.base-url=http://imagebind-service:8081",
+                        "gotham.imagebind.stub=true",
+                        "gotham.imagebind.request-timeout=30s")
+                .run(context -> {
+                    ImageBindProperties imagebind = context.getBean(ImageBindProperties.class);
+                    assertThat(imagebind.stub()).isTrue();
+                    assertThat(imagebind.requestTimeout()).isEqualTo(Duration.ofSeconds(30));
                 });
     }
 
