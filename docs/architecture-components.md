@@ -27,11 +27,12 @@
 | Article CRUD | `/article` — full CRUD on denormalized `gotham-media-browser` docs (status: DRAFT / PUBLISHED / ARCHIVED) |
 | Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
 | Fault tolerance | Branded error pages with reason on **all** endpoints |
-| Synthetic data | **Last phase P10** — `gotham-datagen` loads via HTTP CRUD; helpers Qwen / FLUX / Kokoro / Wan ([`synthetic-data-generation.md`](./synthetic-data-generation.md)) |
+| Synthetic data | **Last phase P10** — independent Java app via HTTP CRUD; **M4 32 GB** helpers Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B ([`synthetic-data-generation.md`](./synthetic-data-generation.md)) |
 | Journalist UI search | **No** dedicated public journalist search UI |
 | Journalist as search param | **Yes** — article full-text accepts `journalist` filter/param |
 | Embeddings build | ImageBind **in-repo** under `imagebind-service/` |
-| Runtime | Local Docker Compose (+ optional profile `datagen`) |
+| Runtime | Local Docker Compose for web + ImageBind; **native macOS** datagen helpers (no CUDA) |
+| Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA** |
 | Users / auth | Out of scope (`/journalist` and `/article` open) |
 | Implementation | [`implementation-plan.md`](./implementation-plan.md) · [`implementation-state.md`](./implementation-state.md) |
 
@@ -41,7 +42,7 @@
 flowchart LR
   U[Browser] --> WEB[Gotham Web<br/>Spring Boot 4.1.1 + Thymeleaf]
   DG[gotham-datagen P10] -->|HTTP CRUD| WEB
-  DG --> HELPERS[Ollama / ComfyUI / Kokoro]
+  DG --> HELPERS[Ollama Metal · ComfyUI MPS · Kokoro]
   WEB --> JI[(gotham-journalists)]
   WEB --> AI[(gotham-media-browser)]
   WEB --> IB[ImageBind Helper]
@@ -88,7 +89,8 @@ Flow:
 - **Independent** Spring Boot Java application (own process / jar); **no** public UI  
 - Calls modality helpers over HTTP, then loads data **only** through live CRUD APIs  
 - Defaults: **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) per article  
-- Helpers (Compose profile `datagen`): Ollama + Qwen 2.5 14B · ComfyUI + FLUX.1 [schnell] / Wan2.1 · Kokoro-82M  
+- Lab: **MacBook Pro M4 · 32 GB · no NVIDIA** — native Metal/MPS helpers  
+- Models: **Qwen 2.5 7B-Instruct** · **SDXL-Turbo** · **Kokoro-82M** · **Wan2.1 T2V-1.3B**  
 - Spec: [`synthetic-data-generation.md`](./synthetic-data-generation.md)
 
 ### 5. Elastic indexes
@@ -150,14 +152,14 @@ Journalist: **not** a results entity. On article full-text, `journalist` param f
 ## Docker Compose
 
 ```text
-services (always):
+services (Compose):
   gotham-web           # :8080
-  imagebind-service    # :8081
+  imagebind-service    # :8081 (CPU OK on Mac)
 
-services (profile: datagen — P10):
-  ollama               # Qwen 2.5 14B-Instruct
-  comfyui              # FLUX.1 [schnell] + Wan2.1
-  kokoro               # Kokoro-82M TTS
+native macOS (P10 — not CUDA Docker):
+  Ollama               # Qwen 2.5 7B-Instruct (Metal)
+  ComfyUI (MPS)        # SDXL-Turbo + Wan2.1 1.3B
+  Kokoro               # Kokoro-82M TTS
 
 external:
   Elastic Cloud Serverless  (URL + API key)  → indexes gotham-journalists, gotham-media-browser
@@ -168,5 +170,5 @@ external:
 
 1. Paste real Elastic Cloud endpoint + API key into `gotham-web` `application.properties`  
 2. Paste GCS project/bucket into `application.properties`; place SA JSON at `secrets/gcs-sa.json` (never commit)  
-3. Confirm CPU-only ImageBind on the lab machine for in-repo `imagebind-service`  
-4. For P10 synthetic load: confirm GPU VRAM (≥12 GB recommended for FLUX/Wan alongside Qwen) or use `--skip-image` / `--skip-video`
+3. Confirm CPU ImageBind on the Mac for in-repo `imagebind-service`  
+4. For P10: install native Ollama / ComfyUI (MPS) / Kokoro on the M4; expect long wall-clock for 125×5 s videos

@@ -33,9 +33,9 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 ```mermaid
 flowchart LR
   U[Browser] --> WEB[gotham-web<br/>Spring Boot 4.1.1 + Thymeleaf<br/>:8080]
-  DG[gotham-datagen<br/>P10 CLI] -->|POST /journalist /article| WEB
-  DG --> OLL[Ollama · Qwen 2.5]
-  DG --> CFY[ComfyUI · FLUX / Wan]
+  DG[gotham-datagen<br/>P10 independent app] -->|POST /journalist /article| WEB
+  DG --> OLL[Ollama Metal · Qwen 2.5 7B]
+  DG --> CFY[ComfyUI MPS · SDXL-Turbo / Wan 1.3B]
   DG --> KOK[Kokoro · TTS]
   WEB --> JI[(gotham-journalists<br/>Elastic Cloud)]
   WEB --> AI[(gotham-media-browser<br/>Elastic Cloud)]
@@ -50,7 +50,7 @@ flowchart LR
 | `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends, **global error pages** |
 | `gotham-datagen` | **P10 (last):** independent Java app — synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
 | `imagebind-service` | Sync HTTP embed text/image/audio/video → `float[1024]` |
-| Ollama / ComfyUI / Kokoro | Optional Compose profile `datagen` — text / image+video / audio generation |
+| Ollama / ComfyUI / Kokoro | Native macOS helpers (Metal/MPS) for P10 — Qwen 7B / SDXL-Turbo / Wan 1.3B / Kokoro |
 | `gotham-journalists` | Journalist master documents (ES auto `_id`) |
 | `gotham-media-browser` | One denormalized article doc + nested journalists + nested multimedia |
 | GCS | Public object storage for media binaries (`storage_uri` HTTPS) |
@@ -176,14 +176,14 @@ Spec: [`ui-design-errors.md`](./ui-design-errors.md) · mockup: `ui-mockups/erro
 ## 6. Local Docker Compose (target)
 
 ```text
-services (always):
+services (Compose — always):
   gotham-web           # :8080  Spring Boot + Thymeleaf (module gotham-web)
-  imagebind-service    # :8081  Meta ImageBind helper (in-repo)
+  imagebind-service    # :8081  Meta ImageBind helper (in-repo, CPU OK on Mac)
 
-services (profile: datagen — P10):
-  ollama               # Qwen 2.5 14B-Instruct (Q4/Q5)
-  comfyui              # FLUX.1 [schnell] + Wan2.1 T2V
-  kokoro               # Kokoro-82M TTS (CPU image OK)
+native macOS (P10 datagen helpers — not CUDA Docker):
+  Ollama               # :11434  qwen2.5:7b-instruct (Metal)
+  ComfyUI (MPS)        # :8188  SDXL-Turbo + Wan2.1 T2V-1.3B
+  Kokoro               # :8880  Kokoro-82M TTS (CPU)
 
 external:
   Elastic Cloud Serverless
@@ -192,7 +192,9 @@ external:
 
 **Credentials (locked):** Elasticsearch endpoint + API key and GCS bucket/project ids are **hardcoded** in `gotham-web` `application.properties`. The GCS service account JSON key is a **secret file** under `secrets/` (gitignored; path in properties). Do not commit real keys.
 
-**Synthetic load:** independent Java app `gotham-datagen` posts to `/journalist` and `/article` only — defaults **15** / **25** / **5+5+5** (5 s videos); see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
+**Lab hardware (locked):** MacBook Pro **M4 · 32 GB · no NVIDIA GPU**. Synthetic helpers use Apple Metal/MPS natively.
+
+**Synthetic load:** independent Java app `gotham-datagen` posts to `/journalist` and `/article` only — defaults **15** / **25** / **5+5+5** (5 s videos); models **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B**; see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
 ---
 
@@ -268,5 +270,5 @@ gotham-news-media-browser/
 | Multi-module Maven (`gotham-common` + `gotham-web`; `gotham-datagen` in P10) | ✓ |
 | ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
-| Synthetic data last phase P10 (independent Java app; Qwen / FLUX / Kokoro / Wan via HTTP CRUD; 15/25/5+5+5) | ✓ |
+| Synthetic data last phase P10 (M4 native; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5) | ✓ |
 | Implementation plan ↔ state (41 tasks, P0–P10) | ✓ |

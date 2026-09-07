@@ -14,7 +14,8 @@
 | How data enters the system | **Only via HTTP** to `/journalist` and `/article` (exercises validation, GCS, ImageBind, projections) |
 | Not allowed | Writing straight to Elasticsearch / GCS while bypassing the app (except debugging) |
 | Runtime shape | **Independent Java application** in the multi-module Maven project (own main class / fat jar — **not** embedded inside `gotham-web`) |
-| CI / smoke | Keep **P9** minimal static fixtures; **P10** is model-backed full synthetic load |
+| Target lab hardware | **MacBook Pro M4 · 32 GB unified memory · no NVIDIA GPU** |
+| CI / smoke | Keep **P9** minimal static fixtures; **P10** is full synthetic load on the Mac |
 
 ---
 
@@ -29,53 +30,78 @@ gotham-datagen/          # standalone Spring Boot app (web disabled / none)
 | Rule | Detail |
 |------|--------|
 | Packaging | Maven module with `spring-boot-maven-plugin` executable jar |
-| Process | Runs **separately** from `gotham-web` (different JVM / Compose service or `mvn -pl gotham-datagen spring-boot:run`) |
+| Process | Runs **separately** from `gotham-web` (different JVM; typically `mvn -pl gotham-datagen spring-boot:run` or `java -jar …`) |
 | Not | A library called in-process by `gotham-web`, and not a Python-only repo |
 | Package | `com.gotham.newsmediabrowser.datagen` |
-| Parent POM | Lists `gotham-datagen` alongside `gotham-common` and `gotham-web` (IntelliJ: three runnable/app modules + shared common) |
-
-Example:
+| Parent POM | Lists `gotham-datagen` alongside `gotham-common` and `gotham-web` |
 
 ```bash
 mvn -pl gotham-datagen spring-boot:run
-# or after package:
+# or:
 java -jar gotham-datagen/target/gotham-datagen-*.jar
 ```
 
 ---
 
-## 3. Helper services (modality generators)
+## 3. Target hardware (locked)
 
-Orchestrator calls these **over HTTP**. Images below are the locked prototype defaults:
+| Item | Value |
+|------|--------|
+| Machine | Apple **MacBook Pro M4** |
+| Memory | **32 GB** unified memory |
+| Discrete NVIDIA GPU | **None** |
+| Acceleration | Apple **Metal / MPS** (and CPU) — **not** CUDA |
 
-| Modality | Best model | Size / quant | VRAM (approx.) | Recommended Docker image | Typical API use |
-|----------|------------|--------------|----------------|--------------------------|-----------------|
-| **Text** | Qwen 2.5 (14B-Instruct) | 14B (Q4_K_M or Q5_K_M) | ~9–11 GB | `ollama/ollama:latest` | Chat/completions → names, bios, titles, summaries, bodies, metadata, captions |
-| **Image** | FLUX.1 [schnell] | 12B (NF4 / Q4 GGUF) | ~11–13 GB | `yanwk/comfyui-boot` | T2I workflow → JPEG/PNG bytes for `IMAGE` multimedia |
-| **Audio / voice** | Kokoro-82M | 82M (FP16 / ONNX) | ~0.5 GB (or 0 on CPU) | `ghcr.io/remsky/kokoro-fastapi-cpu` | TTS → WAV/MP3 for `AUDIO` multimedia |
-| **Video** | Wan2.1 (T2V-1.3B) | 1.3B (BF16 / FP8) | ~9–12 GB (CPU offload OK) | `yanwk/comfyui-boot` | T2V → **5-second** MP4 clips (within 90 s / 50 MiB product limit) |
+**Implication:** Do **not** rely on NVIDIA CUDA Docker images (`yanwk/comfyui-boot` CUDA builds, GPU Compose device reservations). Run modality helpers **natively on macOS** so Metal can be used. Linux CUDA containers under Docker Desktop on Mac would fall back to CPU and are not the prototype path.
 
-### Compose profile `datagen`
+---
+
+## 4. Helper services — lighter models for M4 / 32 GB
+
+Chosen as lighter family variants that fit **alongside** `gotham-web` + ImageBind on 32 GB unified memory:
+
+| Modality | Model (prototype default) | Size / quant | Unified mem (approx.) | How to run on Mac | Typical API use |
+|----------|---------------------------|--------------|------------------------|-------------------|-----------------|
+| **Text** | **Qwen 2.5 7B-Instruct** | 7B (Q4_K_M) | ~5–6 GB | **Native Ollama** (Metal) — `ollama pull qwen2.5:7b-instruct` | Names, bios, titles, summaries, bodies, metadata, captions |
+| **Image** | **SDXL-Turbo** | ~3.5B UNet / few-step | ~6–8 GB peak | **Native ComfyUI** (PyTorch MPS) | T2I → JPEG/PNG for `IMAGE` |
+| **Audio / voice** | **Kokoro-82M** | 82M (FP16 / ONNX) | ~0.5 GB (CPU OK) | Native process or CPU container | TTS → WAV/MP3 for `AUDIO` |
+| **Video** | **Wan2.1 (T2V-1.3B)** | 1.3B (FP16 / lighter checkpoint) | ~8–12 GB with offload | **Native ComfyUI** (MPS + CPU offload) | T2V → **5-second** MP4 clips |
+
+### Why these (vs earlier CUDA-oriented picks)
+
+| Previous (NVIDIA-oriented) | Prototype default on M4 32 GB | Rationale |
+|----------------------------|------------------------------|-----------|
+| Qwen 2.5 **14B** | Qwen 2.5 **7B** Instruct Q4 | Leaves headroom for ComfyUI + ImageBind + browser/IDE on 32 GB |
+| FLUX.1 [schnell] ~12B | **SDXL-Turbo** | Much lighter; few-step generation is practical on Metal |
+| Kokoro-82M | Kokoro-82M (unchanged) | Already small; fine on CPU |
+| Wan2.1 T2V-1.3B | Wan2.1 T2V-1.3B (unchanged; lightest Wan) | Keep 5 s clips; expect **slow** wall-clock on MPS/CPU |
+
+**Optional faster text fallback:** `qwen2.5:3b-instruct` if the machine is under memory pressure during video runs.
+
+### Native helper layout (not CUDA Compose)
 
 ```text
-services (profile: datagen):
-  ollama                 # Qwen 2.5 14B — pull model on first run
-  comfyui                # FLUX.1 [schnell] + Wan2.1 workflows
-  kokoro                 # Kokoro-82M TTS (CPU image OK)
+macOS host (recommended):
+  Ollama                  :11434   qwen2.5:7b-instruct
+  ComfyUI (MPS)           :8188   SDXL-Turbo + Wan2.1 workflows
+  Kokoro FastAPI (CPU)    :8880   Kokoro-82M
 
-always on (existing):
-  gotham-web
-  imagebind-service
+Docker Compose (always):
+  gotham-web              :8080
+  imagebind-service       :8081   (CPU; acceptable on Mac)
 
-optional (P10):
-  gotham-datagen         # independent Java app; or run from host/IDE against Compose helpers
+Java (host / IDE):
+  gotham-datagen          → HTTP to :8080 + helpers above
 ```
 
-`gotham-datagen` reads base URLs and volumes from `application.properties` (hardcoded placeholders, same pattern as other services):
+Agents document install/pull steps in the P10 runbook. Do **not** make CUDA `yanwk/comfyui-boot` the required path.
+
+`gotham-datagen` properties (placeholders):
 
 ```properties
 gotham.datagen.web-base-url=http://localhost:8080
 gotham.datagen.ollama-base-url=http://localhost:11434
+gotham.datagen.ollama-model=qwen2.5:7b-instruct
 gotham.datagen.comfyui-base-url=http://localhost:8188
 gotham.datagen.kokoro-base-url=http://localhost:8880
 gotham.datagen.journalists=15
@@ -88,7 +114,7 @@ gotham.datagen.video-duration-seconds=5
 
 ---
 
-## 4. Locked default volumes (per full run)
+## 5. Locked default volumes (per full run)
 
 | Entity / asset | Count |
 |----------------|------:|
@@ -99,18 +125,18 @@ gotham.datagen.video-duration-seconds=5
 | VIDEO per article | **5** (each **5 seconds**) |
 | Media assets total | **375** (= 25 × 15) |
 
-Operators may override via CLI flags / properties; these are the prototype defaults.
+**Operator note (M4):** A full run is long — especially **125** Wan video clips on Metal/CPU, plus ImageBind embedding of all 375 assets. Prefer overnight / multi-session runs; skip flags remain for debugging (`--skip-image`, `--skip-audio`, `--skip-video`). Volumes stay locked; runtime expectations are hardware-honest.
 
 ---
 
-## 5. Generation pipeline
+## 6. Generation pipeline
 
 ```mermaid
 flowchart TD
-  APP[gotham-datagen<br/>independent Java app] --> TXT[Ollama · Qwen 2.5]
-  APP --> IMG[ComfyUI · FLUX.1 schnell]
+  APP[gotham-datagen<br/>independent Java app] --> TXT[Ollama Metal · Qwen 2.5 7B]
+  APP --> IMG[ComfyUI MPS · SDXL-Turbo]
   APP --> AUD[Kokoro · TTS]
-  APP --> VID[ComfyUI · Wan2.1]
+  APP --> VID[ComfyUI MPS · Wan2.1 1.3B]
   TXT -->|JSON fields| APP
   IMG -->|image bytes ×5| APP
   AUD -->|audio bytes ×5| APP
@@ -124,83 +150,71 @@ flowchart TD
 
 ### Steps (per run)
 
-1. **Health-check** helper services + `gotham-web` (fail with clear CLI error if down — no silent skip of modalities unless `--skip-video` etc.).  
-2. **Journalists (15):** Qwen produces `first_name`, `last_name`, `email`, `bio` → `POST /journalist` → collect returned `_id`s.  
-3. **Articles (25):** For each article, Qwen produces story + metadata + byline selection among created ids + `contribution_role` ∈ {AUTHOR, CO_AUTHOR, CONTRIBUTING} + `status`.  
-4. **Multimedia (per article):**  
-   - Prompt Qwen for captions aligned to the article (5 image / 5 audio / 5 video captions)  
-   - FLUX → **5** image files (each ≤ 10 MiB)  
-   - Kokoro → **5** voice audio files (each ≤ 20 MiB / 5 min)  
-   - Wan2.1 → **5** video clips, each **5 seconds** (≤ 50 MiB / 90 s product max)  
-5. **POST `/article`** with multipart fields matching the CRUD form contract (all 15 assets, or create then attach via edit if the form contract is multi-step — prefer one write that leaves a complete denormalized doc).  
-6. Rely on **gotham-web** for GCS upload, ImageBind embeddings, projections, and indexing.  
-7. Print a summary report (ids created, failures with reasons).
-
-Respect media limits and fault-tolerant UX: HTTP error bodies from `/article` should be surfaced in the CLI log (reference id if present).
-
-**Operator note:** A full run embeds **375** media files through ImageBind on write — expect long wall-clock time on CPU-only ImageBind.
+1. **Health-check** helpers + `gotham-web`.  
+2. **Journalists (15):** Qwen 7B → `POST /journalist` → collect `_id`s.  
+3. **Articles (25):** story + metadata + bylines + status mix.  
+4. **Multimedia (per article):** 5× SDXL-Turbo images · 5× Kokoro audio · 5× Wan **5 s** videos (captions from Qwen).  
+5. **POST `/article`** multipart matching CRUD contract.  
+6. `gotham-web` handles GCS, ImageBind, projections, ES.  
+7. Summary report (ids, failures, reference ids).
 
 ---
 
-## 6. Content constraints
+## 7. Content constraints
 
 - Language default `en`; Gotham / civic-news tone.  
 - Every article ≥ 1 journalist.  
-- Status mix: include DRAFT, PUBLISHED, and at least one ARCHIVED across a full run.  
-- Tags/section/location/source/seo_*/canonical_url populated when Qwen returns them.  
-- Do not invent ES `_id`s client-side for journalists/articles — use API responses.  
+- Status mix: DRAFT, PUBLISHED, and at least one ARCHIVED.  
+- Do not invent ES `_id`s client-side.  
 - `multimedia_element_id` remains **app-assigned** inside `gotham-web`.  
-- Video target duration for synthetic clips: **5 seconds** (not the product max of 90 s).
+- Synthetic video duration: **5 seconds**.
 
 ---
 
-## 7. Failure & skip policy
+## 8. Failure & skip policy
 
 | Condition | Behavior |
 |-----------|----------|
 | Ollama / Qwen unavailable | Abort run (text is required) |
 | Kokoro unavailable | Continue without AUDIO if `--skip-audio`; else fail |
-| ComfyUI / FLUX unavailable | Continue without IMAGE if `--skip-image`; else fail |
+| ComfyUI / SDXL-Turbo unavailable | Continue without IMAGE if `--skip-image`; else fail |
 | ComfyUI / Wan unavailable | Continue without VIDEO if `--skip-video`; else fail |
-| `gotham-web` 4xx/5xx | Log reason + reference id; fail that item; continue or `--fail-fast` |
-| Helper OOM / resource exhaustion | Prefer fail **before** POST; do not leave half-built article docs mid-write |
+| Unified-memory pressure / OOM | Prefer fail before POST; suggest pausing video or using `qwen2.5:3b-instruct` fallback |
+| `gotham-web` 4xx/5xx | Log reason + reference id; continue or `--fail-fast` |
 
 ---
 
-## 8. Out of scope
+## 9. Out of scope
 
 - Training or fine-tuning models  
-- Replacing ImageBind (still required on write path inside `gotham-web`)  
-- Public UI for datagen (independent Java app / CLI only)  
+- Replacing ImageBind  
+- Requiring NVIDIA CUDA for the prototype lab  
+- Public UI for datagen  
 - Committing generated binaries to git  
 
 ---
 
-## 9. Locked decisions (human)
+## 10. Locked decisions (human)
 
 | # | Decision | Status |
 |---|----------|--------|
+| D1 | Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA GPU** → native Metal helpers + **lighter** models (Qwen 7B, SDXL-Turbo, Kokoro, Wan 1.3B) | **Locked** |
 | D2 | Volumes: **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) per article | **Locked** |
 | D3 | `gotham-datagen` is an **independent Java application** in the multi-module Maven project | **Locked** |
-| D4 | P9 static seed remains for CI without generative helpers | **Locked** (default) |
-
-| # | Still open | Notes |
-|---|------------|-------|
-| D1 | Hardware for image/video helpers | See operator question in PR / handoff — skip flags remain available |
+| D4 | P9 static seed remains for CI without generative helpers | **Locked** |
 
 ---
 
-## 10. Validation checklist (design)
+## 11. Validation checklist (design)
 
 | Check | Result |
 |-------|--------|
-| Module is **last** phase (**P10**) after P9 smoke | ✓ |
+| Module is **last** phase (**P10**) | ✓ |
 | Independent Java app in multi-module project | ✓ |
+| Hardware = M4 32 GB, no CUDA requirement | ✓ |
+| Lighter models: Qwen 7B · SDXL-Turbo · Kokoro · Wan 1.3B | ✓ |
+| Native macOS helpers (Metal/MPS), not CUDA Compose | ✓ |
+| Volumes 15 / 25 / 5+5+5 (5 s video) | ✓ |
 | Data enters only via `/journalist` and `/article` | ✓ |
-| Helper table matches operator models / images | ✓ Qwen · FLUX · Kokoro · Wan |
-| Default volumes 15 / 25 / 5+5+5 (5 s video) | ✓ |
-| Compose profile `datagen` separate from always-on web/ImageBind | ✓ |
-| Media limits align with ImageBind CPU caps; synthetic video = 5 s | ✓ |
-| P9 static fixtures kept for no-GPU CI | ✓ |
-| ImageBind still used on write path inside `gotham-web` | ✓ |
-| Plan/state task count includes P10 (41 total) | ✓ |
+| P9 static fixtures kept | ✓ |
+| Plan/state includes P10 (41 tasks) | ✓ |

@@ -4,7 +4,7 @@
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
-**Last updated:** 2026-09-07T03:55:00Z  
+**Last updated:** 2026-09-07T04:05:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`
 
@@ -36,8 +36,9 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | Commits | One per task |
 | Package | `com.gotham.newsmediabrowser` |
 | Fault tolerance | Global error pages with reason on **all** endpoints (`docs/ui-design-errors.md`) |
-| Synthetic data | **Last phase P10** — independent Java app `gotham-datagen` via HTTP CRUD; helpers Qwen / FLUX / Kokoro / Wan |
+| Synthetic data | **Last phase P10** — independent Java app `gotham-datagen` via HTTP CRUD; **M4 32 GB** native helpers: Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B |
 | Datagen volumes | **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) each |
+| Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA GPU** |
 | Extra agent formats | None (Markdown plan + state only) |
 
 ---
@@ -102,8 +103,8 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03, P9-T01 | | | | |
 | P9-T03 | P9 | Hardening sync pass | pending | P9-T02 | | | | |
 | P10-T01 | P10 | Independent gotham-datagen app skeleton | pending | P0-T01, P9-T03 | | | | |
-| P10-T02 | P10 | Compose profile datagen (helpers) | pending | P0-T02, P10-T01 | | | | |
-| P10-T03 | P10 | Helper HTTP clients (Qwen/FLUX/Kokoro/Wan) | pending | P10-T02 | | | | |
+| P10-T02 | P10 | Native macOS helpers runbook (Ollama/ComfyUI/Kokoro) | pending | P0-T02, P10-T01 | | | | |
+| P10-T03 | P10 | Helper HTTP clients (Qwen7B/SDXL-Turbo/Kokoro/Wan) | pending | P10-T02 | | | | |
 | P10-T04 | P10 | Orchestrator → POST /journalist & /article (15/25/5+5+5) | pending | P10-T03, P3-T03, P5-T02, P6-T03 | | | | |
 | P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |
 

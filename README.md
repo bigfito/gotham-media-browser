@@ -26,7 +26,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 ## Locked stack
 
-Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · ES Java client · Docker Compose (`gotham-web` + in-repo `imagebind-service`; optional profile `datagen` for Qwen / FLUX / Kokoro / Wan) · ImageBind 1024-d
+Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · ES Java client · Docker Compose (`gotham-web` + in-repo `imagebind-service`) · ImageBind 1024-d · P10 native macOS helpers on **M4 32 GB** (Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B)
 
 Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
