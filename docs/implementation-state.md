@@ -2,7 +2,8 @@
 
 **Plan:** [`implementation-plan.md`](./implementation-plan.md)  
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
-**Last updated:** 2026-09-07T03:15:00Z  
+**ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
+**Last updated:** 2026-09-07T03:25:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`
 

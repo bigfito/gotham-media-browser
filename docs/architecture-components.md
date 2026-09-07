@@ -18,15 +18,21 @@
 | Object storage | **GCS public bucket objects** (no signed URLs) |
 | Embeddings | Meta ImageBind (OSS), Docker helper, sync HTTP, **1024-d** |
 | Modalities | Image, audio, video (+ text queries via ImageBind text) |
-| App stack | Java 25 · Spring Boot 4.1.1 · Maven 3.9.x · Thymeleaf · ES Java API Client 9.4.x |
+| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web`) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
+| ES credentials | Endpoint + API key **hardcoded** in `application.properties` |
+| GCS credentials | Bucket/project hardcoded in properties; SA JSON **secret file** under `secrets/` |
 | Landing | `/` — two panels: articles · multimedia |
 | Journalist CRUD | `/journalist` — full CRUD on `gotham-journalists` |
+| Journalist delete | **Cascade-strip** nested bylines + reindex articles, then delete master |
 | Article CRUD | `/article` — full CRUD on denormalized `gotham-media-browser` docs (status: DRAFT / PUBLISHED / ARCHIVED) |
 | Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
+| Fault tolerance | Branded error pages with reason on **all** endpoints |
 | Journalist UI search | **No** dedicated public journalist search UI |
 | Journalist as search param | **Yes** — article full-text accepts `journalist` filter/param |
+| Embeddings build | ImageBind **in-repo** under `imagebind-service/` |
 | Runtime | Local Docker Compose |
 | Users / auth | Out of scope (`/journalist` and `/article` open) |
+| Implementation | [`implementation-plan.md`](./implementation-plan.md) · [`implementation-state.md`](./implementation-state.md) |
 
 ## System context
 
@@ -55,7 +61,14 @@ Flow:
 
 ## Components
 
-### 1. `gotham-web`
+### 1. Maven modules
+| Module | Role |
+|--------|------|
+| parent `gotham-news-media-browser` | BOM, Java 25, module list (IntelliJ Ultimate import) |
+| `gotham-common` | Config properties, ES/GCS/ImageBind clients, repositories, projections, domain |
+| `gotham-web` | Spring Boot app, Thymeleaf controllers/views, static assets, global error handling |
+
+### 2. `gotham-web` (runtime)
 - Dual-panel landing; entity-scoped `/results`; `/journalist` + `/article` CRUD  
 - Articles panel methods: Full-text · Semantic · Hybrid  
 - Multimedia panel methods: Full-text · Semantic · Hybrid · Vector  
@@ -64,18 +77,19 @@ Flow:
 - Health: ImageBind `http://imagebind-service:8081/health` · ES via `/api/health/elasticsearch`  
 - **Fault tolerance:** global `@ControllerAdvice` / error templates for **all** endpoints — branded error page with **reason** + reference id; Whitelabel off; client timeouts on ES/ImageBind/GCS (see [`ui-design-errors.md`](./ui-design-errors.md))
 
-### 2. `imagebind-service`
-- Sync embed text / image / audio / video → `float[1024]`  
+### 3. `imagebind-service`
+- Sync embed text / image / audio / video → `float[1024]` · **built in-repo**
 
-### 3. Elastic indexes
+### 4. Elastic indexes
 | Index | Grain | Role |
 |-------|-------|------|
 | `gotham-journalists` | 1 journalist | Master data for `/journalist` + article bylines |
 | `gotham-media-browser` | 1 article | Public browse/search + `/article` CRUD; nested journalists + multimedia |
 
-### 4. GCS
+### 5. GCS
 - Public objects; ES stores `storage_uri` (e.g. `https://storage.googleapis.com/...` or `gs://...` resolved to public HTTPS in UI)  
 - No signed URLs  
+- SA JSON loaded from secret file path in `application.properties`
 
 ## Local media limits (prototype)
 
@@ -134,7 +148,8 @@ external:
   GCS public bucket         (SA for write; public read)
 ```
 
-## Follow-ups when credentials arrive
-1. ES endpoint + API key  
-2. GCS bucket name + write-capable SA (objects public-readable)  
-3. Confirm CPU-only ImageBind on the lab machine  
+## Follow-ups for operators
+
+1. Paste real Elastic Cloud endpoint + API key into `gotham-web` `application.properties`  
+2. Paste GCS project/bucket into `application.properties`; place SA JSON at `secrets/gcs-sa.json` (never commit)  
+3. Confirm CPU-only ImageBind on the lab machine for in-repo `imagebind-service`

@@ -17,7 +17,7 @@ This document is the **Elasticsearch-side contract** for every UI search mode. A
 | Article | `fulltext` | BM25 `multi_match` (+ filters) | — | Optional `journalist` nested filter |
 | Article | `semantic` | kNN | `article_embedding` | Query text → ImageBind → `query_vector` |
 | Article | `hybrid` | **RRF**(BM25, kNN) | `article_embedding` | Same filters on both legs |
-| Article | `vector` | — | — | **Not allowed** (ignore / 400) |
+| Article | `vector` | — | — | **Not allowed** — reject with **HTTP 400** error page |
 | Multimedia | `fulltext` | Nested BM25 + **`inner_hits`** | — | Asset-level cards |
 | Multimedia | `semantic` | Nested kNN + **`inner_hits`** | `multimedia.asset_vector` | Text → ImageBind |
 | Multimedia | `hybrid` | **RRF**(nested BM25, nested kNN) | `multimedia.asset_vector` | |

@@ -3,7 +3,8 @@
 **Product:** Gotham News & Media Browser  
 **Routes:** `/journalist/**` · `/article/**` (no `/admin`)  
 **Theme:** Light pastel (shared chrome)  
-**Mockups:** `ui-mockups/journalist*.html`, `ui-mockups/article*.html`
+**Mockups:** `ui-mockups/journalist*.html`, `ui-mockups/article*.html`  
+**Related:** [`frontend-information-architecture.md`](./frontend-information-architecture.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`ui-design-errors.md`](./ui-design-errors.md)
 
 ## Endpoints
 

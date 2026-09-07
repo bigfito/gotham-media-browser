@@ -142,9 +142,9 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 ---
 
-## Phase 1 — Config, health, ES client
+## Phase 1 — Config, health, ES client, global fault-tolerant error pages
 
-**Goal:** Hardcoded properties drive ES client; header legends get health.
+**Goal:** Hardcoded properties drive ES client; header legends get health; branded error pages cover all endpoints.
 
 ### P1-T01 — `@ConfigurationProperties` bound to `application.properties`
 - **Create:** In `gotham-common`: properties for elasticsearch endpoint + api-key, gcs.*, imagebind.base-url, media limits.  

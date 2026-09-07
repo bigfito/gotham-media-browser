@@ -14,6 +14,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | Logical ER | `docs/er-design.md` |
 | ES model | `docs/elasticsearch-denormalized-model.md` |
 | ES search methods (DSL) | `docs/elasticsearch-search-methods.md` |
+| ES / dual-index diagrams | `docs/elasticsearch-denormalized-diagram.md` · `diagrams/` |
 | Components | `docs/architecture-components.md` |
 | Frontend IA | `docs/frontend-information-architecture.md` |
 | Search UI | `docs/ui-design-search-results.md` |

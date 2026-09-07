@@ -3,7 +3,8 @@
 **Product:** Gotham News & Media Browser  
 **Theme:** Light pastel (compatible soft wash background)  
 **Chrome:** Shared header + footer on all pages  
-**Mockups:** `ui-mockups/`
+**Mockups:** `ui-mockups/`  
+**Related:** [`frontend-information-architecture.md`](./frontend-information-architecture.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md) · [`ui-design-errors.md`](./ui-design-errors.md)
 
 ## Background
 

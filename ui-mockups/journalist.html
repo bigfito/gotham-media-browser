@@ -58,7 +58,9 @@
             <td>Sep 6, 2026</td>
             <td class="data-table__actions">
               <a href="journalist-edit.html">Edit</a>
-              <button type="button" class="linkish linkish--danger">Delete</button>
+              <form action="/journalist/j_lois_lane/delete" method="post" style="display:inline" onsubmit="return confirm('Cascade-strip this journalist from all article bylines, then delete?');">
+                <button type="submit" class="linkish linkish--danger">Delete</button>
+              </form>
             </td>
           </tr>
           <tr>
@@ -68,7 +70,9 @@
             <td>Sep 4, 2026</td>
             <td class="data-table__actions">
               <a href="journalist-edit.html">Edit</a>
-              <button type="button" class="linkish linkish--danger">Delete</button>
+              <form action="/journalist/j_clark_kent/delete" method="post" style="display:inline" onsubmit="return confirm('Cascade-strip this journalist from all article bylines, then delete?');">
+                <button type="submit" class="linkish linkish--danger">Delete</button>
+              </form>
             </td>
           </tr>
           <tr>
@@ -78,7 +82,9 @@
             <td>Aug 22, 2026</td>
             <td class="data-table__actions">
               <a href="journalist-edit.html">Edit</a>
-              <button type="button" class="linkish linkish--danger">Delete</button>
+              <form action="/journalist/j_vicki_vale/delete" method="post" style="display:inline" onsubmit="return confirm('Cascade-strip this journalist from all article bylines, then delete?');">
+                <button type="submit" class="linkish linkish--danger">Delete</button>
+              </form>
             </td>
           </tr>
         </tbody>

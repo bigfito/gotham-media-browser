@@ -2,7 +2,9 @@
 
 **Persistence:** Elastic Cloud Serverless only (+ GCS for binaries)  
 **IDs:** Elasticsearch **auto `_id`** for top-level documents  
-**Logical ER:** [`er-design.md`](./er-design.md) (design aid only)
+**Logical ER:** [`er-design.md`](./er-design.md) (design aid only)  
+**Canonical overview:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
+**Search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)
 
 ## Indexes
 
@@ -59,7 +61,7 @@ _id  (ES auto)
 ├── section, tags, location, source, seo_*
 ├── journalist_names, journalist_bios, journalist_search_text
 ├── multimedia_text, multimedia_search_text, article_search_text
-├── journalists[] nested { journalist_id, names, email, bio, byline_order, role }
+├── journalists[] nested { journalist_id, names, email, bio, byline_order, contribution_role }
 ├── multimedia[] nested { multimedia_element_id, media_type, storage_uri, …, asset_vector }
 └── article_embedding
 ```

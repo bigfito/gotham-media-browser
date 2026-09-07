@@ -4,7 +4,7 @@
 **Status:** Approved **logical** artifact (design aid for denormalized ES model)  
 **Scope:** Single-brand online news & articles prototype. No authentication or user management.  
 **Physical persistence:** **Not implemented as RDBMS.** Prototype persists in **Elasticsearch** (`gotham-journalists`, `gotham-media-browser`) + **GCS** only.  
-**Related:** [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md) · [`architecture-components.md`](./architecture-components.md)
+**Related:** [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md) · [`architecture-components.md`](./architecture-components.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md)
 
 ## Entity-relationship diagram
 
@@ -146,7 +146,7 @@ JOURNALIST ——< ARTICLE_AUTHORSHIP >—— ARTICLE
 | `MULTIMEDIA_METADATA` | `multimedia_element_id` unique |
 | `MULTIMEDIA_ELEMENT` | `(article_id, position)` unique (recommended) |
 
-### Check / domain constraints (application or DB)
+### Check / domain constraints (application-enforced)
 | Rule | Description |
 |------|-------------|
 | `ARTICLE.status` | One of `DRAFT`, `PUBLISHED`, `ARCHIVED` |
@@ -156,10 +156,10 @@ JOURNALIST ——< ARTICLE_AUTHORSHIP >—— ARTICLE
 | Image metadata | Prefer `width` / `height` present when `media_type = IMAGE` |
 | A/V metadata | Prefer `duration_ms` present when `media_type` is `AUDIO` or `VIDEO` |
 
-### Cascades (recommended)
-- Delete `ARTICLE` → cascade delete `ARTICLE_AUTHORSHIP`, `ARTICLE_METADATA`, `MULTIMEDIA_ELEMENT`
-- Delete `MULTIMEDIA_ELEMENT` → cascade delete `MULTIMEDIA_METADATA`
-- Delete `JOURNALIST` → restrict if authorship rows exist (or reassign first)
+### Cascades (logical → ES write rules)
+- Delete `ARTICLE` → remove nested multimedia (+ GCS objects) and the article document  
+- Delete nested multimedia element → drop from parent article + delete GCS object  
+- Delete `JOURNALIST` → **cascade-strip**: remove nested `journalists[]` entries with that `journalist_id` from all articles, rebuild journalist projections, reindex those articles, then delete the `gotham-journalists` document
 
 ## Enumerations
 

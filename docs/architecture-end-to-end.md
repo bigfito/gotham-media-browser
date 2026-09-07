@@ -147,7 +147,9 @@ sequenceDiagram
   WEB->>AI: index denormalized doc (auto _id)
 ```
 
-Journalist update reindexes articles nesting that `journalist_id`. Article delete removes GCS objects + article doc.
+Journalist update reindexes articles nesting that `journalist_id`.  
+Journalist **delete cascade-strips** nested bylines from all referencing articles, rebuilds journalist projections, reindexes those articles, then deletes the `gotham-journalists` document.  
+Article delete removes GCS objects + article doc.
 
 ---
 
@@ -168,15 +170,15 @@ Spec: [`ui-design-errors.md`](./ui-design-errors.md) · mockup: `ui-mockups/erro
 
 ```text
 services:
-  gotham-web           # :8080  Spring Boot + Thymeleaf
-  imagebind-service    # :8081  Meta ImageBind helper
+  gotham-web           # :8080  Spring Boot + Thymeleaf (module gotham-web)
+  imagebind-service    # :8081  Meta ImageBind helper (in-repo)
 
 external:
-  Elastic Cloud Serverless   # API key
-  GCS public bucket          # SA / ADC
+  Elastic Cloud Serverless
+  GCS public bucket
 ```
 
-Credentials provided at runtime (not in repo).
+**Credentials (locked):** Elasticsearch endpoint + API key and GCS bucket/project ids are **hardcoded** in `gotham-web` `application.properties`. The GCS service account JSON key is a **secret file** under `secrets/` (gitignored; path in properties). Do not commit real keys.
 
 ---
 
@@ -194,15 +196,25 @@ Credentials provided at runtime (not in repo).
 ```text
 gotham-news-media-browser/
 ├── README.md
+├── AGENTS.md
+├── pom.xml                      # Maven parent (multi-module)
+├── gotham-common/               # (to be created in P0)
+├── gotham-web/                  # (to be created in P0)
+├── imagebind-service/           # (to be created in P0/P6)
+├── secrets/                     # SA JSON secret (gitignored) + *.example
 ├── docs/
 │   ├── architecture-end-to-end.md   ← this file
 │   ├── er-design.md
 │   ├── elasticsearch-denormalized-model.md
 │   ├── elasticsearch-denormalized-diagram.md
+│   ├── elasticsearch-search-methods.md
 │   ├── architecture-components.md
 │   ├── frontend-information-architecture.md
 │   ├── ui-design-search-results.md
-│   └── ui-design-crud.md
+│   ├── ui-design-crud.md
+│   ├── ui-design-errors.md
+│   ├── implementation-plan.md
+│   └── implementation-state.md
 ├── elasticsearch/
 │   ├── gotham-journalists.mapping.json
 │   └── gotham-media-browser.mapping.json
@@ -213,6 +225,7 @@ gotham-news-media-browser/
     ├── results-*.html
     ├── journalist*.html
     ├── article*.html
+    ├── error.html
     ├── chrome.js · styles.css
     └── media/   # HTML5 fixtures
 ```
@@ -226,11 +239,17 @@ gotham-news-media-browser/
 | Dual-index ES + public GCS, no RDBMS | ✓ |
 | Auto `_id` + app `multimedia_element_id` | ✓ |
 | No `/admin`; `/journalist` + `/article` CRUD | ✓ |
-| Search modes & ImageBind 1024-d | ✓ |
+| Journalist delete **cascade-strip** | ✓ |
+| Search modes & ImageBind 1024-d in-repo | ✓ |
+| ES search-methods Query DSL cookbook | ✓ |
 | FTS attribute checkboxes + pagination 25/50/100 | ✓ |
 | Status DRAFT\|PUBLISHED\|ARCHIVED | ✓ |
 | `contribution_role` enum aligned with ER | ✓ |
 | `canonical_url` on article forms + mapping | ✓ |
 | `source.text` copy_to `article_search_text` | ✓ |
 | Results filters wired to IA query params | ✓ |
+| Article `mode=vector` → HTTP 400 error page | ✓ |
+| Multi-module Maven (`gotham-common` + `gotham-web`) | ✓ (planned P0) |
+| ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
+| Implementation plan ↔ state (35 tasks) | ✓ |

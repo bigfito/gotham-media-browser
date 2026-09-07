@@ -88,7 +88,7 @@ track_total_hits = true
 Total page count = `ceil(hits.total.value / size)`. Changing `size` resets `page` to `1`.
 
 - All three statuses are searchable; filter defaults can show all.  
-- Ignore `mode=vector` when `entity=article`.  
+- Ignore is **not** acceptable for `mode=vector` when `entity=article` — reject with **HTTP 400** and the branded error page (“Vector search is only available for multimedia.”).  
 - Multimedia hits should surface matched asset via inner hits / card UI.  
 - Media URLs are **public GCS** HTTPS links (no signing).  
 - Multimedia results render with **HTML5** `<img>` / `<audio controls>` / `<video controls>`.
