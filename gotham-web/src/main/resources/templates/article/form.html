@@ -135,6 +135,13 @@
             <a class="btn btn-ghost" th:href="@{/article}" href="/article">Cancel</a>
         </div>
     </form>
+
+    <!-- Delete only exists once the article does; separate confirming form (GCS cleanup added in P5). -->
+    <form class="danger-zone" th:if="${articleId != null}"
+          th:action="@{/article/{id}/delete(id=${articleId})}" method="post"
+          onsubmit="return confirm('Delete this article document?');">
+        <button class="btn btn-danger" type="submit">Delete article</button>
+    </form>
 </div>
 
 <footer th:replace="~{fragments/chrome :: footer}"></footer>

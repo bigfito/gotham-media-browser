@@ -171,4 +171,25 @@ class ArticleControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(view().name("error"));
     }
+
+    @Test
+    void deleteExistingArticleRedirectsWithFlash() throws Exception {
+        when(articleRepository.deleteById("a1")).thenReturn(true);
+
+        mockMvc.perform(post("/article/a1/delete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/article"))
+                .andExpect(flash().attribute("flash", containsString("Deleted")));
+
+        verify(articleRepository).deleteById("a1");
+    }
+
+    @Test
+    void deleteUnknownArticleRendersBranded404() throws Exception {
+        when(articleRepository.deleteById("ghost")).thenReturn(false);
+
+        mockMvc.perform(post("/article/ghost/delete"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error"));
+    }
 }

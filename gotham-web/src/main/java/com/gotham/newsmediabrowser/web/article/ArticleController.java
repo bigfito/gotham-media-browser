@@ -84,7 +84,7 @@ public class ArticleController {
 
     @GetMapping("/article/new")
     public String newForm(Model model) {
-        addFormChrome(model, "New article", "/article");
+        addFormChrome(model, "New article", "/article", null);
         model.addAttribute("articleForm", new ArticleForm());
         return "article/form";
     }
@@ -99,7 +99,7 @@ public class ArticleController {
         Map<String, Journalist> journalists = journalistsById();
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
-            addFormChrome(model, "New article", "/article");
+            addFormChrome(model, "New article", "/article", null);
             return "article/form";
         }
 
@@ -112,7 +112,7 @@ public class ArticleController {
     public String editForm(@PathVariable String id, Model model) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
-        addFormChrome(model, "Edit article", "/article/" + id);
+        addFormChrome(model, "Edit article", "/article/" + id, id);
         model.addAttribute("articleForm", ArticleForm.fromArticle(article));
         return "article/form";
     }
@@ -131,13 +131,27 @@ public class ArticleController {
         Map<String, Journalist> journalists = journalistsById();
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
-            addFormChrome(model, "Edit article", "/article/" + id);
+            addFormChrome(model, "Edit article", "/article/" + id, id);
             return "article/form";
         }
 
         Article toSave = built.get().withId(id).withTimestamps(existing.createdAt(), existing.updatedAt());
         Article saved = articleRepository.update(toSave);
         redirectAttributes.addFlashAttribute("flash", "Updated “" + saved.title() + "”.");
+        return "redirect:/article";
+    }
+
+    /**
+     * Deletes an article document. GCS cleanup for its media is added in P5-T03.
+     *
+     * @throws NotFoundException if no article has that id (rendered as the branded 404 page)
+     */
+    @PostMapping("/article/{id}/delete")
+    public String delete(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        if (!articleRepository.deleteById(id)) {
+            throw new NotFoundException("Article " + id + " was not found.");
+        }
+        redirectAttributes.addFlashAttribute("flash", "Deleted the article.");
         return "redirect:/article";
     }
 
@@ -196,10 +210,11 @@ public class ArticleController {
         model.addAttribute("elasticsearchStatus", "checking");
     }
 
-    private void addFormChrome(Model model, String heading, String formAction) {
+    private void addFormChrome(Model model, String heading, String formAction, String articleId) {
         addChrome(model);
         model.addAttribute("heading", heading);
         model.addAttribute("formAction", formAction);
+        model.addAttribute("articleId", articleId);
         model.addAttribute("journalistOptions", journalistRepository.findAll(0, MAX_JOURNALIST_OPTIONS).items());
         model.addAttribute("roles", List.of("AUTHOR", "CO_AUTHOR", "CONTRIBUTING"));
     }

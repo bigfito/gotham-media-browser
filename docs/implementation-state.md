@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T00:05:00Z  
-**Active phase:** P4 (in progress — P4-T01…P4-T04 done)  
+**Last updated:** 2026-09-08T00:35:00Z  
+**Active phase:** P5 (P4 complete — **compact context now** before starting P5)  
 **Prototype status:** `in_progress`  
-**Next task:** `P4-T05` (Article delete — dep P4-T04 done)
+**Next task:** `P5-T01` (GCS storage service — deps P1-T01, P0-T05 done)
 
 ---
 
@@ -58,7 +58,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P1 | Config, health, ES client, error pages | 4/4 | done |
 | P2 | Index bootstrap | 2/2 | done |
 | P3 | `/journalist` — list + create + edit form | 3/3 | done |
-| P4 | `/article` CRUD + journalist cascade-strip delete | 4/5 | in progress |
+| P4 | `/article` CRUD + journalist cascade-strip delete | 5/5 | done |
 | P5 | GCS + multimedia | 0/3 | pending |
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 18 / **42** tasks done
+**Totals:** 19 / **42** tasks done
 
 ---
 
@@ -94,7 +94,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P4-T02 | P4 | Article repository | done | P4-T01, P2-T02 | JavaMentor | 2026-09-07T22:45:00Z | 2026-09-07T23:05:00Z | ArticleRepository (@Repository) over gotham-media-browser: create/findById/update/deleteById/findAll(status?,journalistId?,from,size newest-first, trackTotalHits) + findByJournalistId (sweeps all pages via nested query, for cascade-strip P4-T03). Doc via Map<String,Object>: flattens metadata, writes status enum name + ISO dates, rebuilds journalist_names/journalist_bios projections + ordered nested journalists[] each write (no drift). fromSource round-trips incl. nested bylines (ordered) + roles. Query DSL verified via javap: bool.filter([term status, nested journalists.journalist_id]) else match_all; sort created_at desc. Refresh.True; ES failure -> DependencyException(503). ArticlePage(items,total). Unit ArticleRepositoryTest (3: toDocument projections+ordered nested, round-trip, null-role/empty-bylines). Live ArticleRepositoryIT (@Tag integration, assumeTrue): create->read->update(DRAFT->PUBLISHED)->status filter->nested journalist query->delete PASSED vs real Serverless (auto-clean). mvn test green (64; IT excluded). |
 | P4-T03 | P4 | Journalist edit + cascade-strip delete | done | P4-T02, P3-T03 | JavaMentor | 2026-09-07T23:10:00Z | 2026-09-07T23:35:00Z | JournalistService (gotham-common @Service, orchestrates Journalist+Article repos): update() saves master then refreshes each nesting article's byline snapshot (preserving byline_order+role); cascadeDelete() strips the nested byline from every affected article (findByJournalistId), reindexes (projections rebuilt), then deletes master. Article reindex before master change so a mid-sweep failure is retry-safe (no multi-doc txn in ES). Controller: GET /journalist/{id} (prefill; unknown->NotFoundException 404 branded), POST /journalist/{id} (@Valid; preserves createdAt; invalid->in-form errors, no cascade), POST /journalist/{id}/delete (cascade + flash). journalist/edit.html ported from mockup (readonly _id+timestamps, separate confirm delete form, .danger-zone CSS). Added JournalistService @MockitoBean to existing slice tests. Tests: JournalistServiceTest(3 Mockito: reindex preserves order/role, cascade strips+deletes in order, empty-affected still deletes) + JournalistEditControllerTest(5). mvn test green (72). LIVE vs real Serverless: edit Lois->Louise refreshed article snapshot (full_name/email + journalist_names) keeping byline_order/role; cascade-delete -> master 404, article nested count 0 + journalist_names []; unknown id edit -> branded 404. Demo data cleaned. |
 | P4-T04 | P4 | Article list + create/edit (text + metadata + bylines) | done | P4-T02, P3-T03, P0-T04, P1-T04 | JavaMentor | 2026-09-07T23:45:00Z | 2026-09-08T00:05:00Z | ArticleController: GET /article (status+size filters, pagination, chips, bylines column; media col deferred), GET /article/new, POST /article, GET /article/{id} (prefill; unknown->404 branded), POST /article/{id}. ArticleForm (Bean Validation: title/summary/body @NotBlank, status, @NotEmpty journalistIds; bylineOrder/role bound as Map keyed by journalist id; tags CSV->keyword[]; publishedAt datetime-local->UTC Instant; toNewArticle snapshots selected journalists via lookup; fromArticle prefill). buildOrReject rejects unresolvable byline + unparseable date as in-form errors. Templates article/list.html + shared article/form.html (new+edit) ported from mockups, NO media upload (P5). No media/GCS/embeddings yet. Tests: ArticleControllerTest(@WebMvcTest,7). mvn test green (79). LIVE vs real Serverless: create w/ byline -> ES doc has nested snapshot + journalist_names/journalist_bios projections; list chips + status filter; edit prefilled; update (title/status DRAFT/role CO_AUTHOR) 302; no-journalist + empty-title -> in-form errors; unknown id -> branded 404. Demo data cleaned. |
-| P4-T05 | P4 | Article delete | pending | P4-T04 | | | | |
+| P4-T05 | P4 | Article delete | done | P4-T04 | JavaMentor | 2026-09-08T00:15:00Z | 2026-09-08T00:35:00Z | POST /article/{id}/delete on ArticleController: articleRepository.deleteById; unknown id -> NotFoundException (branded 404). Delete form added to list rows (confirm) + .danger-zone delete on the edit form (shown only when articleId present). GCS cleanup deferred to P5-T03. Tests: +2 in ArticleControllerTest (delete existing -> redirect+flash+deleteById; delete unknown -> branded 404). mvn test green (81). LIVE vs real Serverless: delete existing -> 302, ES _doc 404 (gone), list back to 0; delete unknown id -> branded 404 error page. Demo data cleaned. |
 | P5-T01 | P5 | GCS storage service | pending | P1-T01, P0-T05 | | | | |
 | P5-T02 | P5 | Multimedia on article create/update | pending | P5-T01, P4-T04 | | | | |
 | P5-T03 | P5 | Remove media + article delete cleans GCS | pending | P5-T02 | | | | |
