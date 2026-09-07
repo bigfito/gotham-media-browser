@@ -17,6 +17,7 @@
       <span class="entity-badge entity-badge--article">Entity · Articles</span>
       <form class="results-search" action="results-articles.html" method="get" data-search-panel>
         <input type="hidden" name="entity" value="article" />
+        <input type="hidden" name="page" value="1" />
         <div class="methods" role="radiogroup" aria-label="Article search method" data-methods>
           <label><input type="radio" name="mode" value="fulltext" checked /><span>Full-text</span></label>
           <label><input type="radio" name="mode" value="semantic" /><span>Semantic</span></label>
@@ -78,27 +79,40 @@
           </select>
         </div>
         <div class="field">
-          <label for="from">From</label>
-          <input id="from" type="date" value="2026-01-01" />
+          <label for="published_from">Published from</label>
+          <input id="published_from" type="date" name="published_from" value="2026-01-01" />
         </div>
         <div class="field">
-          <label for="to">To</label>
-          <input id="to" type="date" value="2026-09-06" />
+          <label for="published_to">Published to</label>
+          <input id="published_to" type="date" name="published_to" value="2026-09-06" />
         </div>
         <button class="btn btn-sky" type="button">Apply filters</button>
       </aside>
 
       <main>
         <div class="results-toolbar">
-          <div class="results-meta"><strong>24</strong> articles · fields <strong>title</strong>, <strong>subtitle</strong>, <strong>summary</strong>, <strong>body</strong></div>
-          <div class="field" style="min-width:12rem">
-            <label for="sort">Sort</label>
-            <select id="sort">
-              <option selected>Relevance</option>
-              <option>Newest published</option>
-              <option>Oldest published</option>
-              <option>Title A–Z</option>
-            </select>
+          <div class="results-meta">
+            <strong>124</strong> articles · showing <strong>1–25</strong>
+            <span class="results-meta__es" title="Mapped to Elasticsearch Search API">ES <code>from=0</code> · <code>size=25</code> · <code>track_total_hits</code></span>
+          </div>
+          <div class="toolbar-controls">
+            <div class="field">
+              <label for="size">Per page</label>
+              <select id="size" name="size" form="page-nav">
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sort">Sort</label>
+              <select id="sort" name="sort">
+                <option selected>Relevance</option>
+                <option>Newest published</option>
+                <option>Oldest published</option>
+                <option>Title A–Z</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -135,11 +149,21 @@
           </article>
         </div>
 
-        <nav class="pagination" aria-label="Pagination">
-          <span class="is-current">1</span>
-          <a href="#">2</a>
-          <a href="#">3</a>
-          <a href="#">Next</a>
+        <nav class="pagination" id="page-nav" aria-label="Pagination">
+          <div class="pagination__pages">
+            <span class="pagination__disabled" aria-disabled="true">Prev</span>
+            <span class="is-current" aria-current="page">1</span>
+            <a href="?entity=article&amp;q=transit+funding&amp;mode=fulltext&amp;page=2&amp;size=25">2</a>
+            <a href="?entity=article&amp;q=transit+funding&amp;mode=fulltext&amp;page=3&amp;size=25">3</a>
+            <span class="pagination__ellipsis" aria-hidden="true">…</span>
+            <a href="?entity=article&amp;q=transit+funding&amp;mode=fulltext&amp;page=5&amp;size=25">5</a>
+            <a href="?entity=article&amp;q=transit+funding&amp;mode=fulltext&amp;page=2&amp;size=25">Next</a>
+          </div>
+          <p class="pagination__hint">
+            Page <strong>1</strong> of <strong>5</strong>
+            · <code>from = (page − 1) × size</code>
+            · size limited to <strong>25</strong>, <strong>50</strong>, or <strong>100</strong> (Elasticsearch <code>size</code>)
+          </p>
         </nav>
       </main>
     </div>

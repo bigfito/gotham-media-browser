@@ -50,6 +50,38 @@ Default checked: title, caption, description, alt_text.
 
 Backend maps checked `fields` into a `multi_match` / `bool` should over those ES fields.
 
+## Multimedia playback (results)
+
+Multimedia result cards use **HTML5** native elements against public `storage_uri` URLs (GCS HTTPS):
+
+| `media_type` | Element | Notes |
+|--------------|---------|--------|
+| `IMAGE` | `<img>` | `alt` from `multimedia.alt_text` |
+| `AUDIO` | `<audio controls preload="metadata">` | native play/seek |
+| `VIDEO` | `<video controls preload="metadata">` | optional poster; native play/seek |
+
+No third-party player libraries in the prototype.
+
+## Pagination (Elasticsearch Search API)
+
+UI query params map 1:1 onto Elasticsearch offset pagination:
+
+| UI param | Allowed values | Elasticsearch |
+|----------|----------------|---------------|
+| `page` | 1-based integer | used to compute `from` |
+| `size` | **25**, **50**, or **100** only | request `size` |
+
+```text
+from = (page - 1) × size
+size = size
+track_total_hits = true   # accurate total for page count
+```
+
+- Changing `size` resets to `page=1`.
+- Page links preserve query, mode, fields, and filters.
+- Do **not** reuse `from` as a date param — use `published_from` / `published_to` for date range filters so they never collide with ES `from`.
+- Deep paging beyond `from + size` soft limits is out of scope for the mockup; stick to classic `from`/`size` (not `search_after`) for this prototype.
+
 ## Shared chrome
 `chrome.js` injects header/footer; Thymeleaf will use layout fragments later.
 
@@ -57,7 +89,8 @@ Backend maps checked `fields` into a `multi_match` / `bool` should over those ES
 | File | Role |
 |------|------|
 | `index.html` | Dual-panel landing |
-| `results-articles.html` | Article results |
-| `results-multimedia.html` | Multimedia results |
+| `results-articles.html` | Article results + ES-synced pagination |
+| `results-multimedia.html` | Multimedia results (HTML5 players) + pagination |
 | `styles.css` | Light pastel theme |
 | `chrome.js` | Shared header/footer + mode toggles |
+| `media/` | Sample IMAGE / AUDIO / VIDEO fixtures for HTML5 playback |

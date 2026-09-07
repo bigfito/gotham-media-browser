@@ -17,6 +17,7 @@
       <span class="entity-badge entity-badge--media">Entity · Multimedia</span>
       <form class="results-search" action="results-multimedia.html" method="get" data-search-panel>
         <input type="hidden" name="entity" value="multimedia" />
+        <input type="hidden" name="page" value="1" />
         <div class="methods" role="radiogroup" aria-label="Multimedia search method" data-methods>
           <label><input type="radio" name="mode" value="fulltext" checked /><span>Full-text</span></label>
           <label><input type="radio" name="mode" value="semantic" /><span>Semantic</span></label>
@@ -81,32 +82,53 @@
           </select>
         </div>
         <div class="field">
-          <label for="from">From</label>
-          <input id="from" type="date" />
+          <label for="published_from">Published from</label>
+          <input id="published_from" type="date" name="published_from" />
         </div>
         <div class="field">
-          <label for="to">To</label>
-          <input id="to" type="date" />
+          <label for="published_to">Published to</label>
+          <input id="published_to" type="date" name="published_to" />
         </div>
         <button class="btn btn-coral" type="button">Apply filters</button>
       </aside>
 
       <main>
         <div class="results-toolbar">
-          <div class="results-meta"><strong>12</strong> assets · fields <strong>title</strong>, <strong>caption</strong>, <strong>description</strong>, <strong>alt_text</strong></div>
-          <div class="field" style="min-width:12rem">
-            <label for="sort">Sort</label>
-            <select id="sort">
-              <option selected>Relevance</option>
-              <option>Newest</option>
-              <option>Oldest</option>
-            </select>
+          <div class="results-meta">
+            <strong>87</strong> assets · showing <strong>1–25</strong>
+            <span class="results-meta__es" title="Mapped to Elasticsearch Search API">ES <code>from=0</code> · <code>size=25</code> · <code>track_total_hits</code></span>
+          </div>
+          <div class="toolbar-controls">
+            <div class="field">
+              <label for="size">Per page</label>
+              <select id="size" name="size" form="page-nav">
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sort">Sort</label>
+              <select id="sort" name="sort">
+                <option selected>Relevance</option>
+                <option>Newest</option>
+                <option>Oldest</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div class="media-grid">
           <article class="media-card">
-            <div class="media-card__thumb">Image</div>
+            <div class="media-card__player">
+              <img
+                src="media/chamber.jpg"
+                alt="Council chamber after the vote"
+                width="800"
+                height="500"
+                loading="lazy"
+              />
+            </div>
             <div class="media-card__body">
               <p class="media-card__caption">Council chamber after the vote</p>
               <p class="media-card__parent">In <a href="#">Gotham Transit Expansion Clears Final Vote</a></p>
@@ -114,7 +136,11 @@
             </div>
           </article>
           <article class="media-card">
-            <div class="media-card__thumb">Audio</div>
+            <div class="media-card__player media-card__player--audio">
+              <audio controls preload="metadata" src="media/debate.mp3">
+                Your browser does not support HTML5 audio.
+              </audio>
+            </div>
             <div class="media-card__body">
               <p class="media-card__caption">Floor debate excerpt — funding clause</p>
               <p class="media-card__parent">In <a href="#">Gotham Transit Expansion Clears Final Vote</a></p>
@@ -122,7 +148,11 @@
             </div>
           </article>
           <article class="media-card">
-            <div class="media-card__thumb">Video</div>
+            <div class="media-card__player">
+              <video controls preload="metadata" poster="media/chamber.jpg" src="media/gallery.mp4" width="800" height="500">
+                Your browser does not support HTML5 video.
+              </video>
+            </div>
             <div class="media-card__body">
               <p class="media-card__caption">Gallery reaction, east steps</p>
               <p class="media-card__parent">In <a href="#">Budget Office Flags Overruns</a></p>
@@ -130,7 +160,15 @@
             </div>
           </article>
           <article class="media-card">
-            <div class="media-card__thumb">Image</div>
+            <div class="media-card__player">
+              <img
+                src="media/blueprint.jpg"
+                alt="Blueprint detail — east portal"
+                width="800"
+                height="500"
+                loading="lazy"
+              />
+            </div>
             <div class="media-card__body">
               <p class="media-card__caption">Blueprint detail — east portal</p>
               <p class="media-card__parent">In <a href="#">Budget Office Flags Overruns</a></p>
@@ -139,10 +177,21 @@
           </article>
         </div>
 
-        <nav class="pagination" aria-label="Pagination">
-          <span class="is-current">1</span>
-          <a href="#">2</a>
-          <a href="#">Next</a>
+        <nav class="pagination" id="page-nav" aria-label="Pagination">
+          <div class="pagination__pages">
+            <span class="pagination__disabled" aria-disabled="true">Prev</span>
+            <span class="is-current" aria-current="page">1</span>
+            <a href="?entity=multimedia&amp;q=council+chamber&amp;mode=fulltext&amp;page=2&amp;size=25">2</a>
+            <a href="?entity=multimedia&amp;q=council+chamber&amp;mode=fulltext&amp;page=3&amp;size=25">3</a>
+            <span class="pagination__ellipsis" aria-hidden="true">…</span>
+            <a href="?entity=multimedia&amp;q=council+chamber&amp;mode=fulltext&amp;page=4&amp;size=25">4</a>
+            <a href="?entity=multimedia&amp;q=council+chamber&amp;mode=fulltext&amp;page=2&amp;size=25">Next</a>
+          </div>
+          <p class="pagination__hint">
+            Page <strong>1</strong> of <strong>4</strong>
+            · <code>from = (page − 1) × size</code>
+            · size limited to <strong>25</strong>, <strong>50</strong>, or <strong>100</strong> (Elasticsearch <code>size</code>)
+          </p>
         </nav>
       </main>
     </div>

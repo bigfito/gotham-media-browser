@@ -53,14 +53,24 @@
 | `section` | both | Section facet |
 | `mediaType` | multimedia | `IMAGE` \| `AUDIO` \| `VIDEO` |
 | `language` | article | e.g. `en` |
-| `from` / `to` | both | Date range on `published_at` |
+| `published_from` / `published_to` | both | Date range on `published_at` (not ES `from`) |
 | `sort` | both | `relevance` \| `published_at_desc` \| `published_at_asc` \| `title_asc` |
-| `page` / `size` | both | Pagination |
+| `page` | both | 1-based page index |
+| `size` | both | **25** \| **50** \| **100** → Elasticsearch `size` |
+
+### Pagination ↔ Elasticsearch
+```text
+from = (page - 1) * size
+size = size ∈ {25, 50, 100}
+track_total_hits = true
+```
+Total page count = `ceil(hits.total.value / size)`. Changing `size` resets `page` to `1`.
 
 - All three statuses are searchable; filter defaults can show all.  
 - Ignore `mode=vector` when `entity=article`.  
 - Multimedia hits should surface matched asset via inner hits / card UI.  
-- Media URLs are **public GCS** HTTPS links (no signing).
+- Media URLs are **public GCS** HTTPS links (no signing).  
+- Multimedia results render with **HTML5** `<img>` / `<audio controls>` / `<video controls>`.
 
 ## 3. Admin
 
