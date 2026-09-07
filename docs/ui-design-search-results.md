@@ -2,87 +2,64 @@
 
 **Product:** Gotham News & Media Browser  
 **Pages:** `/` (search landing), `/results` (results)  
-**Stack target:** Thymeleaf + shared CSS (mockups in `ui-mockups/`)
+**Theme:** Light pastel  
+**Mockups:** `ui-mockups/`
 
 ## Visual direction
 
-Editorial **night-desk** — ink surfaces, cool mist gradients, one sharp signal accent. Not a marketing splash page; the first viewport is a **search workspace** with brand as the hero signal.
+Soft **pastel newsroom** — airy surfaces, mint / sky / coral accents, shared chrome on every page.
 
 | Token | Value | Role |
 |-------|-------|------|
-| `--ink` | `#070B14` | Page depth |
-| `--panel` | `#121A2B` | Panel surfaces |
-| `--panel-edge` | `#243049` | Borders |
-| `--mist` | `#9BB0D0` | Secondary text |
-| `--paper` | `#E8EEF8` | Primary text |
-| `--signal` | `#FF4D6D` | Accent / CTA |
-| `--focus` | `#5CE1FF` | Focus rings / active tabs |
-| Brand font | **Fraunces** | Display / wordmark |
-| UI font | **Sora** | Controls, body |
+| `--bg` | `#F4F7FB` | Page wash |
+| `--surface` | `#FFFFFF` | Panels |
+| `--ink` | `#2C3E5A` | Primary text |
+| `--mint` | `#9FD5C5` | Full-text terms / secondary CTA |
+| `--sky` | `#9EC5E8` | Articles accent |
+| `--coral` | `#EFB0B8` | Multimedia accent |
+| Brand font | **Fraunces** | Wordmark / titles |
+| UI font | **Sora** | Controls |
 
-Atmosphere: radial vignette + subtle diagonal grid (CSS), no stock photos in the first viewport.
+Atmosphere: pastel radial washes (sky, coral, mint). No dark theme.
 
-## Landing (`/`) — composition
+## Shared chrome
 
-One viewport, one job: choose a search lane and run it.
+Every page includes the same **header** and **footer** via `chrome.js` mounts (`#site-header`, `#site-footer`):
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│  GOTHAM NEWS & MEDIA BROWSER                    Admin    │  ← brand-dominant
-│  Search the newsroom desk — articles or media assets.    │  ← one supporting line
-├─────────────────────────────┬────────────────────────────┤
-│  ARTICLES                   │  MULTIMEDIA                │
-│  Full-text · Semantic ·     │  Full-text · Semantic ·    │
-│  Hybrid                     │  Hybrid · Vector           │
-│  [ query ................ ] │  [ query ................ ]│
-│  (journalist filter FTS)    │  [ file drop if Vector ]   │
-│  [ Search articles → ]      │  [ Search multimedia → ]   │
-└─────────────────────────────┴────────────────────────────┘
-```
+- Header: brand wordmark + nav (Search · Article results · Media results · Admin)
+- Footer: prototype label + quick links
 
-### Rules
-- Brand wordmark is the largest type on the page (not the panel titles).
-- Panels are peers — equal width, equal visual weight; no card stack of promos.
-- Article panel: method tabs **Full-text | Semantic | Hybrid** only.
-- Multimedia panel: **Full-text | Semantic | Hybrid | Vector**; Vector reveals file dropzone.
-- Article Full-text shows optional **Journalist** field (FTS parameter).
-- Primary CTAs use `--signal`; active method uses `--focus` underline.
+Thymeleaf will later replace `chrome.js` with `layout.html` fragments.
 
-## Results (`/results`) — composition
+## Landing (`/`) — two panels
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│  Brand · entity badge · sticky search (methods for entity)│
-├──────────────┬───────────────────────────────────────────┤
-│ Filters      │ Sort · “N results”                        │
-│ status       │ ┌ result row / media tile ─────────────┐  │
-│ section      │ └──────────────────────────────────────┘  │
-│ journalist*  │ …                                         │
-│ media type†  │ Pagination                                │
-│ dates        │                                           │
-└──────────────┴───────────────────────────────────────────┘
-* article entity   † multimedia entity
-```
+| Panel | Methods | Full-text UX |
+|-------|---------|--------------|
+| Articles | Full-text · Semantic · Hybrid | Multi-term **checkboxes** + journalist filter |
+| Multimedia | Full-text · Semantic · Hybrid · Vector | Multi-term **checkboxes**; Vector shows file drop |
 
-### Rules
-- Sticky header mirrors the **originating panel’s** methods only.
-- Left filter rail (collapses under search on narrow screens).
-- Article results: editorial rows (title, deck, byline, section, status chip, date).
-- Multimedia results: media tiles (thumb/type glyph, caption, parent article, type chip).
-- Pagination + sort always visible when there are hits.
-- Empty state: short copy + link back to the other panel.
+### Multi-term full-text
+1. User adds terms (input + Add / Enter).  
+2. Each term appears as a **checked checkbox**.  
+3. Unchecking excludes that term from the submitted query.  
+4. Checked terms are joined into `q` (and may also post as repeated `term=` params in the Spring app).  
+5. Semantic / Hybrid switch back to a single query field.
 
-## Interaction notes
-- Progressive enhancement: GET forms; Vector uses POST multipart.
-- Keyboard: tabs are real radio/segmented controls; focus rings use `--focus`.
-- Motion: 150–220ms tab indicator + panel hover border only (restraint).
+## Results (`/results`)
+
+- Same shared header/footer  
+- Entity badge + method tabs for that entity only  
+- Full-text mode keeps the multi-term checkbox builder  
+- Filters, sort, pagination unchanged in structure  
 
 ## Mockups
+
 | File | Page |
 |------|------|
-| `ui-mockups/index.html` | Landing dual-panel search |
+| `ui-mockups/index.html` | Landing |
 | `ui-mockups/results-articles.html` | Article results |
 | `ui-mockups/results-multimedia.html` | Multimedia results |
-| `ui-mockups/styles.css` | Shared tokens + layout |
+| `ui-mockups/styles.css` | Pastel theme |
+| `ui-mockups/chrome.js` | Shared header/footer + terms helper |
 
-Open with any static server, e.g. `python3 -m http.server -d ui-mockups 8765`.
+Preview: `python3 -m http.server -d ui-mockups 8765`

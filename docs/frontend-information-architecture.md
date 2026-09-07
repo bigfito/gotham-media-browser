@@ -22,7 +22,9 @@
 | Articles | ✓ | ✓ | ✓ | ✗ |
 | Multimedia | ✓ | ✓ | ✓ | ✓ |
 
-**No journalist search UI.** Article full-text accepts a **`journalist`** parameter (filter).
+**No journalist search UI.** Article full-text accepts a **`journalist`** parameter (filter).  
+**Full-text is multi-term:** users add terms as checkboxes; only checked terms are queried.  
+**Chrome:** shared header + footer on all pages.
 
 ## 1. Landing (`/`) — two panels
 

@@ -9,28 +9,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <a class="brand__mark" href="index.html" style="text-decoration:none">Gotham News <span>&amp;</span> Media Browser</a>
-        <div class="brand__tag">Article search results</div>
-      </div>
-      <a class="nav-link" href="index.html">New search</a>
-    </header>
+<body data-page="results-articles">
+  <div id="site-header"></div>
 
+  <div class="shell">
     <section class="results-header">
       <span class="entity-badge entity-badge--article">Entity · Articles</span>
-      <form class="results-search" action="results-articles.html" method="get">
+      <form class="results-search" action="results-articles.html" method="get" data-search-panel data-seed-terms="transit|funding">
         <input type="hidden" name="entity" value="article" />
-        <div class="methods" role="radiogroup" aria-label="Article search method">
+        <div class="methods" role="radiogroup" aria-label="Article search method" data-methods>
           <label><input type="radio" name="mode" value="fulltext" checked /><span>Full-text</span></label>
           <label><input type="radio" name="mode" value="semantic" /><span>Semantic</span></label>
           <label><input type="radio" name="mode" value="hybrid" /><span>Hybrid</span></label>
         </div>
+
+        <div class="terms-box is-visible" data-terms>
+          <div class="terms-box__title">Full-text terms</div>
+          <div class="term-add">
+            <input type="text" data-term-input placeholder="Add a term" aria-label="Add full-text term" />
+            <button class="btn btn-mint" type="button" data-term-add>Add</button>
+          </div>
+          <ul class="term-list" data-term-list></ul>
+          <input type="hidden" name="q" data-terms-query value="" />
+        </div>
+
+        <div class="field" data-single-query style="display:none">
+          <label for="q">Query</label>
+          <input id="q" type="search" name="q_single" />
+        </div>
+
         <div class="results-search__row">
-          <input type="search" name="q" value="transit funding" aria-label="Query" />
-          <button class="btn btn-focus" type="submit">Update</button>
+          <input type="text" name="journalist" value="Lois Lane" aria-label="Journalist filter" placeholder="Journalist filter" />
+          <button class="btn btn-sky" type="submit">Update</button>
         </div>
       </form>
     </section>
@@ -56,10 +66,6 @@
           </select>
         </div>
         <div class="field">
-          <label for="journalist">Journalist</label>
-          <input id="journalist" type="text" value="Lois Lane" />
-        </div>
-        <div class="field">
           <label for="from">From</label>
           <input id="from" type="date" value="2026-01-01" />
         </div>
@@ -67,12 +73,12 @@
           <label for="to">To</label>
           <input id="to" type="date" value="2026-09-06" />
         </div>
-        <button class="btn btn-focus" type="button">Apply filters</button>
+        <button class="btn btn-sky" type="button">Apply filters</button>
       </aside>
 
       <main>
         <div class="results-toolbar">
-          <div class="results-meta"><strong>24</strong> articles · mode <strong>full-text</strong></div>
+          <div class="results-meta"><strong>24</strong> articles · terms <strong>transit</strong>, <strong>funding</strong></div>
           <div class="field" style="min-width:12rem">
             <label for="sort">Sort</label>
             <select id="sort">
@@ -126,5 +132,8 @@
       </main>
     </div>
   </div>
+
+  <div id="site-footer"></div>
+  <script src="chrome.js"></script>
 </body>
 </html>
