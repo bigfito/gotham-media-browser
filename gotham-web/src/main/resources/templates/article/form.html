@@ -150,6 +150,10 @@
                         <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
                     </video>
                     <figcaption th:text="${m.originalFilename()} ?: ${m.mediaType()}">file</figcaption>
+                    <label class="media-card__remove">
+                        <input type="checkbox" th:field="*{removeMediaIds}" th:value="${m.multimediaElementId()}"/>
+                        Remove on save (deletes the file from GCS)
+                    </label>
                 </figure>
             </div>
 
@@ -165,7 +169,8 @@
         </div>
     </form>
 
-    <!-- Delete only exists once the article does; separate confirming form (GCS cleanup added in P5). -->
+    <!-- Delete only exists once the article does; a separate confirming form. Deleting the article
+         also purges every media object it owns from GCS (P5-T03). -->
     <form class="danger-zone" th:if="${articleId != null}"
           th:action="@{/article/{id}/delete(id=${articleId})}" method="post"
           onsubmit="return confirm('Delete this article document?');">

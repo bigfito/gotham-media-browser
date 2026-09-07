@@ -141,7 +141,12 @@ public class ArticleController {
                 .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
 
         Map<String, Journalist> journalists = journalistsById();
-        List<ArticleMultimedia> uploaded = uploadOrReject(mediaFiles, existing.multimedia().size(), bindingResult);
+        Set<String> removeIds = Set.copyOf(articleForm.getRemoveMediaIds());
+        List<ArticleMultimedia> retained = existing.multimedia().stream()
+                .filter(m -> !removeIds.contains(m.multimediaElementId()))
+                .toList();
+        int nextPosition = retained.size();
+        List<ArticleMultimedia> uploaded = uploadOrReject(mediaFiles, nextPosition, bindingResult);
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
             addFormChrome(model, "Edit article", "/article/" + id, id);
@@ -149,8 +154,13 @@ public class ArticleController {
             return "article/form";
         }
 
-        // Existing media is preserved; newly uploaded files are appended. Removal is P5-T03.
-        List<ArticleMultimedia> merged = new ArrayList<>(existing.multimedia());
+        // Only now that the save is committed do we purge GCS objects for the removed elements, then
+        // rebuild the nested list from the retained ones plus any new uploads.
+        List<ArticleMultimedia> removed = existing.multimedia().stream()
+                .filter(m -> removeIds.contains(m.multimediaElementId()))
+                .toList();
+        mediaUploadService.remove(removed);
+        List<ArticleMultimedia> merged = new ArrayList<>(retained);
         merged.addAll(uploaded);
         Article toSave = built.get().withId(id)
                 .withTimestamps(existing.createdAt(), existing.updatedAt())
@@ -174,15 +184,19 @@ public class ArticleController {
     }
 
     /**
-     * Deletes an article document. GCS cleanup for its media is added in P5-T03.
+     * Deletes an article document and every media object it owns. The GCS objects are purged first so
+     * that a storage failure aborts before the document is removed; a retry then re-attempts the same
+     * (idempotent) deletes, leaving no orphaned objects in the bucket.
      *
      * @throws NotFoundException if no article has that id (rendered as the branded 404 page)
      */
     @PostMapping("/article/{id}/delete")
     public String delete(@PathVariable String id, RedirectAttributes redirectAttributes) {
-        if (!articleRepository.deleteById(id)) {
-            throw new NotFoundException("Article " + id + " was not found.");
-        }
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
+
+        mediaUploadService.remove(article.multimedia());
+        articleRepository.deleteById(id);
         redirectAttributes.addFlashAttribute("flash", "Deleted the article.");
         return "redirect:/article";
     }

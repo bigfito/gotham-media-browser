@@ -1170,6 +1170,16 @@ a:hover { text-decoration: underline; }
   overflow-wrap: anywhere;
 }
 
+.media-card__remove {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--danger, #b3261e);
+  cursor: pointer;
+}
+
 /* Destructive action set apart from the main edit form. */
 .danger-zone {
   margin-top: 1.25rem;

@@ -74,6 +74,10 @@ public class ArticleForm {
     /** Contribution role per journalist id. */
     private Map<String, String> role = new LinkedHashMap<>();
 
+    // --- Multimedia removal (edit only) ---
+    /** Ids of existing multimedia elements the user checked for removal on the edit screen. */
+    private List<String> removeMediaIds = new ArrayList<>();
+
     /**
      * Builds a not-yet-persisted article, snapshotting the selected journalists (resolved via the
      * given lookup) into nested bylines ordered by the form's byline order.
@@ -313,5 +317,13 @@ public class ArticleForm {
 
     public void setRole(Map<String, String> role) {
         this.role = role != null ? role : new LinkedHashMap<>();
+    }
+
+    public List<String> getRemoveMediaIds() {
+        return removeMediaIds;
+    }
+
+    public void setRemoveMediaIds(List<String> removeMediaIds) {
+        this.removeMediaIds = removeMediaIds != null ? removeMediaIds : new ArrayList<>();
     }
 }

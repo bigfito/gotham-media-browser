@@ -209,23 +209,77 @@ class ArticleControllerTest {
     }
 
     @Test
-    void deleteExistingArticleRedirectsWithFlash() throws Exception {
-        when(articleRepository.deleteById("a1")).thenReturn(true);
+    void deleteExistingArticlePurgesMediaThenRedirectsWithFlash() throws Exception {
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia media =
+                com.gotham.newsmediabrowser.common.article.ArticleMultimedia.uploaded(
+                        "m1", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                        "https://storage.googleapis.com/b/media/image/x.png", "image/png", 0, "x.png", 10L);
+        Article article = new Article("a1", "Transit vote", null, "s", "b", "transit",
+                ArticleStatus.PUBLISHED, "en", null, null, null,
+                new ArticleMetadata("Politics", List.of(), null, null, null, null, null, null),
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)), List.of(media));
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(article));
 
         mockMvc.perform(post("/article/a1/delete"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/article"))
                 .andExpect(flash().attribute("flash", containsString("Deleted")));
 
-        verify(articleRepository).deleteById("a1");
+        // GCS objects are purged before the ES document is removed.
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(mediaUploadService, articleRepository);
+        inOrder.verify(mediaUploadService).remove(article.multimedia());
+        inOrder.verify(articleRepository).deleteById("a1");
     }
 
     @Test
     void deleteUnknownArticleRendersBranded404() throws Exception {
-        when(articleRepository.deleteById("ghost")).thenReturn(false);
+        when(articleRepository.findById("ghost")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/article/ghost/delete"))
                 .andExpect(status().isNotFound())
                 .andExpect(view().name("error"));
+
+        verify(articleRepository, never()).deleteById(any());
+        verify(mediaUploadService, never()).remove(any());
+    }
+
+    @Test
+    void updateRemovesSelectedMediaAndPurgesItsGcsObject() throws Exception {
+        oneJournalistAvailable();
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia keep =
+                com.gotham.newsmediabrowser.common.article.ArticleMultimedia.uploaded(
+                        "m_keep", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                        "https://storage.googleapis.com/b/media/image/keep.png", "image/png", 0, "keep.png", 10L);
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia drop =
+                com.gotham.newsmediabrowser.common.article.ArticleMultimedia.uploaded(
+                        "m_drop", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                        "https://storage.googleapis.com/b/media/image/drop.png", "image/png", 1, "drop.png", 10L);
+        Article existing = new Article("a1", "Transit vote", null, "s", "b", "transit",
+                ArticleStatus.PUBLISHED, "en", null, null, null,
+                new ArticleMetadata("Politics", List.of(), null, null, null, null, null, null),
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)),
+                List.of(keep, drop));
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(existing));
+        when(mediaUploadService.upload(any(), anyInt())).thenReturn(List.of());
+        when(articleRepository.update(any(Article.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post("/article/a1")
+                        .param("title", "Transit vote")
+                        .param("summary", "s")
+                        .param("body", "b")
+                        .param("status", "PUBLISHED")
+                        .param("journalistIds", "j_lois")
+                        .param("bylineOrder[j_lois]", "1")
+                        .param("role[j_lois]", "AUTHOR")
+                        .param("removeMediaIds", "m_drop"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/article"));
+
+        // The dropped element's GCS object is deleted; the kept one stays on the saved document.
+        verify(mediaUploadService).remove(List.of(drop));
+        ArgumentCaptor<Article> captor = ArgumentCaptor.forClass(Article.class);
+        verify(articleRepository).update(captor.capture());
+        assertThat(captor.getValue().multimedia()).containsExactly(keep);
     }
 }

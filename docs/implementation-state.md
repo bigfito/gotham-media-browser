@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T01:45:00Z  
-**Active phase:** P5 (in progress — P5-T01, P5-T02 done)  
+**Last updated:** 2026-09-08T02:15:00Z  
+**Active phase:** P5 (done — P5-T01, P5-T02, P5-T03 done)  
 **Prototype status:** `in_progress`  
-**Next task:** `P5-T03` (Remove media + article delete cleans GCS — dep P5-T02 done)
+**Next task:** `P6-T01` (In-repo `imagebind-service` — dep P0-T02 done)
 
 ---
 
@@ -59,14 +59,14 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P2 | Index bootstrap | 2/2 | done |
 | P3 | `/journalist` — list + create + edit form | 3/3 | done |
 | P4 | `/article` CRUD + journalist cascade-strip delete | 5/5 | done |
-| P5 | GCS + multimedia | 2/3 | in progress |
+| P5 | GCS + multimedia | 3/3 | done |
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 21 / **42** tasks done
+**Totals:** 22 / **42** tasks done
 
 ---
 
@@ -97,7 +97,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P4-T05 | P4 | Article delete | done | P4-T04 | JavaMentor | 2026-09-08T00:15:00Z | 2026-09-08T00:35:00Z | POST /article/{id}/delete on ArticleController: articleRepository.deleteById; unknown id -> NotFoundException (branded 404). Delete form added to list rows (confirm) + .danger-zone delete on the edit form (shown only when articleId present). GCS cleanup deferred to P5-T03. Tests: +2 in ArticleControllerTest (delete existing -> redirect+flash+deleteById; delete unknown -> branded 404). mvn test green (81). LIVE vs real Serverless: delete existing -> 302, ES _doc 404 (gone), list back to 0; delete unknown id -> branded 404 error page. Demo data cleaned. |
 | P5-T01 | P5 | GCS storage service | done | P1-T01, P0-T05 | JavaMentor | 2026-09-08T00:45:00Z | 2026-09-08T01:05:00Z | Added GCP libraries-bom (26.50.0) to parent depMgmt + google-cloud-storage to gotham-common (BOM-managed, resolved 2.44.1 line). MediaType enum {IMAGE,AUDIO,VIDEO} (fromContentType). GcsClientConfig @Bean Storage: creds from secret file (fail-fast CRED-001 if present-but-invalid; degrade to ADC/NoCredentials if absent), lazy getService (no boot network). GcsStorageService @Service: upload enforces per-type size + audio/video duration limits BEFORE upload (MediaLimitException 413), stores object media/<type>/<uuid>-<sanitized>, returns public storage_uri https://storage.googleapis.com/<bucket>/<obj>; delete parses object from our URI; StorageException->DependencyException(503). Bucket uses UBLA + had PAP enforced -> per-object ACL impossible; user authorized public access (SA has Storage Admin) so provisioned bucket public ONCE via gcloud (isolated CLOUDSDK_CONFIG): --no-public-access-prevention + allUsers:objectViewer (documented in secrets/README; noted in [[gcs-connection]] memory). Service uploads with NO ACL. Unit GcsStorageServiceTest(6). Live GcsStorageServiceIT (@Tag integration, env GCS_BUCKET/GCS_PROJECT/GCS_CREDENTIALS_FILE): upload -> public GET 200 (body match) -> delete PASSED. mvn test green (87; IT excluded). |
 | P5-T02 | P5 | Multimedia on article create/update | done | P5-T01, P4-T04 | JavaMentor | 2026-09-08T01:15:00Z | 2026-09-08T01:45:00Z | ArticleMultimedia nested record (full mapping fidelity minus asset_vector; app-assigned multimedia_element_id; uploaded() factory; searchableText). Added multimedia list to Article (+withMultimedia). ArticleProjections.multimediaText + orderedByPosition. ArticleRepository toDocument/fromSource nest multimedia[] + multimedia_text projection; nullable number helpers. ArticleMediaUploadService (web @Service): each MultipartFile -> classify MediaType from content-type -> GcsStorageService.upload -> ArticleMultimedia (image width/height via ImageIO best-effort); supports multiple files/type. ArticleController create/update accept mediaFiles[]; create attaches uploads, update preserves existing + appends (removal is P5-T03); unsupported type -> in-form global error; size/duration -> branded 413. article/form.html: multipart enctype, media section, existing media rendered as <img>/<audio controls>/<video controls>; global-error block; .media-grid/.media-card/.flash--error CSS. Multipart size limits in application.properties (50MB/350MB). Unit: ArticleRepositoryTest+1 (multimedia round-trip), ArticleControllerTest+1 (create w/ media file, MockMultipartFile). mvn test green (89). LIVE vs real Serverless+GCS: uploaded PNG(1x1)+mp3+mp4 to one article -> 3 nested elements (positions 0/1/2, UUID ids, mimes), image dims (1,1), edit form renders the 3 HTML5 players with public sources, image storage_uri public GET 200. GCS objects + ES + journalist cleaned up. |
-| P5-T03 | P5 | Remove media + article delete cleans GCS | pending | P5-T02 | | | | |
+| P5-T03 | P5 | Remove media + article delete cleans GCS | done | P5-T02 | JavaMentor | 2026-09-08T02:00:00Z | 2026-09-08T02:15:00Z | ArticleMediaUploadService.remove(List<ArticleMultimedia>) deletes each element's GCS object (idempotent, retry-safe; null list = no-op). ArticleForm.removeMediaIds (checkbox list on edit). ArticleController.update: retains existing minus checked ids, uploads new appended after retained (positions from retained.size()), purges removed elements' GCS objects only after validation passes, then saves. ArticleController.delete: findById first (branded 404 if absent), remove() all media objects BEFORE deleting ES doc (so a storage failure aborts before the doc is gone; retry re-purges). form.html: per-card "Remove on save" checkbox (th:field removeMediaIds); .media-card__remove CSS; stale P5 comments updated. Tests: new ArticleMediaUploadServiceTest(3: remove deletes each, null no-op, empty no-op); ArticleControllerTest reworked delete tests (existing -> InOrder remove then deleteById; unknown -> findById empty -> 404, never deleteById/remove) +1 (update removes selected media -> verify remove(List.of(drop)) + saved multimedia == [keep]). mvn test green (93; was 89). LIVE vs real Serverless+GCS: created article w/ PNG -> public GET 200; edit w/ removeMediaIds -> doc has 0 media + object GET 404 (log 'Delete GCS object ... -> true'); re-added media then POST /{id}/delete -> object GET 404 + doc 404. Test journalist + article cleaned up. |
 | P6-T01 | P6 | In-repo imagebind-service | pending | P0-T02 | | | | |
 | P6-T02 | P6 | Java ImageBind client + stub mode | pending | P1-T01 | | | | |
 | P6-T03 | P6 | Embed on article write | pending | P6-T02, P5-T02 | | | | |

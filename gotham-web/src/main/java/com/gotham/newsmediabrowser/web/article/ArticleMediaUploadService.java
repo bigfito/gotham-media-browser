@@ -54,6 +54,23 @@ public class ArticleMediaUploadService {
         return elements;
     }
 
+    /**
+     * Deletes the GCS objects backing the given media elements. Called before the article document is
+     * updated or removed, so a retry after a storage failure re-attempts the same (idempotent) deletes
+     * and no orphaned objects are left behind.
+     *
+     * @param media the elements whose stored objects should be removed (a {@code null} list is a no-op)
+     * @throws com.gotham.newsmediabrowser.common.error.DependencyException if a delete call to GCS fails
+     */
+    public void remove(List<ArticleMultimedia> media) {
+        if (media == null) {
+            return;
+        }
+        for (ArticleMultimedia element : media) {
+            storageService.delete(element.storageUri());
+        }
+    }
+
     private ArticleMultimedia toElement(MultipartFile file, int position) {
         byte[] data = readBytes(file);
         String contentType = file.getContentType();
