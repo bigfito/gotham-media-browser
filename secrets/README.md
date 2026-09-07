@@ -29,9 +29,9 @@ So every `secrets/*.json` is ignored **except** the `*.example`.
    git check-ignore -v secrets/gcp-sa.json
    ```
 4. Put the real ES/GCS **values** (endpoint, api-key, bucket, project) in
-   `gotham-web/src/main/resources/application-local.properties` (also gitignored),
-   copied from `application-local.properties.example`. In Docker, use `.env` instead
-   (see `.env.example`).
+   `application-local.properties` at the **repo root** (gitignored; kept out of
+   `src/main/resources` so it never bundles into the jar), copied from
+   `application-local.properties.example`. In Docker, use `.env` instead (see `.env.example`).
 
 ## CI / production
 

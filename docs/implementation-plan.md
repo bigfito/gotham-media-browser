@@ -183,7 +183,7 @@ See [`testing-strategy.md`](./testing-strategy.md).
 ### P0-T05 — Secrets scaffolding
 - **Create:** `secrets/README.md`, `secrets/gcp-sa.json.example`, and `gotham-web/.../application-local.properties.example` (documenting ES/GCS real-value keys); ensure real `secrets/gcp-sa.json` and `application-local.properties` are gitignored.  
 - **Do:** Document that operators place the real SA JSON key as a secret file locally / in CI secret store, and real ES/GCS values in `application-local.properties` (or env) — never in the committed `application.properties`.  
-- **Verification:** Example files committed; `git check-ignore -v secrets/gcp-sa.json` and `git check-ignore -v gotham-web/src/main/resources/application-local.properties` match ignore rules.  
+- **Verification:** Example files committed; `git check-ignore -v secrets/gcp-sa.json` and `git check-ignore -v application-local.properties` (repo root — kept out of `src/main/resources` so it never bundles into the jar) match ignore rules.  
 - **Depends on:** P0-T01
 
 ---
