@@ -105,6 +105,8 @@ Reject uploads over limit on `/article` forms with clear validation messages.
 | Hybrid | RRF(BM25, article kNN) | RRF(BM25, asset kNN) |
 | Vector | — | kNN `asset_vector` (media→ImageBind) |
 
+**Full Query DSL for every mode:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)
+
 Journalist: **not** a results entity. On article full-text, `journalist` param filters by nested `journalist_id` or `full_name`.
 
 ## Write paths

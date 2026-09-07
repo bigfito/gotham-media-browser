@@ -104,7 +104,7 @@ flowchart TD
 | `page` (1-based), `size` ∈ {25, 50, 100} | `from = (page-1)*size`, `size`, `track_total_hits` |
 | `published_from` / `published_to` | range on `published_at` |
 | `fields` (FTS checkboxes) | `multi_match` (map `section`→`section.text`, etc.) |
-| `mode=fulltext\|semantic\|hybrid\|vector` | BM25 / kNN / RRF / media→vector kNN |
+| `mode=fulltext\|semantic\|hybrid\|vector` | BM25 / kNN / RRF / media→vector kNN — **see [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)** |
 | `status`, `section`, `language`, `journalist`, `mediaType`, `sort` | filters + sort |
 
 ---
