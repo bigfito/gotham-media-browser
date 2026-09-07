@@ -34,7 +34,7 @@
 | Search | Elasticsearch Java API Client (Boot BOM ~9.4.x) |
 | Compose | `gotham-web` + `imagebind-service`; P10 profile **`datagen`** = Ollama + ComfyUI + Kokoro **Docker containers (mandatory)** |
 | Embeddings | Meta ImageBind **built in-repo**, sync HTTP, **1024-d** |
-| Synthetic data | Maven module **`gotham-datagen`** (phase **P10**, last) — see [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
+| Synthetic data | Maven module **`gotham-datagen`** — Java **console** app, not Spring Boot (phase **P10**, last) — see [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
 | Storage | Elastic Cloud Serverless + **public** GCS |
 | Config file | `application.properties` (not YAML for secrets/endpoints) |
 | Base package | `com.gotham.newsmediabrowser` |
@@ -50,8 +50,8 @@ gotham-news-media-browser/
 │   └── pom.xml
 ├── gotham-web/                  # Spring Boot executable + Thymeleaf
 │   └── pom.xml                  # depends on gotham-common; spring-boot-maven-plugin
-├── gotham-datagen/              # independent Java app (added in P10; last phase)
-│   └── pom.xml                  # own Spring Boot main; depends on gotham-common; HTTP to web + helpers
+├── gotham-datagen/              # P10 Java console app (NOT Spring Boot; last phase)
+│   └── pom.xml                  # jar + Main-Class; depends on gotham-common; HTTP to web + helpers
 ├── comfyui-service/             # P10 Compose-built CPU ComfyUI (SDXL-Turbo + Wan; NOT a Maven module)
 ├── imagebind-service/           # Python/Docker ImageBind (NOT a Maven module)
 ├── secrets/                     # gitignored real secrets; *.example committed
@@ -65,10 +65,10 @@ gotham-news-media-browser/
 | parent | `gotham-news-media-browser` | BOM alignment, plugin versions, module list |
 | `gotham-common` | `gotham-common` | Config properties, ES repositories, GCS, ImageBind client, projections |
 | `gotham-web` | `gotham-web` | Controllers, Thymeleaf, `SpringBootApplication`, static assets |
-| `gotham-datagen` | `gotham-datagen` | **P10** independent Java app: generate text/media via helpers → `POST /journalist` & `/article` |
+| `gotham-datagen` | `gotham-datagen` | **P10** Java **console** app (`main`): generate text/media via helpers → `POST /journalist` & `/article` |
 
-`imagebind-service/` stays in the same repo for cohesion but is **Compose-built**, not a Maven module.  
-**P0** scaffolds `gotham-common` + `gotham-web` only; **P10** adds `gotham-datagen` (standalone Boot app) to the parent module list.
+`imagebind-service/` and `comfyui-service/` stay in the same repo for cohesion but are **Compose-built**, not Maven modules.  
+**P0** scaffolds `gotham-common` + `gotham-web` only; **P10** adds `gotham-datagen` (console jar, **not** Spring Boot) to the parent module list.
 
 ### Credentials & secrets (locked)
 
@@ -355,7 +355,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 ## Phase 10 — Synthetic data generation (**last phase**)
 
-**Goal:** Independent Java app `gotham-datagen` generates realistic journalists + articles (with IMAGE / AUDIO / VIDEO) and loads them **only through** live `POST /journalist` and `POST /article`.  
+**Goal:** Independent **Java console** app `gotham-datagen` (plain `main`, **not** Spring Boot) generates realistic journalists + articles (with IMAGE / AUDIO / VIDEO) and loads them **only through** live `POST /journalist` and `POST /article`.  
 **Spec:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
 ### Helper services (locked — Docker containers on MacBook Pro M4 · 32 GB · no NVIDIA)
@@ -381,11 +381,11 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) is required**. Full runs on M4 Docker CPU are long (especially video) — document overnight expectation in the runbook.
 
-### P10-T01 — Parent POM + independent `gotham-datagen` app skeleton
-- **Create:** `gotham-datagen/` as a **standalone** Spring Boot application (`web` disabled or none; own `@SpringBootApplication` + executable jar); package `com.gotham.newsmediabrowser.datagen`; add module to parent `pom.xml`.  
-- **Do:** Placeholder `application.properties` for `gotham.datagen.*` URLs/volumes/model id (`qwen2.5:7b-instruct`, 15 / 25 / 5+5+5 / 5 s).  
-- **Don’t:** Embed datagen inside `gotham-web`; don’t call generative APIs yet.  
-- **Verification:** `mvn -pl gotham-datagen -am -DskipTests package` produces a runnable jar; IntelliJ shows independent app module.  
+### P10-T01 — Parent POM + Java console `gotham-datagen` skeleton
+- **Create:** `gotham-datagen/` as a **plain Java console** module (`public static void main`); package `com.gotham.newsmediabrowser.datagen`; add module to parent `pom.xml`.  
+- **Do:** Runnable jar via `Main-Class` manifest (shade optional); placeholder properties/CLI for `gotham.datagen.*` URLs/volumes/model id (`qwen2.5:7b-instruct`, 15 / 25 / 5+5+5 / 5 s). Use Java HTTP client (or lightweight lib) — **no** Spring Boot dependencies on this module.  
+- **Don’t:** Add `@SpringBootApplication` / `spring-boot-maven-plugin` to `gotham-datagen`; don’t embed datagen inside `gotham-web`; don’t call generative APIs yet.  
+- **Verification:** `mvn -pl gotham-datagen -am -DskipTests package` produces a console jar; `java -jar … --help` (or equivalent) exits 0; IntelliJ shows a non-Boot application module.  
 - **Depends on:** P0-T01, P9-T03
 
 ### P10-T02 — Compose profile `datagen` (Ollama · ComfyUI · Kokoro containers)
@@ -409,7 +409,7 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 
 ### P10-T05 — Datagen runbook + verification report
 - **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video.  
-- **Do:** Sample: `mvn -pl gotham-datagen spring-boot:run` or `java -jar gotham-datagen/target/gotham-datagen-*.jar`.  
+- **Do:** Sample: `mvn -pl gotham-datagen -am package && java -jar gotham-datagen/target/gotham-datagen-*.jar` (or `exec:java` with `DatagenMain`).  
 - **Verification:** Runbook completes on the M4 lab with containers **or** documents skip-flag path; state file P10 tasks closable.  
 - **Depends on:** P10-T04
 
@@ -427,7 +427,7 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - [ ] Header health legends + MIT footer  
 - [ ] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps)  
 - [ ] P9 static smoke path works without generative helpers  
-- [ ] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; independent `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
+- [ ] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; **Java console** `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
 - [ ] State file tasks completed  
 
 ---
@@ -444,9 +444,9 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 | Q6 | Commits: **one per task** |
 | Q7 | Package: **`com.gotham.newsmediabrowser`** |
 | Q8 | No extra Antigravity/Claude task format beyond Markdown plan + state |
-| Extra | **Multi-module Maven** for IntelliJ IDEA Ultimate (`gotham-common` + `gotham-web` + parent; **`gotham-datagen` independent app in P10**) |
+| Extra | **Multi-module Maven** for IntelliJ IDEA Ultimate (`gotham-common` + `gotham-web` + parent; **`gotham-datagen` console module in P10**) |
 | Extra | **Fault-tolerant UX:** global error pages with reason on all endpoints ([`ui-design-errors.md`](./ui-design-errors.md)) |
-| Extra | **Synthetic data (last phase P10):** independent Java app `gotham-datagen`; load only via `/journalist` & `/article` |
+| Extra | **Synthetic data (last phase P10):** Java **console** app `gotham-datagen` (**not** Spring Boot); load only via `/journalist` & `/article` |
 | Extra | **Datagen volumes:** 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article; P9 static seed kept |
 | Extra | **Lab hardware:** MacBook Pro M4 · 32 GB · no NVIDIA; lighter models **Qwen 2.5 7B**, **SDXL-Turbo**, **Kokoro-82M**, **Wan2.1 1.3B** |
 | Extra | **Helpers mandatory as Docker containers** (Compose profile `datagen`: Ollama + `comfyui-service` + Kokoro CPU) |

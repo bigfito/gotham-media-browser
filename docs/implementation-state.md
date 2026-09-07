@@ -4,7 +4,7 @@
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
-**Last updated:** 2026-09-07T04:15:00Z  
+**Last updated:** 2026-09-07T04:20:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`
 
@@ -31,14 +31,14 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | GCS bucket/project | Hardcoded in `application.properties` |
 | GCS SA JSON | Secret file under `secrets/` (gitignored); path in properties |
 | ImageBind | Built **in-repo** under `imagebind-service/` |
-| Maven | **Multi-module**: parent + `gotham-common` + `gotham-web` (+ **independent `gotham-datagen` app in P10**) |
+| Maven | **Multi-module**: parent + `gotham-common` + `gotham-web` (+ **`gotham-datagen` Java console module in P10 — not Spring Boot**) |
 | Journalist delete | **Cascade-strip** + reindex articles |
 | Commits | One per task |
 | Package | `com.gotham.newsmediabrowser` |
 | Fault tolerance | Global error pages with reason on **all** endpoints (`docs/ui-design-errors.md`) |
-| Synthetic data | **Last phase P10** — independent Java app `gotham-datagen` via HTTP CRUD; **M4 32 GB** native helpers: Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B |
+| Synthetic data | **Last phase P10** — Java **console** `gotham-datagen` via HTTP CRUD; helpers **must** be Docker containers (Ollama / ComfyUI / Kokoro); models Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B |
 | Datagen volumes | **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) each |
-| Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA GPU** |
+| Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA GPU** (CPU inference inside Docker Desktop) |
 | Extra agent formats | None (Markdown plan + state only) |
 
 ---
@@ -102,8 +102,8 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9-T01 | P9 | Static seed fixtures | pending | P6-T03, P5-T02 | | | | |
 | P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03, P9-T01 | | | | |
 | P9-T03 | P9 | Hardening sync pass | pending | P9-T02 | | | | |
-| P10-T01 | P10 | Independent gotham-datagen app skeleton | pending | P0-T01, P9-T03 | | | | |
-| P10-T02 | P10 | Native macOS helpers runbook (Ollama/ComfyUI/Kokoro) | pending | P0-T02, P10-T01 | | | | |
+| P10-T01 | P10 | Java console gotham-datagen skeleton (not Spring Boot) | pending | P0-T01, P9-T03 | | | | |
+| P10-T02 | P10 | Compose profile datagen (Ollama/ComfyUI/Kokoro containers) | pending | P0-T02, P10-T01 | | | | |
 | P10-T03 | P10 | Helper HTTP clients (Qwen7B/SDXL-Turbo/Kokoro/Wan) | pending | P10-T02 | | | | |
 | P10-T04 | P10 | Orchestrator → POST /journalist & /article (15/25/5+5+5) | pending | P10-T03, P3-T03, P5-T02, P6-T03 | | | | |
 | P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |

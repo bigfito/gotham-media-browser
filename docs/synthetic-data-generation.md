@@ -1,6 +1,6 @@
 # Synthetic Data Generation
 
-**Module:** `gotham-datagen` (Maven, last implementation phase **P10**)  
+**Module:** `gotham-datagen` (Maven **Java console** app — **not** Spring Boot; last phase **P10**)  
 **Purpose:** Generate realistic journalists + denormalized articles (with IMAGE / AUDIO / VIDEO) and load them **through** the live CRUD APIs (`POST /journalist`, `POST /article`).  
 **Related:** [`implementation-plan.md`](./implementation-plan.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`ui-design-crud.md`](./ui-design-crud.md)
 
@@ -13,33 +13,36 @@
 | When | **Last phase (P10)** — after CRUD, media, embeddings, and search work |
 | How data enters the system | **Only via HTTP** to `/journalist` and `/article` (exercises validation, GCS, ImageBind, projections) |
 | Not allowed | Writing straight to Elasticsearch / GCS while bypassing the app (except debugging) |
-| Runtime shape | **Independent Java application** in the multi-module Maven project (own main class / fat jar — **not** embedded inside `gotham-web`) |
+| Runtime shape | **Independent Java console application** (`main`) in the multi-module Maven project — **not** Spring Boot |
 | Helper services | **Mandatory Docker containers** via Compose profile `datagen` (no native-host installs as the prototype path) |
 | Target lab hardware | **MacBook Pro M4 · 32 GB unified memory · no NVIDIA GPU** |
 | CI / smoke | Keep **P9** minimal static fixtures; **P10** is full synthetic load on the Mac |
 
 ---
 
-## 2. Independent Java application (`gotham-datagen`)
+## 2. Independent Java console application (`gotham-datagen`)
 
 ```text
-gotham-datagen/          # standalone Spring Boot app (web disabled / none)
-  pom.xml                # depends on gotham-common; HTTP client to gotham-web + helpers
-  src/.../DatagenApplication.java   # @SpringBootApplication — own process
+gotham-datagen/          # plain Java console app (NOT Spring Boot)
+  pom.xml                # jar module; depends on gotham-common; Java HTTP client(s)
+  src/.../DatagenMain.java   # public static void main(String[] args)
 ```
 
 | Rule | Detail |
 |------|--------|
-| Packaging | Maven module with `spring-boot-maven-plugin` executable jar |
-| Process | Runs **separately** from `gotham-web` (host/IDE JVM talking to Dockerized helpers + web) |
-| Not | A library called in-process by `gotham-web`, and not a Python-only repo |
+| Shape | **Console / CLI** Java application with a normal `main` entrypoint |
+| Not Spring Boot | **No** `@SpringBootApplication`, **no** Spring Boot parent plugin on this module, **no** embedded Tomcat/web |
+| Config | CLI args + optional `application.properties` / `.properties` file read manually (or env); same placeholder URL/volume keys as below |
+| Packaging | Maven `jar` (optional `maven-shade-plugin` / `maven-jar-plugin` with `Main-Class` for fat/thin runnable jar) |
+| Process | Runs **separately** from `gotham-web` (host/IDE JVM → Dockerized helpers + web over HTTP) |
 | Package | `com.gotham.newsmediabrowser.datagen` |
 | Parent POM | Lists `gotham-datagen` alongside `gotham-common` and `gotham-web` |
 
 ```bash
-mvn -pl gotham-datagen spring-boot:run
-# or:
+mvn -pl gotham-datagen -am package
 java -jar gotham-datagen/target/gotham-datagen-*.jar
+# or during dev:
+mvn -pl gotham-datagen exec:java -Dexec.mainClass="com.gotham.newsmediabrowser.datagen.DatagenMain"
 ```
 
 ---
@@ -146,7 +149,7 @@ gotham.datagen.video-duration-seconds=5
 
 ```mermaid
 flowchart TD
-  APP[gotham-datagen<br/>independent Java app] --> TXT[Docker Ollama · Qwen 2.5 7B]
+  APP[gotham-datagen<br/>Java console main] --> TXT[Docker Ollama · Qwen 2.5 7B]
   APP --> IMG[Docker ComfyUI · SDXL-Turbo]
   APP --> AUD[Docker Kokoro · TTS]
   APP --> VID[Docker ComfyUI · Wan2.1 1.3B]
@@ -203,7 +206,7 @@ flowchart TD
 - Replacing ImageBind  
 - Requiring NVIDIA CUDA for the Mac lab  
 - Native (non-Docker) Ollama/ComfyUI/Kokoro as the supported path  
-- Public UI for datagen  
+- Public UI for datagen (console Java app only)  
 - Committing generated binaries to git  
 
 ---
@@ -214,7 +217,7 @@ flowchart TD
 |---|----------|--------|
 | D1 | Lab: **MacBook Pro M4 · 32 GB · no NVIDIA** → lighter models; helpers are **CPU Docker** containers | **Locked** |
 | D2 | Volumes: **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) per article | **Locked** |
-| D3 | `gotham-datagen` is an **independent Java application** in the multi-module Maven project | **Locked** |
+| D3 | `gotham-datagen` is an **independent Java console application** (not Spring Boot) in the multi-module Maven project | **Locked** |
 | D4 | P9 static seed remains for CI without generative helpers | **Locked** |
 | D5 | All helper services (**Ollama**, **ComfyUI**, **Kokoro**) **must** run as **Docker containers** | **Locked** |
 
@@ -225,7 +228,7 @@ flowchart TD
 | Check | Result |
 |-------|--------|
 | Module is **last** phase (**P10**) | ✓ |
-| Independent Java app in multi-module project | ✓ |
+| Independent Java **console** app (not Spring Boot) | ✓ |
 | Helpers are **mandatory Docker** Compose services | ✓ |
 | Hardware = M4 32 GB; CPU-in-container; no CUDA requirement | ✓ |
 | Lighter models: Qwen 7B · SDXL-Turbo · Kokoro · Wan 1.3B | ✓ |

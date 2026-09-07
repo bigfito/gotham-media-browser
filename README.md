@@ -43,4 +43,4 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 - `/journalist/**` — CRUD on `gotham-journalists`  
 - `/article/**` — CRUD on denormalized `gotham-media-browser`  
 
-No `/admin`. Synthetic load (last phase): independent Java app `gotham-datagen` → HTTP CRUD only (defaults 15 journalists · 25 articles · 5+5+5 media). License: MIT (see repository `LICENSE`).
+No `/admin`. Synthetic load (last phase): Java **console** `gotham-datagen` (**not** Spring Boot) → HTTP CRUD only (defaults 15 journalists · 25 articles · 5+5+5 media). License: MIT (see repository `LICENSE`).

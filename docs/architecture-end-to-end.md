@@ -33,7 +33,7 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 ```mermaid
 flowchart LR
   U[Browser] --> WEB[gotham-web<br/>Spring Boot 4.1.1 + Thymeleaf<br/>:8080]
-  DG[gotham-datagen<br/>P10 independent app] -->|POST /journalist /article| WEB
+  DG[gotham-datagen<br/>Java console] -->|POST /journalist /article| WEB
   DG --> OLL[Docker Ollama · Qwen 2.5 7B]
   DG --> CFY[Docker ComfyUI · SDXL-Turbo / Wan 1.3B]
   DG --> KOK[Docker Kokoro · TTS]
@@ -48,9 +48,9 @@ flowchart LR
 | Component | Role |
 |-----------|------|
 | `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends, **global error pages** |
-| `gotham-datagen` | **P10 (last):** independent Java app — synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
+| `gotham-datagen` | **P10 (last):** Java **console** app (`main`, not Spring Boot) — synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
 | `imagebind-service` | Sync HTTP embed text/image/audio/video → `float[1024]` |
-| Ollama / ComfyUI / Kokoro | Native macOS helpers (Metal/MPS) for P10 — Qwen 7B / SDXL-Turbo / Wan 1.3B / Kokoro |
+| Ollama / ComfyUI / Kokoro | **Mandatory Docker** Compose profile `datagen` — Qwen 7B / SDXL-Turbo / Wan 1.3B / Kokoro (CPU on Mac) |
 | `gotham-journalists` | Journalist master documents (ES auto `_id`) |
 | `gotham-media-browser` | One denormalized article doc + nested journalists + nested multimedia |
 | GCS | Public object storage for media binaries (`storage_uri` HTTPS) |
@@ -176,14 +176,14 @@ Spec: [`ui-design-errors.md`](./ui-design-errors.md) · mockup: `ui-mockups/erro
 ## 6. Local Docker Compose (target)
 
 ```text
-services (Compose — always):
+services (always):
   gotham-web           # :8080  Spring Boot + Thymeleaf (module gotham-web)
   imagebind-service    # :8081  Meta ImageBind helper (in-repo, CPU OK on Mac)
 
-native macOS (P10 datagen helpers — not CUDA Docker):
-  Ollama               # :11434  qwen2.5:7b-instruct (Metal)
-  ComfyUI (MPS)        # :8188  SDXL-Turbo + Wan2.1 T2V-1.3B
-  Kokoro               # :8880  Kokoro-82M TTS (CPU)
+services (profile: datagen — P10, MANDATORY for synthetic load):
+  ollama               # :11434  ollama/ollama:latest → qwen2.5:7b-instruct
+  comfyui              # :8188  build ./comfyui-service (CPU multi-arch; SDXL-Turbo + Wan2.1)
+  kokoro               # :8880  ghcr.io/remsky/kokoro-fastapi-cpu
 
 external:
   Elastic Cloud Serverless
@@ -192,9 +192,9 @@ external:
 
 **Credentials (locked):** Elasticsearch endpoint + API key and GCS bucket/project ids are **hardcoded** in `gotham-web` `application.properties`. The GCS service account JSON key is a **secret file** under `secrets/` (gitignored; path in properties). Do not commit real keys.
 
-**Lab hardware (locked):** MacBook Pro **M4 · 32 GB · no NVIDIA GPU**. Synthetic helpers use Apple Metal/MPS natively.
+**Lab hardware (locked):** MacBook Pro **M4 · 32 GB · no NVIDIA GPU**. Datagen helpers run as **Docker containers** (CPU inside Docker Desktop — no Metal passthrough).
 
-**Synthetic load:** independent Java app `gotham-datagen` posts to `/journalist` and `/article` only — defaults **15** / **25** / **5+5+5** (5 s videos); models **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B**; see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
+**Synthetic load:** Java **console** app `gotham-datagen` (**not** Spring Boot) posts to `/journalist` and `/article` only — defaults **15** / **25** / **5+5+5** (5 s videos); models **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B**; see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
 ---
 
@@ -217,6 +217,7 @@ gotham-news-media-browser/
 ├── gotham-common/               # (to be created in P0)
 ├── gotham-web/                  # (to be created in P0)
 ├── gotham-datagen/              # (to be created in P10 — last)
+├── comfyui-service/             # (to be created in P10 — CPU ComfyUI container)
 ├── imagebind-service/           # (to be created in P0/P6)
 ├── secrets/                     # SA JSON secret (gitignored) + *.example
 ├── docs/
@@ -270,5 +271,5 @@ gotham-news-media-browser/
 | Multi-module Maven (`gotham-common` + `gotham-web`; `gotham-datagen` in P10) | ✓ |
 | ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
-| Synthetic data last phase P10 (M4 native; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5) | ✓ |
+| Synthetic data last phase P10 (Docker helpers mandatory; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5) | ✓ |
 | Implementation plan ↔ state (41 tasks, P0–P10) | ✓ |

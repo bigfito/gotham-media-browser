@@ -28,7 +28,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 ## Project shape (IntelliJ)
 
 - Open **parent** `pom.xml` in IntelliJ IDEA Ultimate as a **Maven multi-module** project.  
-- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** independent Java app added in **P10** (last phase).  
+- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** Java **console** module (not Spring Boot) in **P10**.  
 - `imagebind-service/` is in-repo Docker/Python — not a Maven module.  
 - P10 helpers: **mandatory Docker** Compose profile `datagen` — Ollama (Qwen 7B), `comfyui-service` (SDXL-Turbo + Wan 1.3B), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).  
 - Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  
@@ -46,7 +46,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - ES endpoint + API key: hardcoded in `application.properties`  
 - GCS SA JSON: **secret file** under `secrets/` (never commit real key)  
 - **Fault tolerance:** every unexpected failure shows branded error page with **reason** (see `docs/ui-design-errors.md`); no Whitelabel stack dumps to users  
-- **Synthetic data:** only in **P10** via independent Java app `gotham-datagen`; load through HTTP CRUD — never bypass to ES/GCS from the generator  
+- **Synthetic data:** only in **P10** via Java **console** `gotham-datagen` (not Spring Boot); load through HTTP CRUD — never bypass to ES/GCS from the generator  
 
 ## Do not
 
