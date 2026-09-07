@@ -2,6 +2,7 @@ package com.gotham.newsmediabrowser.web.article;
 
 import com.gotham.newsmediabrowser.common.article.Article;
 import com.gotham.newsmediabrowser.common.article.ArticleJournalist;
+import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
 import com.gotham.newsmediabrowser.common.article.ArticlePage;
 import com.gotham.newsmediabrowser.common.article.ArticleRepository;
 import com.gotham.newsmediabrowser.common.article.ArticleStatus;
@@ -10,6 +11,7 @@ import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.journalist.JournalistRepository;
 import jakarta.validation.Valid;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -41,10 +44,13 @@ public class ArticleController {
 
     private final ArticleRepository articleRepository;
     private final JournalistRepository journalistRepository;
+    private final ArticleMediaUploadService mediaUploadService;
 
-    public ArticleController(ArticleRepository articleRepository, JournalistRepository journalistRepository) {
+    public ArticleController(ArticleRepository articleRepository, JournalistRepository journalistRepository,
+                            ArticleMediaUploadService mediaUploadService) {
         this.articleRepository = articleRepository;
         this.journalistRepository = journalistRepository;
+        this.mediaUploadService = mediaUploadService;
     }
 
     @GetMapping("/article")
@@ -86,6 +92,7 @@ public class ArticleController {
     public String newForm(Model model) {
         addFormChrome(model, "New article", "/article", null);
         model.addAttribute("articleForm", new ArticleForm());
+        model.addAttribute("existingMultimedia", List.of());
         return "article/form";
     }
 
@@ -93,17 +100,20 @@ public class ArticleController {
     public String create(
             @Valid @ModelAttribute("articleForm") ArticleForm articleForm,
             BindingResult bindingResult,
+            @RequestParam(name = "mediaFiles", required = false) MultipartFile[] mediaFiles,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         Map<String, Journalist> journalists = journalistsById();
+        List<ArticleMultimedia> uploaded = uploadOrReject(mediaFiles, 0, bindingResult);
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
             addFormChrome(model, "New article", "/article", null);
+            model.addAttribute("existingMultimedia", List.of());
             return "article/form";
         }
 
-        Article created = articleRepository.create(built.get());
+        Article created = articleRepository.create(built.get().withMultimedia(uploaded));
         redirectAttributes.addFlashAttribute("flash", "Created “" + created.title() + "”.");
         return "redirect:/article";
     }
@@ -114,6 +124,7 @@ public class ArticleController {
                 .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
         addFormChrome(model, "Edit article", "/article/" + id, id);
         model.addAttribute("articleForm", ArticleForm.fromArticle(article));
+        model.addAttribute("existingMultimedia", article.multimedia());
         return "article/form";
     }
 
@@ -122,6 +133,7 @@ public class ArticleController {
             @PathVariable String id,
             @Valid @ModelAttribute("articleForm") ArticleForm articleForm,
             BindingResult bindingResult,
+            @RequestParam(name = "mediaFiles", required = false) MultipartFile[] mediaFiles,
             Model model,
             RedirectAttributes redirectAttributes) {
 
@@ -129,16 +141,36 @@ public class ArticleController {
                 .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
 
         Map<String, Journalist> journalists = journalistsById();
+        List<ArticleMultimedia> uploaded = uploadOrReject(mediaFiles, existing.multimedia().size(), bindingResult);
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
             addFormChrome(model, "Edit article", "/article/" + id, id);
+            model.addAttribute("existingMultimedia", existing.multimedia());
             return "article/form";
         }
 
-        Article toSave = built.get().withId(id).withTimestamps(existing.createdAt(), existing.updatedAt());
+        // Existing media is preserved; newly uploaded files are appended. Removal is P5-T03.
+        List<ArticleMultimedia> merged = new ArrayList<>(existing.multimedia());
+        merged.addAll(uploaded);
+        Article toSave = built.get().withId(id)
+                .withTimestamps(existing.createdAt(), existing.updatedAt())
+                .withMultimedia(merged);
         Article saved = articleRepository.update(toSave);
         redirectAttributes.addFlashAttribute("flash", "Updated “" + saved.title() + "”.");
         return "redirect:/article";
+    }
+
+    /**
+     * Uploads any attached media, or registers an in-form error and returns an empty list if a file
+     * has an unsupported content type. Size/duration violations propagate as the branded 413 page.
+     */
+    private List<ArticleMultimedia> uploadOrReject(MultipartFile[] mediaFiles, int startPosition, BindingResult bindingResult) {
+        try {
+            return mediaUploadService.upload(mediaFiles, startPosition);
+        } catch (IllegalArgumentException e) {
+            bindingResult.reject("media.unsupported", e.getMessage());
+            return List.of();
+        }
     }
 
     /**

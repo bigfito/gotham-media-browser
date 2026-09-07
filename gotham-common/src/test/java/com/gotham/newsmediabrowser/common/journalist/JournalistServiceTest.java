@@ -36,7 +36,7 @@ class JournalistServiceTest {
 
     private Article articleWith(List<ArticleJournalist> bylines) {
         return new Article("art1", "T", null, null, null, "t", ArticleStatus.PUBLISHED, "en",
-                null, null, null, ArticleMetadata.empty(), bylines);
+                null, null, null, ArticleMetadata.empty(), bylines, List.of());
     }
 
     @Test

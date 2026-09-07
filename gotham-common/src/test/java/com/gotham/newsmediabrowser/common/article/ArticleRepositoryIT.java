@@ -70,7 +70,7 @@ class ArticleRepositoryIT {
             // update: flip to PUBLISHED
             Article edited = repository.update(new Article(created.id(), created.title(), null, "Summary",
                     "Body text", created.slug(), ArticleStatus.PUBLISHED, "en", null,
-                    created.createdAt(), created.updatedAt(), created.metadata(), bylines));
+                    created.createdAt(), created.updatedAt(), created.metadata(), bylines, java.util.List.of()));
             assertThat(repository.findById(created.id())).get()
                     .extracting(Article::status).isEqualTo(ArticleStatus.PUBLISHED);
 

@@ -43,7 +43,29 @@ public final class ArticleProjections {
                 .toList();
     }
 
+    /** Multimedia assets ordered by their position (stable for equal positions). */
+    public static List<ArticleMultimedia> orderedByPosition(List<ArticleMultimedia> multimedia) {
+        return safeMedia(multimedia).stream()
+                .sorted(Comparator.comparingInt(ArticleMultimedia::position))
+                .toList();
+    }
+
+    /**
+     * The searchable text of all multimedia assets (title/caption/credit/description/alt text), in
+     * position order. Feeds {@code multimedia_text}, which the mapping copies into
+     * {@code multimedia_search_text}.
+     */
+    public static List<String> multimediaText(List<ArticleMultimedia> multimedia) {
+        return orderedByPosition(multimedia).stream()
+                .flatMap(ArticleMultimedia::searchableText)
+                .toList();
+    }
+
     private static List<ArticleJournalist> safe(List<ArticleJournalist> journalists) {
         return journalists != null ? journalists : List.of();
+    }
+
+    private static List<ArticleMultimedia> safeMedia(List<ArticleMultimedia> multimedia) {
+        return multimedia != null ? multimedia : List.of();
     }
 }

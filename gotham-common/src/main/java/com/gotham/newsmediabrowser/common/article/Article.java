@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * An article (one document in the {@code gotham-media-browser} index), with its 1:1 metadata and its
- * nested journalist bylines. Multimedia is added in P5; this model covers text + metadata + bylines.
+ * An article (one document in the {@code gotham-media-browser} index), with its 1:1 metadata, its
+ * nested journalist bylines, and its nested multimedia assets.
  *
  * <p>Immutable. {@code id} is the Elasticsearch {@code _id} (auto-generated, {@code null} until the
  * article is created). Denormalized projection fields ({@code journalist_names}, {@code
@@ -25,7 +25,8 @@ public record Article(
         Instant createdAt,
         Instant updatedAt,
         ArticleMetadata metadata,
-        List<ArticleJournalist> journalists) {
+        List<ArticleJournalist> journalists,
+        List<ArticleMultimedia> multimedia) {
 
     /**
      * Creates a not-yet-persisted article (no id, no timestamps). The repository assigns those on
@@ -43,7 +44,7 @@ public record Article(
             ArticleMetadata metadata,
             List<ArticleJournalist> journalists) {
         return new Article(null, title, subtitle, summary, body, slug, status, language, publishedAt,
-                null, null, metadata != null ? metadata : ArticleMetadata.empty(), safe(journalists));
+                null, null, metadata != null ? metadata : ArticleMetadata.empty(), safe(journalists), List.of());
     }
 
     /** Never-null journalist list, for callers that iterate without null checks. */
@@ -51,25 +52,40 @@ public record Article(
         return journalists != null ? journalists : List.of();
     }
 
+    /** Never-null multimedia list, for callers that iterate without null checks. */
+    public List<ArticleMultimedia> multimedia() {
+        return multimedia != null ? multimedia : List.of();
+    }
+
     /** Returns a copy with the given Elasticsearch id. */
     public Article withId(String newId) {
         return new Article(newId, title, subtitle, summary, body, slug, status, language, publishedAt,
-                createdAt, updatedAt, metadata, journalists);
+                createdAt, updatedAt, metadata, journalists, multimedia);
     }
 
     /** Returns a copy with the given creation/update timestamps. */
     public Article withTimestamps(Instant created, Instant updated) {
         return new Article(id, title, subtitle, summary, body, slug, status, language, publishedAt,
-                created, updated, metadata, journalists);
+                created, updated, metadata, journalists, multimedia);
     }
 
     /** Returns a copy with the given journalist bylines (e.g. after a cascade reindex). */
     public Article withJournalists(List<ArticleJournalist> newJournalists) {
         return new Article(id, title, subtitle, summary, body, slug, status, language, publishedAt,
-                createdAt, updatedAt, metadata, safe(newJournalists));
+                createdAt, updatedAt, metadata, safe(newJournalists), multimedia);
+    }
+
+    /** Returns a copy with the given multimedia assets. */
+    public Article withMultimedia(List<ArticleMultimedia> newMultimedia) {
+        return new Article(id, title, subtitle, summary, body, slug, status, language, publishedAt,
+                createdAt, updatedAt, metadata, journalists, safeMedia(newMultimedia));
     }
 
     private static List<ArticleJournalist> safe(List<ArticleJournalist> journalists) {
         return journalists != null ? List.copyOf(journalists) : List.of();
+    }
+
+    private static List<ArticleMultimedia> safeMedia(List<ArticleMultimedia> multimedia) {
+        return multimedia != null ? List.copyOf(multimedia) : List.of();
     }
 }

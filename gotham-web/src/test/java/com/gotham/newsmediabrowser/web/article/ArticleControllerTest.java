@@ -49,6 +49,9 @@ class ArticleControllerTest {
     @MockitoBean
     private JournalistRepository journalistRepository;
 
+    @MockitoBean
+    private ArticleMediaUploadService mediaUploadService;
+
     private final Journalist lois =
             new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace", null, null);
 
@@ -61,7 +64,7 @@ class ArticleControllerTest {
         Article article = new Article("a1", "Transit vote", null, "s", "b", "transit",
                 ArticleStatus.PUBLISHED, "en", null, null, null,
                 new ArticleMetadata("Politics", List.of(), null, null, null, null, null, null),
-                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)));
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)), List.of());
         when(articleRepository.findAll(null, null, 0, 25)).thenReturn(new ArticlePage(List.of(article), 1));
 
         mockMvc.perform(get("/article"))
@@ -170,6 +173,39 @@ class ArticleControllerTest {
         mockMvc.perform(get("/article/ghost"))
                 .andExpect(status().isNotFound())
                 .andExpect(view().name("error"));
+    }
+
+    @Test
+    void createWithMediaFileAttachesUploadedMultimedia() throws Exception {
+        oneJournalistAvailable();
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia uploaded =
+                com.gotham.newsmediabrowser.common.article.ArticleMultimedia.uploaded(
+                        "m1", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                        "https://storage.googleapis.com/b/media/image/x.png", "image/png", 0, "x.png", 10L);
+        when(mediaUploadService.upload(any(), org.mockito.ArgumentMatchers.eq(0))).thenReturn(java.util.List.of(uploaded));
+        when(articleRepository.create(any(Article.class)))
+                .thenAnswer(invocation -> ((Article) invocation.getArgument(0)).withId("a_new"));
+
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                "mediaFiles", "x.png", "image/png", new byte[] {1, 2, 3});
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/article")
+                        .file(file)
+                        .param("title", "With media")
+                        .param("summary", "s")
+                        .param("body", "b")
+                        .param("status", "DRAFT")
+                        .param("journalistIds", "j_lois")
+                        .param("bylineOrder[j_lois]", "1")
+                        .param("role[j_lois]", "AUTHOR"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/article"));
+
+        ArgumentCaptor<Article> captor = ArgumentCaptor.forClass(Article.class);
+        verify(articleRepository).create(captor.capture());
+        assertThat(captor.getValue().multimedia()).hasSize(1);
+        assertThat(captor.getValue().multimedia().get(0).storageUri())
+                .isEqualTo("https://storage.googleapis.com/b/media/image/x.png");
     }
 
     @Test

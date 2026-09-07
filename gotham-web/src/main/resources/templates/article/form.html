@@ -21,7 +21,12 @@
         <a class="nav-link" th:href="@{/article}" href="/article">Back to list</a>
     </header>
 
-    <form class="crud-form" th:action="@{${formAction}}" th:object="${articleForm}" method="post">
+    <form class="crud-form" th:action="@{${formAction}}" th:object="${articleForm}" method="post"
+          enctype="multipart/form-data">
+        <div class="flash flash--error" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">error</p>
+        </div>
+
         <section class="form-section">
             <h2>Story</h2>
             <div class="form-grid">
@@ -127,6 +132,30 @@
                         <option th:each="r : ${roles}" th:value="${r}" th:text="${r}">AUTHOR</option>
                     </select>
                 </label>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2>Multimedia</h2>
+            <p class="form-section__hint">IMAGE ≤ 10&nbsp;MiB · AUDIO ≤ 20&nbsp;MiB / 5&nbsp;min · VIDEO ≤ 50&nbsp;MiB / 90&nbsp;s.
+                Files upload to public GCS on save; embeddings come in P6.</p>
+
+            <div class="media-grid" th:if="${!existingMultimedia.isEmpty()}">
+                <figure class="media-card" th:each="m : ${existingMultimedia}" th:switch="${m.mediaType().name()}">
+                    <img th:case="'IMAGE'" th:src="${m.storageUri()}" th:alt="${m.altText()} ?: ${m.originalFilename()}"/>
+                    <audio th:case="'AUDIO'" controls="controls">
+                        <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
+                    </audio>
+                    <video th:case="'VIDEO'" controls="controls" width="240">
+                        <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
+                    </video>
+                    <figcaption th:text="${m.originalFilename()} ?: ${m.mediaType()}">file</figcaption>
+                </figure>
+            </div>
+
+            <div class="field">
+                <label for="media_files">Add media files</label>
+                <input id="media_files" name="mediaFiles" type="file" accept="image/*,audio/*,video/*" multiple="multiple"/>
             </div>
         </section>
 

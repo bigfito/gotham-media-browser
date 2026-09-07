@@ -205,14 +205,44 @@ public class ArticleRepository {
         document.put("seo_keywords", metadata.seoKeywords());
         document.put("canonical_url", metadata.canonicalUrl());
 
-        // Denormalized projections, always rebuilt from the structured bylines.
+        // Denormalized projections, always rebuilt from the structured data.
         document.put("journalist_names", ArticleProjections.journalistNames(article.journalists()));
         document.put("journalist_bios", ArticleProjections.journalistBios(article.journalists()));
+        document.put("multimedia_text", ArticleProjections.multimediaText(article.multimedia()));
 
         document.put("journalists", ArticleProjections.orderedByByline(article.journalists()).stream()
                 .map(this::toNestedJournalist)
                 .toList());
+        document.put("multimedia", ArticleProjections.orderedByPosition(article.multimedia()).stream()
+                .map(this::toNestedMultimedia)
+                .toList());
         return document;
+    }
+
+    private Map<String, Object> toNestedMultimedia(ArticleMultimedia media) {
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("multimedia_element_id", media.multimediaElementId());
+        nested.put("media_type", media.mediaType() != null ? media.mediaType().name() : null);
+        nested.put("storage_uri", media.storageUri());
+        nested.put("mime_type", media.mimeType());
+        nested.put("position", media.position());
+        nested.put("caption", media.caption());
+        nested.put("credit", media.credit());
+        nested.put("title", media.title());
+        nested.put("description", media.description());
+        nested.put("alt_text", media.altText());
+        nested.put("original_filename", media.originalFilename());
+        nested.put("file_size_bytes", media.fileSizeBytes());
+        nested.put("checksum", media.checksum());
+        nested.put("width", media.width());
+        nested.put("height", media.height());
+        nested.put("duration_ms", media.durationMs());
+        nested.put("codec", media.codec());
+        nested.put("bitrate_kbps", media.bitrateKbps());
+        nested.put("frame_rate", media.frameRate());
+        nested.put("sample_rate_hz", media.sampleRateHz());
+        nested.put("channels", media.channels());
+        return nested;
     }
 
     private Map<String, Object> toNestedJournalist(ArticleJournalist journalist) {
@@ -244,6 +274,9 @@ public class ArticleRepository {
         List<ArticleJournalist> journalists = asMapList(source.get("journalists")).stream()
                 .map(this::fromNestedJournalist)
                 .toList();
+        List<ArticleMultimedia> multimedia = asMapList(source.get("multimedia")).stream()
+                .map(this::fromNestedMultimedia)
+                .toList();
 
         return new Article(
                 id,
@@ -258,7 +291,35 @@ public class ArticleRepository {
                 parseInstant(source.get("created_at")),
                 parseInstant(source.get("updated_at")),
                 metadata,
-                journalists);
+                journalists,
+                multimedia);
+    }
+
+    private ArticleMultimedia fromNestedMultimedia(Map<String, Object> nested) {
+        return new ArticleMultimedia(
+                asString(nested.get("multimedia_element_id")),
+                nested.get("media_type") != null
+                        ? com.gotham.newsmediabrowser.common.media.MediaType.valueOf(asString(nested.get("media_type")))
+                        : null,
+                asString(nested.get("storage_uri")),
+                asString(nested.get("mime_type")),
+                asInt(nested.get("position")),
+                asString(nested.get("caption")),
+                asString(nested.get("credit")),
+                asString(nested.get("title")),
+                asString(nested.get("description")),
+                asString(nested.get("alt_text")),
+                asString(nested.get("original_filename")),
+                asLong(nested.get("file_size_bytes")),
+                asString(nested.get("checksum")),
+                asInteger(nested.get("width")),
+                asInteger(nested.get("height")),
+                asLong(nested.get("duration_ms")),
+                asString(nested.get("codec")),
+                asInteger(nested.get("bitrate_kbps")),
+                asDouble(nested.get("frame_rate")),
+                asInteger(nested.get("sample_rate_hz")),
+                asInteger(nested.get("channels")));
     }
 
     private ArticleJournalist fromNestedJournalist(Map<String, Object> nested) {
@@ -286,6 +347,18 @@ public class ArticleRepository {
 
     private int asInt(Object value) {
         return value instanceof Number number ? number.intValue() : 0;
+    }
+
+    private Integer asInteger(Object value) {
+        return value instanceof Number number ? number.intValue() : null;
+    }
+
+    private Long asLong(Object value) {
+        return value instanceof Number number ? number.longValue() : null;
+    }
+
+    private Double asDouble(Object value) {
+        return value instanceof Number number ? number.doubleValue() : null;
     }
 
     @SuppressWarnings("unchecked")

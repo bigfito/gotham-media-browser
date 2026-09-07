@@ -34,7 +34,7 @@ class ArticleRepositoryTest {
                 Instant.parse("2026-09-01T00:00:00Z"),
                 Instant.parse("2026-09-02T00:00:00Z"),
                 Instant.parse("2026-09-03T00:00:00Z"),
-                metadata, bylines);
+                metadata, bylines, List.of());
     }
 
     @Test
@@ -79,6 +79,41 @@ class ArticleRepositoryTest {
         assertThat(roundTripped.journalists()).extracting(ArticleJournalist::journalistId)
                 .containsExactly("j_lois", "j_clark");
         assertThat(roundTripped.journalists().get(0).contributionRole()).isEqualTo(ContributionRole.AUTHOR);
+    }
+
+    @Test
+    void multimediaIsNestedOrderedWithProjectionAndRoundTrips() {
+        ArticleMultimedia image = new ArticleMultimedia("m2", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                "https://storage.googleapis.com/b/media/image/x.png", "image/png", 1,
+                "A caption", "Credit", "Photo title", null, "Alt text", "x.png", 1234L, null,
+                800, 600, null, null, null, null, null, null);
+        ArticleMultimedia audio = new ArticleMultimedia("m1", com.gotham.newsmediabrowser.common.media.MediaType.AUDIO,
+                "https://storage.googleapis.com/b/media/audio/y.mp3", "audio/mpeg", 0,
+                null, null, "Clip", "Desc", null, "y.mp3", 5678L, null,
+                null, null, 30000L, "mp3", 128, null, 44100, 2);
+        Article article = new Article("art1", "T", null, null, null, "t", ArticleStatus.PUBLISHED, "en",
+                null, null, null, ArticleMetadata.empty(), List.of(), List.of(image, audio));
+
+        Map<String, Object> document = repository.toDocument(article);
+
+        // multimedia_text projection follows position order (audio #0 title/desc, then image #1 fields).
+        assertThat(document).extracting("multimedia_text")
+                .isEqualTo(List.of("Clip", "Desc", "Photo title", "A caption", "Credit", "Alt text"));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nested = (List<Map<String, Object>>) document.get("multimedia");
+        assertThat(nested).hasSize(2);
+        assertThat(nested.get(0)).containsEntry("multimedia_element_id", "m1")
+                .containsEntry("media_type", "AUDIO")
+                .containsEntry("position", 0)
+                .containsEntry("duration_ms", 30000L);
+
+        Article roundTripped = repository.fromSource("art1", document);
+        assertThat(roundTripped.multimedia()).extracting(ArticleMultimedia::multimediaElementId)
+                .containsExactly("m1", "m2");
+        assertThat(roundTripped.multimedia().get(1).width()).isEqualTo(800);
+        assertThat(roundTripped.multimedia().get(0).mediaType())
+                .isEqualTo(com.gotham.newsmediabrowser.common.media.MediaType.AUDIO);
     }
 
     @Test
