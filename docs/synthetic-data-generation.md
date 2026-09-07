@@ -236,4 +236,4 @@ flowchart TD
 | Volumes 15 / 25 / 5+5+5 (5 s video) | ✓ |
 | Data enters only via `/journalist` and `/article` | ✓ |
 | P9 static fixtures kept | ✓ |
-| Plan/state includes P10 (41 tasks) | ✓ |
+| Plan/state includes P10 (**40** tasks) | ✓ |

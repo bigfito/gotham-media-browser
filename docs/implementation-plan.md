@@ -21,7 +21,9 @@
 9. Prefer matching existing mockups under `ui-mockups/` and specs under `docs/`.  
 10. After each task: run the task’s **Verification** commands; leave the tree buildable.  
 11. **Commit once per task** (message includes task id, e.g. `P3-T02 Journalist list UI`).  
-12. **Never** leave users on Whitelabel/stack-trace pages — unexpected failures must use the global error page with a clear reason ([`ui-design-errors.md`](./ui-design-errors.md)).
+12. **Never** leave users on Whitelabel/stack-trace pages — unexpected failures must use the global error page with a clear reason ([`ui-design-errors.md`](./ui-design-errors.md)).  
+13. **`gotham-datagen` is a Java console app** (`main`) — never Spring Boot.  
+14. **Datagen helpers** (Ollama, ComfyUI, Kokoro) run **only** as Docker Compose profile `datagen` containers.
 
 ### Stack lock (do not change without human approval)
 
@@ -104,14 +106,31 @@ P5  GCS + multimedia nested CRUD + HTML5 playback
 P6  imagebind-service (in-repo) + write-time embeddings
 P7  Public search: landing + /results full-text
 P8  Semantic · Hybrid · Vector search
-P9  Static smoke fixtures + demo runbook (no GPU required)
-P10 Synthetic data generation (`gotham-datagen` + modality helpers)  ← LAST
+P9  Static smoke fixtures + demo runbook (no generative helpers)
+P10 Synthetic data generation (Java console `gotham-datagen` + Docker helpers)  ← LAST
 ```
 
 Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → P10`
 
-**Total tasks:** 41 (see task sections + [`implementation-state.md`](./implementation-state.md)).  
+**Total tasks:** **40** (see inventory below + [`implementation-state.md`](./implementation-state.md)).  
 **Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).
+
+### Task inventory (authoritative IDs)
+
+| Phase | Tasks (count) |
+|-------|----------------|
+| P0 | P0-T01 … P0-T05 (**5**) |
+| P1 | P1-T01 … P1-T04 (**4**) |
+| P2 | P2-T01 … P2-T02 (**2**) |
+| P3 | P3-T01 … P3-T04 (**4**) |
+| P4 | P4-T01 … P4-T04 (**4**) |
+| P5 | P5-T01 … P5-T03 (**3**) |
+| P6 | P6-T01 … P6-T03 (**3**) |
+| P7 | P7-T01 … P7-T04 (**4**) |
+| P8 | P8-T01 … P8-T03 (**3**) |
+| P9 | P9-T01 … P9-T03 (**3**) |
+| P10 | P10-T01 … P10-T05 (**5**) |
+| **Sum** | **40** |
 
 ---
 
@@ -130,6 +149,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 ### P0-T02 — Docker Compose skeleton
 - **Create:** `docker-compose.yml` building `gotham-web` (context/dockerfile for the Boot module) and `imagebind-service` (placeholder `GET /health` until P6).  
 - **Do:** Mount or copy `secrets/` into `gotham-web` as needed; document Compose service names/ports `:8080` / `:8081`.  
+- **Don’t:** Add Compose profile `datagen` / `comfyui-service` yet (P10-T02).  
 - **Verification:** `docker compose config` validates.  
 - **Depends on:** P0-T01
 
@@ -212,9 +232,9 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - **Depends on:** P2-T02
 
 ### P3-T02 — Journalist list UI (`GET /journalist`)
-- **Do:** Thymeleaf in `gotham-web`; pagination `size` ∈ {25,50,100}.  
-- **Verification:** List renders.  
-- **Depends on:** P3-T01, P0-T04
+- **Do:** Thymeleaf in `gotham-web`; pagination `size` ∈ {25,50,100}; match `ui-mockups/journalist.html`.  
+- **Verification:** List renders with layout chrome; empty and non-empty states OK.  
+- **Depends on:** P3-T01, P0-T04, P1-T04
 
 ### P3-T03 — Journalist create
 - **Do:** `GET /journalist/new`, `POST /journalist`.  
@@ -224,7 +244,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 ### P3-T04 — Journalist edit + cascade-strip delete
 - **Do:** `GET/POST /journalist/{id}` for updates.  
 - **Do:** `POST /journalist/{id}/delete` **cascade-strips**: find articles with nested `journalists.journalist_id` = id → remove nested element → rebuild journalist projections → reindex articles → delete journalist master doc.  
-- **Verification:** After delete, journalist is gone; previously linked articles no longer nest that id.  
+- **Verification:** After delete, journalist is gone; previously linked articles no longer nest that id; failures use branded error page.  
 - **Depends on:** P3-T03, P4-T02  
 
 ---
@@ -242,13 +262,13 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - **Depends on:** P4-T01, P2-T02
 
 ### P4-T03 — Article list + create/edit (text + metadata + bylines)
-- **Do:** Port forms without media upload (or disabled). Nest journalist snapshots on save.  
-- **Verification:** Create/update with ≥1 journalist.  
-- **Depends on:** P4-T02, P3-T03, P0-T04
+- **Do:** Port forms without media upload (or disabled). Nest journalist snapshots on save. Match `ui-mockups/article*.html` (media fields deferred to P5).  
+- **Verification:** Create/update with ≥1 journalist; validation errors stay in-form.  
+- **Depends on:** P4-T02, P3-T03, P0-T04, P1-T04
 
 ### P4-T04 — Article delete
-- **Do:** Remove ES doc (GCS cleanup in P5).  
-- **Verification:** Doc gone.  
+- **Do:** `POST /article/{id}/delete` removes ES doc (GCS cleanup in P5-T03).  
+- **Verification:** Doc gone; unknown id → branded 404 error page.  
 - **Depends on:** P4-T03
 
 ---
@@ -257,17 +277,18 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 ### P5-T01 — GCS storage service
 - **Do:** In `gotham-common`: upload/delete using **secret** SA JSON from `gotham.gcs.credentials-file`; bucket from properties; public HTTPS `storage_uri`.  
-- **Do:** Enforce size limits (IMAGE 10 MiB, AUDIO 20 MiB, VIDEO 50 MiB).  
-- **Verification:** With real secret file + bucket props, public GET of uploaded object works.  
+- **Do:** Enforce limits: IMAGE **10 MiB**; AUDIO **20 MiB** / **5 minutes**; VIDEO **50 MiB** / **90 seconds**.  
+- **Verification:** With real secret file + bucket props, public GET of uploaded object works; over-limit rejected.  
 - **Depends on:** P1-T01, P0-T05
 
 ### P5-T02 — Multimedia on article create/update
-- **Do:** App `multimedia_element_id`; nest metadata; projections; HTML5 on edit.  
-- **Verification:** Image/audio/video fixtures play in edit UI.  
+- **Do:** App-assigned `multimedia_element_id`; nest metadata; projections; HTML5 on edit (`<img>` / `<audio controls>` / `<video controls>`). Support multiple files per type (needed later by datagen 5+5+5).  
+- **Verification:** Image/audio/video fixtures play in edit UI; vectors deferred to P6.  
 - **Depends on:** P5-T01, P4-T03
 
 ### P5-T03 — Remove media + article delete cleans GCS
-- **Verification:** Objects removed.  
+- **Do:** Remove nested media element + delete GCS object; on article delete, delete all related GCS objects then ES doc.  
+- **Verification:** Objects removed from bucket; orphaned URIs do not remain after successful delete.  
 - **Depends on:** P5-T02
 
 ---
@@ -294,18 +315,25 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 ## Phase 7 — Public search (full-text)
 
 ### P7-T01 — Landing `GET /`
-- **Verification:** Forms post/get to `/results` with IA params.  
-- **Depends on:** P0-T04
+- **Create:** Dual-panel landing matching [`frontend-information-architecture.md`](./frontend-information-architecture.md) + `ui-mockups/index.html`.  
+- **Do:** Article methods Full-text · Semantic · Hybrid; multimedia Full-text · Semantic · Hybrid · Vector; query params per IA.  
+- **Verification:** Forms navigate to `/results` with correct `entity`/`mode`/filters.  
+- **Depends on:** P0-T04, P1-T04
 
 ### P7-T02 — Article FTS service
 - **Do:** Implement cookbook §4 ([`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)): `multi_match`, field remap, filters, journalist nested filter, `from`/`size`, `track_total_hits`.  
+- **Verification:** Sample queries return expected hits; pagination `size` ∈ {25,50,100}.  
 - **Depends on:** P4-T03, P2-T02
 
 ### P7-T03 — Multimedia FTS + inner_hits
 - **Do:** Implement cookbook §7: nested BM25 + `inner_hits` for asset cards.  
+- **Verification:** Nested hits surface media cards with `storage_uri` playback.  
 - **Depends on:** P5-T02
 
 ### P7-T04 — Results Thymeleaf pages
+- **Create:** `/results` for articles + multimedia matching `ui-mockups/results-*.html` (filters, sort, pagination).  
+- **Do:** Wire P7-T02/T03; status + journalist filters on article FTS.  
+- **Verification:** Manual/MockMvc: filter + page round-trips preserve query params.  
 - **Depends on:** P7-T01, P7-T02, P7-T03
 
 ---
@@ -316,15 +344,18 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 ### P8-T01 — Semantic kNN
 - **Do:** Cookbook §5 (articles) + §8 (multimedia nested kNN + `inner_hits`); text → ImageBind → `query_vector` length 1024.  
+- **Verification:** Semantic results return; vector length enforced.  
 - **Depends on:** P6-T03, P7-T04
 
 ### P8-T02 — Hybrid RRF
 - **Do:** Cookbook §6 / §9 using `retriever.rrf`; shared filters; document pagination approach.  
+- **Verification:** Hybrid mode returns fused ranking; filters apply to both legs.  
 - **Depends on:** P8-T01, P7-T02
 
 ### P8-T03 — Multimedia vector (file) search
-- **Do:** Cookbook §10: multipart → ImageBind → same nested kNN as semantic; reject article vector mode with 400 error page.  
-- **Depends on:** P8-T01, P7-T01
+- **Do:** Cookbook §10: multipart → ImageBind → same nested kNN as semantic; reject article `mode=vector` with **HTTP 400** branded error page.  
+- **Verification:** File upload vector search works; article vector mode → error page with reason.  
+- **Depends on:** P8-T01, P7-T01, P1-T04
 
 ---
 
@@ -405,7 +436,7 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - **Do:** Pipeline: Qwen 7B → **15** journalists → **25** articles (+ captions) → **5** images + **5** audios + **5** videos per article → multipart/form matching CRUD contracts → collect ids; print summary with reasons/reference ids on failures.  
 - **Don’t:** Write directly to Elasticsearch or GCS; don’t run inside the `gotham-web` process.  
 - **Verification:** Against running `gotham-web` + **Docker** helpers (or recorded stubs): creates docs visible via list UIs / ES; per-article media counts match defaults; `--skip-image`/`--skip-audio`/`--skip-video` honored; abort if Ollama down.  
-- **Depends on:** P10-T03, P3-T03, P5-T02, P6-T03
+- **Depends on:** P10-T03, P3-T03, P4-T03, P5-T02, P6-T03
 
 ### P10-T05 — Datagen runbook + verification report
 - **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video.  

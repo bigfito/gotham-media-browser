@@ -18,7 +18,7 @@
 | Object storage | **GCS public bucket objects** (no signed URLs) |
 | Embeddings | Meta ImageBind (OSS), Docker helper, sync HTTP, **1024-d** |
 | Modalities | Image, audio, video (+ text queries via ImageBind text) |
-| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
+| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
 | ES credentials | Endpoint + API key **hardcoded** in `application.properties` |
 | GCS credentials | Bucket/project hardcoded in properties; SA JSON **secret file** under `secrets/` |
 | Landing | `/` — two panels: articles · multimedia |

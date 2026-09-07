@@ -1,9 +1,9 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Reviewed & synced (2026-09-07)  
+**Status:** Final end-to-end review synced (2026-09-07)  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
-**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · Elasticsearch Java API Client · Docker Compose  
+**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Elasticsearch Java API Client · Docker Compose  
 
 Open parent `pom.xml` in IntelliJ IDEA Ultimate.
 
@@ -216,8 +216,8 @@ gotham-news-media-browser/
 ├── pom.xml                      # Maven parent (multi-module)
 ├── gotham-common/               # (to be created in P0)
 ├── gotham-web/                  # (to be created in P0)
-├── gotham-datagen/              # (to be created in P10 — last)
-├── comfyui-service/             # (to be created in P10 — CPU ComfyUI container)
+├── gotham-datagen/              # (P10 — Java console, not Spring Boot)
+├── comfyui-service/             # (P10 — CPU ComfyUI container)
 ├── imagebind-service/           # (to be created in P0/P6)
 ├── secrets/                     # SA JSON secret (gitignored) + *.example
 ├── docs/
@@ -268,8 +268,9 @@ gotham-news-media-browser/
 | `source.text` copy_to `article_search_text` | ✓ |
 | Results filters wired to IA query params | ✓ |
 | Article `mode=vector` → HTTP 400 error page | ✓ |
-| Multi-module Maven (`gotham-common` + `gotham-web`; `gotham-datagen` in P10) | ✓ |
+| Multi-module Maven (`gotham-common` + `gotham-web`; Java console `gotham-datagen` in P10) | ✓ |
 | ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
-| Synthetic data last phase P10 (Docker helpers mandatory; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5) | ✓ |
-| Implementation plan ↔ state (41 tasks, P0–P10) | ✓ |
+| Synthetic data last phase P10 (Docker helpers mandatory; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5; console app not Spring Boot) | ✓ |
+| Implementation plan ↔ state (**40** tasks, P0–P10) | ✓ |
+| Lab: MacBook Pro M4 · 32 GB · helpers CPU-in-Docker | ✓ |
