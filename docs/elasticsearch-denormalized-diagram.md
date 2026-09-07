@@ -2,7 +2,8 @@
 
 **Indexes:** `gotham-journalists` · `gotham-media-browser`  
 **IDs:** ES auto `_id` (top-level) · app `multimedia_element_id` (nested)  
-**Related:** [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md)
+**Related:** [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
+**SVG:** [`../diagrams/gotham-media-browser-denormalized.svg`](../diagrams/gotham-media-browser-denormalized.svg)
 
 ## Capability matrix
 
@@ -29,11 +30,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  Admin --> JI[(gotham-journalists<br/>auto _id)]
-  Admin --> AI[(gotham-media-browser<br/>auto _id)]
+  WEB[gotham-web<br/>/journalist · /article] --> JI[(gotham-journalists<br/>auto _id)]
+  WEB --> AI[(gotham-media-browser<br/>auto _id)]
   JI -->|nested journalists.journalist_id| AI
   AI --> GCS[(GCS public objects)]
-  IB[ImageBind] -->|article_embedding / asset_vector| AI
+  IB[ImageBind :8081] -->|article_embedding / asset_vector 1024| AI
 ```
 
 ## Article document

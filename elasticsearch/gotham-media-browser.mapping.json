@@ -39,7 +39,7 @@
       },
       "id_strategy": "elasticsearch_auto_id",
       "companion_index": "gotham-journalists",
-      "notes": "Article documents use ES auto _id. Nested journalists.journalist_id stores gotham-journalists _id. Nested multimedia.multimedia_element_id is app-assigned keyword (nested docs have no ES _id). Public search includes status DRAFT|PUBLISHED|ARCHIVED; filterable. Journalist is not a UI search entity; article FTS accepts journalist query param.",
+      "notes": "Article documents use ES auto _id. Nested journalists.journalist_id stores gotham-journalists _id. Nested multimedia.multimedia_element_id is app-assigned keyword (nested docs have no ES _id). Public search includes status DRAFT|PUBLISHED|ARCHIVED; filterable. Journalist is not a UI search entity; article FTS accepts journalist query param. Projection fields journalist_names/bios, multimedia_text, and *_search_text are maintained by the application on write (in addition to mapping copy_to where present). UI full-text field checkboxes for section/tags/location/source map to *.text subfields in multi_match.",
       "media_limits_local_prototype": {
         "image_max_bytes": 10485760,
         "audio_max_bytes": 20971520,
@@ -143,7 +143,10 @@
         "fields": {
           "text": {
             "type": "text",
-            "analyzer": "gotham_english"
+            "analyzer": "gotham_english",
+            "copy_to": [
+              "article_search_text"
+            ]
           }
         }
       },

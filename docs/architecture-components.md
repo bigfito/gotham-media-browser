@@ -1,8 +1,9 @@
 # Gotham News & Media Browser — Component Architecture
 
 **Status:** Locked for prototype (local Docker Compose)  
-**Date:** 2026-09-06  
-**Persistence:** Elastic Cloud Serverless + Google Cloud Storage only (no RDBMS)
+**Date:** 2026-09-07  
+**Persistence:** Elastic Cloud Serverless + Google Cloud Storage only (no RDBMS)  
+**Canonical overview:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)
 
 ## Decisions locked
 
@@ -58,8 +59,9 @@ Flow:
 - Dual-panel landing; entity-scoped `/results`; `/journalist` + `/article` CRUD  
 - Articles panel methods: Full-text · Semantic · Hybrid  
 - Multimedia panel methods: Full-text · Semantic · Hybrid · Vector  
-- Article FTS supports query params: `q`, `mode`, `status`, `section`, `language`, **`journalist`** (id or name), dates, sort, page  
+- Results query params: `entity`, `q`, `mode`, `fields`, `status`, `section`, `language`, **`journalist`** (article FTS), `mediaType`, `published_from` / `published_to`, `sort`, `page`, `size` ∈ {25, 50, 100}  
 - Services: ES (both indexes), GCS (public URLs), ImageBind  
+- Health: ImageBind `http://imagebind-service:8081/health` · ES via `/api/health/elasticsearch`
 
 ### 2. `imagebind-service`
 - Sync embed text / image / audio / video → `float[1024]`  

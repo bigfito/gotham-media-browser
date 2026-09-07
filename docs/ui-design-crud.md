@@ -30,21 +30,23 @@ Fields: `first_name`, `last_name`, `email`, `bio` (+ read-only ES `_id`, timesta
 Form sections (one job each):
 
 1. **Story** — title, subtitle, summary, body, slug, language, status, published_at  
-2. **Metadata** — section, tags, location, source, SEO fields  
-3. **Bylines** — multi-select journalists from `gotham-journalists`; byline order + role  
+2. **Metadata** — section, tags, location, source, SEO fields, `canonical_url`  
+3. **Bylines** — multi-select journalists from `gotham-journalists`; byline order + `contribution_role` (`AUTHOR` | `CO_AUTHOR` | `CONTRIBUTING`)  
 4. **Multimedia** — nested elements with HTML5 preview; upload within ImageBind local limits  
 
 On write the backend nests journalist snapshots, uploads to public GCS, embeds via ImageBind, and refreshes denormalized text/vector fields.
+
+Delete: `POST /journalist/{id}/delete` · `POST /article/{id}/delete`.
 
 ## Pagination on lists
 Same as search results: `page` + `size` ∈ {25, 50, 100} → ES `from` / `size`.
 
 ## Mock files
-| File | Role |
-|------|------|
-| `journalist.html` | List |
-| `journalist-new.html` | Create |
-| `journalist-edit.html` | Edit |
-| `article.html` | List |
-| `article-new.html` | Create |
-| `article-edit.html` | Edit (bylines + media) |
+| File | Backend |
+|------|---------|
+| `journalist.html` | `GET /journalist` |
+| `journalist-new.html` | `GET /journalist/new` · form `POST /journalist` |
+| `journalist-edit.html` | `GET /journalist/{id}` · `POST /journalist/{id}` · delete `POST /journalist/{id}/delete` |
+| `article.html` | `GET /article` |
+| `article-new.html` | `GET /article/new` · form `POST /article` |
+| `article-edit.html` | `GET /article/{id}` · `POST /article/{id}` · delete `POST /article/{id}/delete` |

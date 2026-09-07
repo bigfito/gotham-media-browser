@@ -56,40 +56,46 @@
 
     <div class="layout">
       <aside class="filters" aria-label="Filters">
-        <h2>Filters</h2>
-        <div class="field">
-          <label>Media type</label>
-          <div class="check-list">
-            <label><input type="checkbox" checked /> Image</label>
-            <label><input type="checkbox" checked /> Audio</label>
-            <label><input type="checkbox" checked /> Video</label>
+        <form id="results-filters" action="results-multimedia.html" method="get">
+          <input type="hidden" name="entity" value="multimedia" />
+          <input type="hidden" name="mode" value="fulltext" />
+          <input type="hidden" name="q" value="council chamber" />
+          <input type="hidden" name="page" value="1" />
+          <h2>Filters</h2>
+          <div class="field">
+            <label>Media type</label>
+            <div class="check-list">
+              <label><input type="checkbox" name="mediaType" value="IMAGE" checked /> Image</label>
+              <label><input type="checkbox" name="mediaType" value="AUDIO" checked /> Audio</label>
+              <label><input type="checkbox" name="mediaType" value="VIDEO" checked /> Video</label>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label>Parent status</label>
-          <div class="check-list">
-            <label><input type="checkbox" checked /> Published</label>
-            <label><input type="checkbox" checked /> Draft</label>
-            <label><input type="checkbox" /> Archived</label>
+          <div class="field">
+            <label>Parent status</label>
+            <div class="check-list">
+              <label><input type="checkbox" name="status" value="PUBLISHED" checked /> Published</label>
+              <label><input type="checkbox" name="status" value="DRAFT" checked /> Draft</label>
+              <label><input type="checkbox" name="status" value="ARCHIVED" /> Archived</label>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label for="section">Section</label>
-          <select id="section">
-            <option selected>All sections</option>
-            <option>Politics</option>
-            <option>Culture</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="published_from">Published from</label>
-          <input id="published_from" type="date" name="published_from" />
-        </div>
-        <div class="field">
-          <label for="published_to">Published to</label>
-          <input id="published_to" type="date" name="published_to" />
-        </div>
-        <button class="btn btn-coral" type="button">Apply filters</button>
+          <div class="field">
+            <label for="section">Section</label>
+            <select id="section" name="section">
+              <option value="" selected>All sections</option>
+              <option value="Politics">Politics</option>
+              <option value="Culture">Culture</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="published_from">Published from</label>
+            <input id="published_from" type="date" name="published_from" />
+          </div>
+          <div class="field">
+            <label for="published_to">Published to</label>
+            <input id="published_to" type="date" name="published_to" />
+          </div>
+          <button class="btn btn-coral" type="submit">Apply filters</button>
+        </form>
       </aside>
 
       <main>
@@ -101,7 +107,7 @@
           <div class="toolbar-controls">
             <div class="field">
               <label for="size">Per page</label>
-              <select id="size" name="size" form="page-nav">
+              <select id="size" name="size" form="results-filters">
                 <option value="25" selected>25</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -109,10 +115,11 @@
             </div>
             <div class="field">
               <label for="sort">Sort</label>
-              <select id="sort" name="sort">
-                <option selected>Relevance</option>
-                <option>Newest</option>
-                <option>Oldest</option>
+              <select id="sort" name="sort" form="results-filters">
+                <option value="relevance" selected>Relevance</option>
+                <option value="published_at_desc">Newest</option>
+                <option value="published_at_asc">Oldest</option>
+                <option value="title_asc">Title A–Z</option>
               </select>
             </div>
           </div>
@@ -131,7 +138,7 @@
             </div>
             <div class="media-card__body">
               <p class="media-card__caption">Council chamber after the vote</p>
-              <p class="media-card__parent">In <a href="#">Gotham Transit Expansion Clears Final Vote</a></p>
+              <p class="media-card__parent">In <a href="article-edit.html">Gotham Transit Expansion Clears Final Vote</a></p>
               <div class="result__meta"><span class="chip">IMAGE</span><span class="chip chip--published">Published</span></div>
             </div>
           </article>
@@ -143,7 +150,7 @@
             </div>
             <div class="media-card__body">
               <p class="media-card__caption">Floor debate excerpt — funding clause</p>
-              <p class="media-card__parent">In <a href="#">Gotham Transit Expansion Clears Final Vote</a></p>
+              <p class="media-card__parent">In <a href="article-edit.html">Gotham Transit Expansion Clears Final Vote</a></p>
               <div class="result__meta"><span class="chip">AUDIO</span><span class="chip chip--published">Published</span></div>
             </div>
           </article>
@@ -155,7 +162,7 @@
             </div>
             <div class="media-card__body">
               <p class="media-card__caption">Gallery reaction, east steps</p>
-              <p class="media-card__parent">In <a href="#">Budget Office Flags Overruns</a></p>
+              <p class="media-card__parent">In <a href="article-edit.html">Budget Office Flags Overruns</a></p>
               <div class="result__meta"><span class="chip">VIDEO</span><span class="chip chip--draft">Draft</span></div>
             </div>
           </article>
@@ -171,13 +178,13 @@
             </div>
             <div class="media-card__body">
               <p class="media-card__caption">Blueprint detail — east portal</p>
-              <p class="media-card__parent">In <a href="#">Budget Office Flags Overruns</a></p>
-              <div class="result__meta"><span class="chip">IMAGE</span><span class="chip chip--published">Published</span></div>
+              <p class="media-card__parent">In <a href="article-edit.html">Budget Office Flags Overruns</a></p>
+              <div class="result__meta"><span class="chip">IMAGE</span><span class="chip chip--archived">Archived</span></div>
             </div>
           </article>
         </div>
 
-        <nav class="pagination" id="page-nav" aria-label="Pagination">
+        <nav class="pagination" aria-label="Pagination">
           <div class="pagination__pages">
             <span class="pagination__disabled" aria-disabled="true">Prev</span>
             <span class="is-current" aria-current="page">1</span>

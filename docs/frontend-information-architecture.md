@@ -35,7 +35,7 @@ No `/admin` hub. CRUD lives on **`/journalist`** and **`/article`** only.
 **No journalist search UI** on the public landing. Journalist master data is managed only via `/journalist`.  
 Article full-text search still accepts a **`journalist`** filter parameter.  
 **Full-text attribute checkboxes:** denormalized ES text attributes.  
-**Chrome:** shared header + footer; ImageBind + Elasticsearch availability legends; MIT footer (2026).
+**Chrome:** shared header + footer; ImageBind + Elasticsearch availability legends; footer © 2020 Packt · © 2026 · MIT.
 
 ## 1. Landing (`/`) — two panels
 
@@ -98,10 +98,12 @@ Delete: block if any article nests this `journalist_id`, or cascade-strip + rein
 Denormalized document form covers:
 
 - Core: title, subtitle, summary, body, slug, status, language, published_at  
-- Metadata: section, tags, location, source, seo_*  
-- Nested **journalists[]**: pick from `gotham-journalists` (`journalist_id`, byline_order, contribution_role); snapshot names/bio/email at write  
+- Metadata: section, tags, location, source, seo_*, canonical_url  
+- Nested **journalists[]**: pick from `gotham-journalists` (`journalist_id`, byline_order, contribution_role ∈ `AUTHOR` \| `CO_AUTHOR` \| `CONTRIBUTING`); snapshot names/bio/email at write  
 - Nested **multimedia[]**: upload IMAGE/AUDIO/VIDEO within local limits; app-assigned `multimedia_element_id`; public GCS `storage_uri`; ImageBind `asset_vector`  
 - Projections refreshed on write: `journalist_*`, `multimedia_*`, `article_search_text`, `article_embedding`
+
+Full-text UI checkbox values such as `section` / `tags` / `location` / `source` are remapped by the backend to analyzable `*.text` subfields (keyword parents keep exact filters/facets).
 
 ### Local upload limits
 | IMAGE | 10 MiB |

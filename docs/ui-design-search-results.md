@@ -48,7 +48,8 @@ Also: optional **journalist** filter param on full-text.
 
 Default checked: title, caption, description, alt_text.
 
-Backend maps checked `fields` into a `multi_match` / `bool` should over those ES fields.
+Backend maps checked `fields` into a `multi_match` / `bool` should over those ES fields.  
+Checkbox values `section`, `tags`, `location`, and `source` are remapped to analyzable `*.text` subfields.
 
 ## Multimedia playback (results)
 
@@ -108,10 +109,10 @@ Shows **all copyrights** from the project license lineage, **MIT License** link,
 | `results-articles.html` | Article results + ES-synced pagination |
 | `results-multimedia.html` | Multimedia results (HTML5 players) + pagination |
 | `journalist.html` | `GET /journalist` list |
-| `journalist-new.html` | `GET/POST /journalist/new` |
+| `journalist-new.html` | `GET /journalist/new` (form posts to `POST /journalist`) |
 | `journalist-edit.html` | `GET/POST /journalist/{id}` |
 | `article.html` | `GET /article` list |
-| `article-new.html` | `GET/POST /article/new` |
+| `article-new.html` | `GET /article/new` (form posts to `POST /article`) |
 | `article-edit.html` | `GET/POST /article/{id}` (bylines + HTML5 media) |
 | `styles.css` | Light pastel theme |
 | `chrome.js` | Shared header/footer, service legends, mode toggles |

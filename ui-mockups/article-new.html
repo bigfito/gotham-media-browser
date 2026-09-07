@@ -96,6 +96,10 @@
             <label for="seo_keywords">SEO keywords</label>
             <input id="seo_keywords" name="seo_keywords" type="text" />
           </div>
+          <div class="field form-grid__full">
+            <label for="canonical_url">Canonical URL</label>
+            <input id="canonical_url" name="canonical_url" type="url" placeholder="https://news.gotham.example/…" />
+          </div>
         </div>
       </section>
 
@@ -107,19 +111,31 @@
             <input type="checkbox" name="journalist_ids" value="j_lois_lane" checked />
             <span class="byline-row__name">Lois Lane</span>
             <input type="number" name="byline_order_j_lois_lane" min="1" value="1" aria-label="Byline order Lois Lane" />
-            <input type="text" name="role_j_lois_lane" value="lead" aria-label="Role Lois Lane" />
+            <select name="role_j_lois_lane" aria-label="Role Lois Lane">
+              <option value="AUTHOR" selected>AUTHOR</option>
+              <option value="CO_AUTHOR">CO_AUTHOR</option>
+              <option value="CONTRIBUTING">CONTRIBUTING</option>
+            </select>
           </label>
           <label class="byline-row">
             <input type="checkbox" name="journalist_ids" value="j_clark_kent" />
             <span class="byline-row__name">Clark Kent</span>
             <input type="number" name="byline_order_j_clark_kent" min="1" value="2" aria-label="Byline order Clark Kent" />
-            <input type="text" name="role_j_clark_kent" value="contributor" aria-label="Role Clark Kent" />
+            <select name="role_j_clark_kent" aria-label="Role Clark Kent">
+              <option value="AUTHOR">AUTHOR</option>
+              <option value="CO_AUTHOR">CO_AUTHOR</option>
+              <option value="CONTRIBUTING" selected>CONTRIBUTING</option>
+            </select>
           </label>
           <label class="byline-row">
             <input type="checkbox" name="journalist_ids" value="j_vicki_vale" />
             <span class="byline-row__name">Vicki Vale</span>
             <input type="number" name="byline_order_j_vicki_vale" min="1" value="3" aria-label="Byline order Vicki Vale" />
-            <input type="text" name="role_j_vicki_vale" value="contributor" aria-label="Role Vicki Vale" />
+            <select name="role_j_vicki_vale" aria-label="Role Vicki Vale">
+              <option value="AUTHOR">AUTHOR</option>
+              <option value="CO_AUTHOR">CO_AUTHOR</option>
+              <option value="CONTRIBUTING" selected>CONTRIBUTING</option>
+            </select>
           </label>
         </div>
       </section>

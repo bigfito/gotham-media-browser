@@ -1,77 +1,73 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="920" viewBox="0 0 1360 920" role="img">
-  <title>Gotham Media Browser denormalized ES model — entity search capabilities</title>
-  <rect width="1360" height="920" fill="#F8FAFC"/>
-  <text x="40" y="40" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#0F172A">Gotham News &amp; Media Browser — Denormalized ES Model</text>
-  <text x="40" y="62" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#475569">Index: gotham-media-browser · entity-scoped search · Elasticsearch 9.x</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="title desc">
+  <title id="title">Gotham News — dual-index denormalized model</title>
+  <desc id="desc">gotham-journalists feeds nested bylines on gotham-media-browser; ImageBind 1024-d embeddings; public GCS media.</desc>
+  <defs>
+    <style>
+      .bg { fill: #F7F9FC; }
+      .box { fill: #ffffff; stroke: #d9e3ee; stroke-width: 1.5; }
+      .title { font: 650 20px Fraunces, Georgia, serif; fill: #2c3e5a; }
+      .h { font: 600 14px Sora, Helvetica, sans-serif; fill: #2c3e5a; }
+      .t { font: 400 12px Sora, Helvetica, sans-serif; fill: #5a6b84; }
+      .accent { fill: #5fad98; }
+      .sky { fill: #6a9cc4; }
+      .coral { fill: #d4878a; }
+      .line { stroke: #9ec5e8; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#6a9cc4"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1100" height="640"/>
+  <text class="title" x="40" y="42">Gotham News &amp; Media Browser — Dual Index</text>
+  <text class="t" x="40" y="64">ES auto _id · ImageBind 1024-d · no semantic_text · no /admin</text>
 
-  <!-- Capability matrix -->
-  <rect x="40" y="85" width="400" height="110" rx="10" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
-  <text x="56" y="110" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#064E3B">Article</text>
-  <text x="56" y="132" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#065F46">Full-text · Semantic · Hybrid</text>
-  <text x="56" y="154" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">Vector: not enabled</text>
-  <text x="56" y="176" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#047857">article_search_text + article_semantic</text>
+  <!-- Journalists -->
+  <rect class="box" x="40" y="100" width="300" height="200" rx="12"/>
+  <circle cx="60" cy="122" r="6" class="accent"/>
+  <text class="h" x="76" y="127">gotham-journalists</text>
+  <text class="t" x="56" y="156">CRUD: /journalist</text>
+  <text class="t" x="56" y="176">_id (ES auto)</text>
+  <text class="t" x="56" y="196">first_name · last_name · full_name</text>
+  <text class="t" x="56" y="216">email · bio · timestamps</text>
+  <text class="t" x="56" y="246">No public search UI</text>
+  <text class="t" x="56" y="266">Feeds article bylines</text>
 
-  <rect x="460" y="85" width="400" height="110" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="2"/>
-  <text x="476" y="110" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#7C2D12">Journalist</text>
-  <text x="476" y="132" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#9A3412">Full-text · Semantic · Hybrid</text>
-  <text x="476" y="154" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">Vector: not enabled</text>
-  <text x="476" y="176" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#C2410C">journalist_search_text + journalist_semantic</text>
+  <!-- Articles -->
+  <rect class="box" x="420" y="100" width="420" height="360" rx="12"/>
+  <circle cx="440" cy="122" r="6" class="sky"/>
+  <text class="h" x="456" y="127">gotham-media-browser</text>
+  <text class="t" x="440" y="156">CRUD: /article · Search: / + /results</text>
+  <text class="t" x="440" y="176">_id (ES auto) · status DRAFT|PUBLISHED|ARCHIVED</text>
+  <text class="t" x="440" y="196">title · subtitle · summary · body · slug · seo_*</text>
+  <text class="t" x="440" y="216">section · tags · location · source · canonical_url</text>
+  <text class="t" x="440" y="246">journalists[] nested → journalist_id = master _id</text>
+  <text class="t" x="440" y="266">contribution_role AUTHOR|CO_AUTHOR|CONTRIBUTING</text>
+  <text class="t" x="440" y="296">multimedia[] nested · multimedia_element_id (app)</text>
+  <text class="t" x="440" y="316">storage_uri → public GCS · asset_vector dims=1024</text>
+  <text class="t" x="440" y="346">article_embedding dims=1024 (ImageBind)</text>
+  <text class="t" x="440" y="366">*_search_text projections (app + copy_to)</text>
+  <text class="t" x="440" y="396">Article: FTS · Semantic · Hybrid</text>
+  <text class="t" x="440" y="416">Multimedia: FTS · Semantic · Hybrid · Vector</text>
+  <text class="t" x="440" y="436">Pagination: from=(page-1)×size · size∈{25,50,100}</text>
 
-  <rect x="880" y="85" width="440" height="110" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
-  <text x="896" y="110" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#1E3A8A">Multimedia asset</text>
-  <text x="896" y="132" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">Full-text · Semantic · Hybrid · Vector</text>
-  <text x="896" y="154" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#2563EB">Vector: enabled (asset_vector)</text>
-  <text x="896" y="176" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#1D4ED8">multimedia_* + multimedia.asset_vector</text>
+  <!-- ImageBind + GCS -->
+  <rect class="box" x="880" y="100" width="180" height="120" rx="12"/>
+  <circle cx="900" cy="122" r="6" class="coral"/>
+  <text class="h" x="916" y="127">ImageBind</text>
+  <text class="t" x="896" y="156">:8081 health</text>
+  <text class="t" x="896" y="176">text/image/audio/video</text>
+  <text class="t" x="896" y="196">→ float[1024]</text>
 
-  <rect x="40" y="220" width="1280" height="620" rx="14" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
-  <text x="60" y="250" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0F172A">Article Document  (_id = article_id)</text>
+  <rect class="box" x="880" y="250" width="180" height="100" rx="12"/>
+  <text class="h" x="896" y="280">GCS public</text>
+  <text class="t" x="896" y="304">storage_uri HTTPS</text>
+  <text class="t" x="896" y="324">no signed URLs</text>
 
-  <rect x="60" y="270" width="1240" height="70" rx="8" fill="#0F766E"/>
-  <text x="76" y="295" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">1 · Editorial + metadata</text>
-  <text x="76" y="318" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#CCFBF1">title, subtitle, summary, body, slug, status, language, dates, section, tags, location, source, seo_*</text>
+  <path class="line" d="M340,200 H420"/>
+  <path class="line" d="M840,200 H880"/>
+  <path class="line" d="M840,320 H880"/>
 
-  <rect x="60" y="355" width="600" height="130" rx="8" fill="#7C2D12"/>
-  <text x="76" y="380" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2a · journalists[] nested</text>
-  <text x="76" y="404" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#FED7AA">Names, bios, byline_order, contribution_role</text>
-  <text x="76" y="426" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#FED7AA">Root helpers: journalist_names, journalist_bios</text>
-  <text x="76" y="456" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FDBA74">No dense_vector on journalists</text>
-
-  <rect x="680" y="355" width="620" height="130" rx="8" fill="#1D4ED8"/>
-  <text x="696" y="380" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2b · multimedia[] nested</text>
-  <text x="696" y="404" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#BFDBFE">IMAGE | AUDIO | VIDEO + metadata text fields</text>
-  <text x="696" y="426" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#BFDBFE">Root helper: multimedia_text</text>
-  <rect x="696" y="440" width="280" height="28" rx="6" fill="#DBEAFE" stroke="#93C5FD"/>
-  <text x="708" y="459" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#1E3A8A">asset_vector : dense_vector(768)</text>
-
-  <rect x="60" y="505" width="400" height="140" rx="8" fill="#FEF3C7" stroke="#D97706"/>
-  <text x="76" y="530" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#78350F">Article projections</text>
-  <text x="76" y="555" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#92400E">article_search_text (text)</text>
-  <text x="76" y="575" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#92400E">article_semantic (semantic_text)</text>
-  <text x="76" y="605" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#059669">FTS · Semantic · Hybrid</text>
-  <text x="76" y="625" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">No vector field</text>
-
-  <rect x="480" y="505" width="400" height="140" rx="8" fill="#FFEDD5" stroke="#EA580C"/>
-  <text x="496" y="530" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#7C2D12">Journalist projections</text>
-  <text x="496" y="555" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#9A3412">journalist_search_text (text)</text>
-  <text x="496" y="575" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#9A3412">journalist_semantic (semantic_text)</text>
-  <text x="496" y="605" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#059669">FTS · Semantic · Hybrid</text>
-  <text x="496" y="625" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#94A3B8">No vector field</text>
-
-  <rect x="900" y="505" width="400" height="140" rx="8" fill="#DBEAFE" stroke="#2563EB"/>
-  <text x="916" y="530" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#1E3A8A">Multimedia projections</text>
-  <text x="916" y="555" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">multimedia_search_text (text)</text>
-  <text x="916" y="575" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">multimedia_semantic (semantic_text)</text>
-  <text x="916" y="595" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#1D4ED8">multimedia.asset_vector (dense_vector)</text>
-  <text x="916" y="625" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#1D4ED8">FTS · Semantic · Hybrid · Vector</text>
-
-  <text x="60" y="680" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#475569">copy_to: editorial/metadata → article_* · journalist helpers → journalist_* · multimedia_text → multimedia_*</text>
-  <text x="60" y="705" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#475569">Hybrid article/journalist = RRF(FTS, semantic). Hybrid multimedia = RRF(FTS, semantic, knn asset_vector).</text>
-
-  <rect x="60" y="740" width="18" height="18" rx="3" fill="#D1FAE5" stroke="#059669"/>
-  <text x="86" y="754" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#0F172A">FTS / Semantic / Hybrid</text>
-  <rect x="280" y="740" width="18" height="18" rx="3" fill="#DBEAFE" stroke="#2563EB"/>
-  <text x="306" y="754" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#0F172A">Vector (multimedia only)</text>
-  <rect x="520" y="740" width="18" height="18" rx="3" fill="#F1F5F9" stroke="#94A3B8"/>
-  <text x="546" y="754" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#0F172A">Vector disabled for article &amp; journalist</text>
+  <text class="t" x="40" y="560">gotham-web (:8080) · Thymeleaf · Java 25 / Spring Boot 4.1.1 · Elastic Cloud Serverless</text>
+  <text class="t" x="40" y="584">UI mockups: ui-mockups/ · Spec: docs/architecture-end-to-end.md</text>
+  <text class="t" x="40" y="608">© 2020 Packt · © 2026 · MIT</text>
 </svg>
