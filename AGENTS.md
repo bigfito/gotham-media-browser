@@ -30,8 +30,8 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Open **parent** `pom.xml` in IntelliJ IDEA Ultimate as a **Maven multi-module** project.  
 - Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** independent Java app added in **P10** (last phase).  
 - `imagebind-service/` is in-repo Docker/Python — not a Maven module.  
-- Optional P10 helpers: **native macOS** Ollama (Qwen 7B), ComfyUI MPS (SDXL-Turbo + Wan 1.3B), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).  
-- Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA**.  
+- P10 helpers: **mandatory Docker** Compose profile `datagen` — Ollama (Qwen 7B), `comfyui-service` (SDXL-Turbo + Wan 1.3B), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).  
+- Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  
 - Datagen defaults: 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article.
 
 ## Hard constraints

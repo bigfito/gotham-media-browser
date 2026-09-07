@@ -34,9 +34,9 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 flowchart LR
   U[Browser] --> WEB[gotham-web<br/>Spring Boot 4.1.1 + Thymeleaf<br/>:8080]
   DG[gotham-datagen<br/>P10 independent app] -->|POST /journalist /article| WEB
-  DG --> OLL[Ollama Metal · Qwen 2.5 7B]
-  DG --> CFY[ComfyUI MPS · SDXL-Turbo / Wan 1.3B]
-  DG --> KOK[Kokoro · TTS]
+  DG --> OLL[Docker Ollama · Qwen 2.5 7B]
+  DG --> CFY[Docker ComfyUI · SDXL-Turbo / Wan 1.3B]
+  DG --> KOK[Docker Kokoro · TTS]
   WEB --> JI[(gotham-journalists<br/>Elastic Cloud)]
   WEB --> AI[(gotham-media-browser<br/>Elastic Cloud)]
   WEB --> IB[imagebind-service<br/>Meta ImageBind<br/>:8081]

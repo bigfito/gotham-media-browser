@@ -27,12 +27,12 @@
 | Article CRUD | `/article` — full CRUD on denormalized `gotham-media-browser` docs (status: DRAFT / PUBLISHED / ARCHIVED) |
 | Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
 | Fault tolerance | Branded error pages with reason on **all** endpoints |
-| Synthetic data | **Last phase P10** — independent Java app via HTTP CRUD; **M4 32 GB** helpers Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B ([`synthetic-data-generation.md`](./synthetic-data-generation.md)) |
+| Synthetic data | **Last phase P10** — independent Java app via HTTP CRUD; helpers **mandatory Docker** (Ollama / ComfyUI / Kokoro); Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B ([`synthetic-data-generation.md`](./synthetic-data-generation.md)) |
 | Journalist UI search | **No** dedicated public journalist search UI |
 | Journalist as search param | **Yes** — article full-text accepts `journalist` filter/param |
 | Embeddings build | ImageBind **in-repo** under `imagebind-service/` |
-| Runtime | Local Docker Compose for web + ImageBind; **native macOS** datagen helpers (no CUDA) |
-| Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA** |
+| Runtime | Local Docker Compose: web + ImageBind always; profile **`datagen`** for helper containers |
+| Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU-in-container for helpers) |
 | Users / auth | Out of scope (`/journalist` and `/article` open) |
 | Implementation | [`implementation-plan.md`](./implementation-plan.md) · [`implementation-state.md`](./implementation-state.md) |
 

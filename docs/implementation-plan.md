@@ -32,7 +32,7 @@
 | Build | Maven **3.9.x** **multi-module** (IntelliJ IDEA Ultimate–friendly) |
 | UI | Thymeleaf (server-rendered) |
 | Search | Elasticsearch Java API Client (Boot BOM ~9.4.x) |
-| Compose | `gotham-web` + `imagebind-service` (datagen helpers run **natively on macOS** in **P10**) |
+| Compose | `gotham-web` + `imagebind-service`; P10 profile **`datagen`** = Ollama + ComfyUI + Kokoro **Docker containers (mandatory)** |
 | Embeddings | Meta ImageBind **built in-repo**, sync HTTP, **1024-d** |
 | Synthetic data | Maven module **`gotham-datagen`** (phase **P10**, last) — see [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
 | Storage | Elastic Cloud Serverless + **public** GCS |
@@ -52,6 +52,7 @@ gotham-news-media-browser/
 │   └── pom.xml                  # depends on gotham-common; spring-boot-maven-plugin
 ├── gotham-datagen/              # independent Java app (added in P10; last phase)
 │   └── pom.xml                  # own Spring Boot main; depends on gotham-common; HTTP to web + helpers
+├── comfyui-service/             # P10 Compose-built CPU ComfyUI (SDXL-Turbo + Wan; NOT a Maven module)
 ├── imagebind-service/           # Python/Docker ImageBind (NOT a Maven module)
 ├── secrets/                     # gitignored real secrets; *.example committed
 ├── docker-compose.yml
@@ -357,16 +358,16 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 **Goal:** Independent Java app `gotham-datagen` generates realistic journalists + articles (with IMAGE / AUDIO / VIDEO) and loads them **only through** live `POST /journalist` and `POST /article`.  
 **Spec:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
-### Helper services (locked — MacBook Pro M4 · 32 GB · no NVIDIA)
+### Helper services (locked — Docker containers on MacBook Pro M4 · 32 GB · no NVIDIA)
 
-| Modality | Model | Size / quant | Unified mem (approx.) | Run on Mac |
-|----------|-------|--------------|------------------------|------------|
-| Text | **Qwen 2.5 7B-Instruct** | 7B (Q4_K_M) | ~5–6 GB | Native **Ollama** (Metal) |
-| Image | **SDXL-Turbo** | few-step SDXL | ~6–8 GB peak | Native **ComfyUI** (MPS) |
-| Audio / voice | **Kokoro-82M** | 82M | ~0.5 GB | Native / CPU |
-| Video | **Wan2.1 (T2V-1.3B)** | 1.3B | ~8–12 GB w/ offload | Native **ComfyUI** (MPS + CPU offload) |
+| Modality | Model | Size / quant | Container image |
+|----------|-------|--------------|-----------------|
+| Text | **Qwen 2.5 7B-Instruct** | 7B (Q4_K_M) | `ollama/ollama:latest` |
+| Image | **SDXL-Turbo** | few-step SDXL | in-repo **`comfyui-service/`** (CPU, multi-arch) |
+| Audio / voice | **Kokoro-82M** | 82M | `ghcr.io/remsky/kokoro-fastapi-cpu` |
+| Video | **Wan2.1 (T2V-1.3B)** | 1.3B | same **`comfyui-service/`** |
 
-Do **not** require NVIDIA CUDA Docker images for the prototype lab.
+**Mandatory:** helpers run **only** as Docker Compose profile `datagen` services (CPU inside Docker Desktop on Mac). No native-host helper installs as the prototype path. Do **not** require CUDA `yanwk/comfyui-boot`.
 
 ### Locked default volumes
 
@@ -378,7 +379,7 @@ Do **not** require NVIDIA CUDA Docker images for the prototype lab.
 | Video clip length | **5 seconds** each |
 | Total media assets | **375** |
 
-Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) is required**. Full runs on M4 are long (especially video) — document overnight expectation in the runbook.
+Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) is required**. Full runs on M4 Docker CPU are long (especially video) — document overnight expectation in the runbook.
 
 ### P10-T01 — Parent POM + independent `gotham-datagen` app skeleton
 - **Create:** `gotham-datagen/` as a **standalone** Spring Boot application (`web` disabled or none; own `@SpringBootApplication` + executable jar); package `com.gotham.newsmediabrowser.datagen`; add module to parent `pom.xml`.  
@@ -387,29 +388,29 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - **Verification:** `mvn -pl gotham-datagen -am -DskipTests package` produces a runnable jar; IntelliJ shows independent app module.  
 - **Depends on:** P0-T01, P9-T03
 
-### P10-T02 — Native macOS helpers runbook (Ollama · ComfyUI · Kokoro)
-- **Create:** Runbook + any thin wrappers for **native** installs on Apple Silicon: Ollama + `qwen2.5:7b-instruct`, ComfyUI MPS workflows for **SDXL-Turbo** + **Wan2.1 1.3B**, Kokoro-82M on CPU.  
-- **Do:** Keep Compose for `gotham-web` + `imagebind-service` only; document that CUDA ComfyUI images are **out of scope** for this lab.  
-- **Don’t:** Make `yanwk/comfyui-boot` (CUDA) a hard dependency.  
-- **Verification:** Health URLs reachable on `:11434` / `:8188` / `:8880` after following the runbook on M4 (or documented mock for CI).  
+### P10-T02 — Compose profile `datagen` (Ollama · ComfyUI · Kokoro containers)
+- **Create/Update:** `docker-compose.yml` profile **`datagen`** with services: `ollama` (`ollama/ollama:latest`), `comfyui` (**build** `./comfyui-service` CPU multi-arch with SDXL-Turbo + Wan2.1 workflows), `kokoro` (`ghcr.io/remsky/kokoro-fastapi-cpu`); named volumes for models/checkpoints; document first-run `ollama pull qwen2.5:7b-instruct`.  
+- **Do:** Keep `gotham-web` + `imagebind-service` always-on; helpers are **mandatory containers** for P10 (not optional native installs).  
+- **Don’t:** Depend on CUDA-only images; don’t document native Ollama/ComfyUI as the supported path.  
+- **Verification:** `docker compose --profile datagen config` validates; `docker compose --profile datagen up -d` brings helpers to healthy ports `:11434` / `:8188` / `:8880` on M4 Docker Desktop (or CI mock documented).  
 - **Depends on:** P0-T02, P10-T01
 
 ### P10-T03 — Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan)
-- **Create:** Clients in `gotham-datagen` for Ollama chat (`qwen2.5:7b-instruct`), ComfyUI T2I (SDXL-Turbo) + T2V (Wan2.1 **5 s** clips), Kokoro TTS; health-check each before use.  
-- **Do:** Enforce product media caps and synthetic video target **5 s**; tolerate slow MPS generation (timeouts documented, not silent failures).  
-- **Verification:** Unit/integration tests or documented dry-run against mocked helpers; clients fail clearly when down.  
+- **Create:** Clients in `gotham-datagen` for Ollama chat (`qwen2.5:7b-instruct`), ComfyUI T2I (SDXL-Turbo) + T2V (Wan2.1 **5 s** clips), Kokoro TTS; health-check each container before use.  
+- **Do:** Enforce product media caps and synthetic video target **5 s**; tolerate slow **CPU-in-container** generation (timeouts documented, not silent failures).  
+- **Verification:** Unit/integration tests or documented dry-run against mocked helpers; clients fail clearly when containers are down.  
 - **Depends on:** P10-T02
 
 ### P10-T04 — Orchestrator → `POST /journalist` & `POST /article`
 - **Do:** Pipeline: Qwen 7B → **15** journalists → **25** articles (+ captions) → **5** images + **5** audios + **5** videos per article → multipart/form matching CRUD contracts → collect ids; print summary with reasons/reference ids on failures.  
 - **Don’t:** Write directly to Elasticsearch or GCS; don’t run inside the `gotham-web` process.  
-- **Verification:** Against running `gotham-web` + helpers (or recorded stubs): creates docs visible via list UIs / ES; per-article media counts match defaults; `--skip-image`/`--skip-audio`/`--skip-video` honored; abort if Ollama down.  
+- **Verification:** Against running `gotham-web` + **Docker** helpers (or recorded stubs): creates docs visible via list UIs / ES; per-article media counts match defaults; `--skip-image`/`--skip-audio`/`--skip-video` honored; abort if Ollama down.  
 - **Depends on:** P10-T03, P3-T03, P5-T02, P6-T03
 
 ### P10-T05 — Datagen runbook + verification report
-- **Create:** Operator runbook for **M4 32 GB**: native helper install, model pulls, memory tips (optional `qwen2.5:3b-instruct` under pressure), expected volumes **15 / 25 / 5+5+5**, long-run / overnight notes for video.  
+- **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video.  
 - **Do:** Sample: `mvn -pl gotham-datagen spring-boot:run` or `java -jar gotham-datagen/target/gotham-datagen-*.jar`.  
-- **Verification:** Runbook completes on the M4 lab **or** documents skip-flag path; state file P10 tasks closable.  
+- **Verification:** Runbook completes on the M4 lab with containers **or** documents skip-flag path; state file P10 tasks closable.  
 - **Depends on:** P10-T04
 
 ---
@@ -426,7 +427,7 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - [ ] Header health legends + MIT footer  
 - [ ] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps)  
 - [ ] P9 static smoke path works without generative helpers  
-- [ ] **P10:** Independent `gotham-datagen` Java app on **M4** loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
+- [ ] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; independent `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
 - [ ] State file tasks completed  
 
 ---
@@ -447,4 +448,5 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 | Extra | **Fault-tolerant UX:** global error pages with reason on all endpoints ([`ui-design-errors.md`](./ui-design-errors.md)) |
 | Extra | **Synthetic data (last phase P10):** independent Java app `gotham-datagen`; load only via `/journalist` & `/article` |
 | Extra | **Datagen volumes:** 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article; P9 static seed kept |
-| Extra | **Lab hardware:** MacBook Pro M4 · 32 GB · no NVIDIA → native Metal helpers; models **Qwen 2.5 7B**, **SDXL-Turbo**, **Kokoro-82M**, **Wan2.1 1.3B** |
+| Extra | **Lab hardware:** MacBook Pro M4 · 32 GB · no NVIDIA; lighter models **Qwen 2.5 7B**, **SDXL-Turbo**, **Kokoro-82M**, **Wan2.1 1.3B** |
+| Extra | **Helpers mandatory as Docker containers** (Compose profile `datagen`: Ollama + `comfyui-service` + Kokoro CPU) |

@@ -4,7 +4,7 @@
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
-**Last updated:** 2026-09-07T04:05:00Z  
+**Last updated:** 2026-09-07T04:15:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`
 
