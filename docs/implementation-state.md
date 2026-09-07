@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T14:10:00Z  
+**Last updated:** 2026-09-07T14:25:00Z  
 **Active phase:** P1  
 **Prototype status:** `in_progress`  
-**Next task:** `P1-T02` (Elasticsearch Java client bean — dep P1-T01 done)
+**Next task:** `P1-T03` (Health endpoints for chrome — deps P1-T02 done, P0-T04 done)
 
 ---
 
@@ -55,7 +55,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | Phase | Title | Tasks done | Status |
 |-------|-------|------------|--------|
 | P0 | Scaffold & agent harness | 5/5 | done |
-| P1 | Config, health, ES client, error pages | 1/4 | in_progress |
+| P1 | Config, health, ES client, error pages | 2/4 | in_progress |
 | P2 | Index bootstrap | 0/2 | pending |
 | P3 | `/journalist` — list + create + edit form | 0/3 | pending |
 | P4 | `/article` CRUD + journalist cascade-strip delete | 0/5 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 6 / **42** tasks done
+**Totals:** 7 / **42** tasks done
 
 ---
 
@@ -82,7 +82,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P0-T04 | P0 | Shared Thymeleaf layout from mockups | done | P0-T01 | JavaMentor | 2026-09-07T13:35:00Z | 2026-09-07T13:45:00Z | Ported chrome to templates/fragments/chrome.html (head/header legends/footer MIT) + static/css/styles.css; HomeController GET / -> index. @WebMvcTest renders chrome (200). Boot 4 note: @WebMvcTest moved to org.springframework.boot.webmvc.test.autoconfigure (added spring-boot-starter-webmvc-test + thymeleaf-test). |
 | P0-T05 | P0 | Secrets scaffolding | done | P0-T01 | JavaMentor | 2026-09-07T13:50:00Z | 2026-09-07T13:55:00Z | Added secrets/README.md, secrets/gcp-sa.json.example, application-local.properties.example. Verified git check-ignore matches for real gcp-sa.json + application-local.properties; examples trackable; real key untracked. mvn test green. |
 | P1-T01 | P1 | @ConfigurationProperties bound to application.properties | done | P0-T01, P0-T05 | JavaMentor | 2026-09-07T14:00:00Z | 2026-09-07T14:10:00Z | Records in gotham-common: ElasticsearchProperties (masked apiKey), GcsProperties, ImageBindProperties, MediaLimitsProperties (DataSize/Duration). Registered via @ConfigurationPropertiesScan on the app. Binding unit test (ApplicationContextRunner, 4 cases incl. mask + placeholder detection). mvn test green (7). |
-| P1-T02 | P1 | Elasticsearch Java client bean | pending | P1-T01 | | | | |
+| P1-T02 | P1 | Elasticsearch Java client bean | done | P1-T01 | JavaMentor | 2026-09-07T14:15:00Z | 2026-09-07T14:25:00Z | ElasticsearchClientConfig builds ElasticsearchClient via ElasticsearchClient.of(host,apiKey) (elasticsearch-java 9.4.5, rest5 transport). Starts with placeholders (client created, calls fail). Unit test creates bean. Real smoke (application-local.properties): cluster info GET / -> 200 serverless 9.6.0; HEAD gotham-media-browser -> 404 (index not yet created). API key never logged. |
 | P1-T03 | P1 | Health endpoints for chrome | pending | P1-T02, P0-T04 | | | | |
 | P1-T04 | P1 | Global fault tolerance & user error pages | pending | P0-T04, P1-T01 | | | | |
 | P2-T01 | P2 | Mapping JSON on classpath | pending | P0-T01 | | | | |
