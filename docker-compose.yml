@@ -1,0 +1,49 @@
+# =============================================================================
+#  Gotham News & Media Browser — local Docker Compose (P0 skeleton)
+#
+#  Always-on services: gotham-web (:8080) + imagebind-service (:8081).
+#  The `datagen` profile (Ollama / ComfyUI / Kokoro) is added later in P10-T02.
+#
+#  Secrets & real values are provided at runtime, never baked into images:
+#    * ./secrets is mounted read-only (holds gcp-sa.json).
+#    * Real ES/GCS values come from an untracked ./.env (see .env.example),
+#      loaded optionally below and mapped by Spring relaxed binding
+#      (e.g. GOTHAM_ELASTICSEARCH_API_KEY -> gotham.elasticsearch.api-key).
+# =============================================================================
+services:
+  gotham-web:
+    build:
+      context: .
+      dockerfile: gotham-web/Dockerfile
+    image: gotham-web:dev
+    container_name: gotham-web
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      # Reach the embedding service by its compose service name.
+      GOTHAM_IMAGEBIND_BASE_URL: http://imagebind-service:8081
+    volumes:
+      # Real GCS service-account key stays on the host, mounted read-only.
+      - ./secrets:/app/secrets:ro
+    depends_on:
+      imagebind-service:
+        condition: service_healthy
+    restart: unless-stopped
+
+  imagebind-service:
+    build:
+      context: ./imagebind-service
+    image: imagebind-service:dev
+    container_name: imagebind-service
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped

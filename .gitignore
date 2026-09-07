@@ -9,6 +9,9 @@ secrets/*.json
 # application.properties (committed) only carries safe placeholders.
 **/application-local.properties
 
+# Docker Compose env override with real values (.env.example is committed).
+.env
+
 # IDE
 .idea/
 *.iml
