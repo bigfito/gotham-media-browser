@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!-- Branded fault-tolerant error page (ported from ui-mockups/error.html). Shows HTTP status,
+     a human reason, and a reference id. Never renders stack traces or secrets. -->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/chrome :: head('Something went wrong — Gotham News & Media Browser')}"></head>
+<body th:attr="data-page='error'">
+
+<header th:replace="~{fragments/chrome :: header}"></header>
+
+<main class="shell shell--narrow">
+    <section class="error-page" role="alert">
+        <p class="error-page__eyebrow">Error · HTTP <span th:text="${errorStatus} ?: 500">500</span></p>
+        <h1 class="error-page__title" th:text="${errorTitle} ?: 'Something went wrong'">Something went wrong</h1>
+        <p class="error-page__lede">We couldn’t complete that request.</p>
+
+        <div class="error-page__reason">
+            <h2>Reason</h2>
+            <p th:text="${errorReason} ?: 'An unexpected error occurred.'">An unexpected error occurred.</p>
+        </div>
+
+        <p class="error-page__ref">Reference <code th:text="${errorReference} ?: 'req_unknown'">req_unknown</code></p>
+
+        <div class="form-actions">
+            <a class="btn btn-sky" th:href="@{/}" href="/">Back to search</a>
+            <a class="btn btn-ghost" th:href="@{/journalist}" href="/journalist">Journalists</a>
+            <a class="btn btn-ghost" th:href="@{/article}" href="/article">Articles</a>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/chrome :: footer}"></footer>
+
+</body>
+</html>
