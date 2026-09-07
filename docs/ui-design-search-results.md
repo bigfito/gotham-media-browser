@@ -85,6 +85,22 @@ track_total_hits = true   # accurate total for page count
 ## Shared chrome
 `chrome.js` injects header/footer; Thymeleaf will use layout fragments later.
 
+### Header service legends
+Two availability legends (Available / Unavailable / Checking…):
+
+| Legend | Source (prototype) |
+|--------|--------------------|
+| **ImageBind** | `data-imagebind-status` on `<body>`, else probe `http://127.0.0.1:8081/health` |
+| **Elasticsearch** | `data-elasticsearch-status` on `<body>`, else probe `/api/health/elasticsearch` |
+
+Spring Boot will later inject Actuator/health results into the same markers.
+
+### Footer
+Shows **all copyrights** from the project license lineage, **MIT License** link, and year **2026**:
+- Copyright © 2020 Packt (repository `LICENSE`)
+- Copyright © 2026 Gotham News & Media Browser contributors
+- MIT License reference
+
 ## Mockups
 | File | Role |
 |------|------|
@@ -92,5 +108,5 @@ track_total_hits = true   # accurate total for page count
 | `results-articles.html` | Article results + ES-synced pagination |
 | `results-multimedia.html` | Multimedia results (HTML5 players) + pagination |
 | `styles.css` | Light pastel theme |
-| `chrome.js` | Shared header/footer + mode toggles |
+| `chrome.js` | Shared header/footer, service legends, mode toggles |
 | `media/` | Sample IMAGE / AUDIO / VIDEO fixtures for HTML5 playback |

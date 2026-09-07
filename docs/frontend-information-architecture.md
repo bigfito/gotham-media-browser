@@ -25,6 +25,8 @@
 **No journalist search UI.** Article full-text accepts a **`journalist`** parameter (filter).  
 **Full-text attribute checkboxes:** fields come from the denormalized ES text attributes (title, body, caption, …).  
 **Chrome:** shared header + footer on all pages.  
+**Header legends:** ImageBind availability · Elasticsearch availability.  
+**Footer:** copyrights (Packt 2020 + contributors 2026), MIT License, year 2026.  
 **Theme:** light pastel background and accents.
 
 ## 1. Landing (`/`) — two panels
