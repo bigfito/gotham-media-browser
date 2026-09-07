@@ -20,6 +20,9 @@
         <a class="btn btn-sky" th:href="@{/journalist/new}" href="/journalist/new">New journalist</a>
     </header>
 
+    <!-- One-shot success banner after a create/edit (Post/Redirect/Get flash attribute). -->
+    <div class="flash flash--ok" role="status" th:if="${flash}" th:text="${flash}">Created.</div>
+
     <div class="results-toolbar">
         <div class="results-meta">
             <strong th:text="${total}">0</strong> journalists
@@ -63,7 +66,7 @@
                 <td th:text="${row.email} ?: '—'">email</td>
                 <td th:text="${row.updated}">Sep 6, 2026</td>
                 <td class="data-table__actions">
-                    <a th:href="@{/journalist/{id}/edit(id=${row.id})}" href="/journalist/edit">Edit</a>
+                    <a th:href="@{/journalist/{id}(id=${row.id})}" href="/journalist/edit">Edit</a>
                     <form th:action="@{/journalist/{id}/delete(id=${row.id})}" method="post"
                           style="display:inline"
                           onsubmit="return confirm('Cascade-strip this journalist from all article bylines, then delete?');">

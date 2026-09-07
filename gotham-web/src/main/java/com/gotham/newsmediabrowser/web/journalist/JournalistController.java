@@ -3,14 +3,19 @@ package com.gotham.newsmediabrowser.web.journalist;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.journalist.JournalistPage;
 import com.gotham.newsmediabrowser.common.journalist.JournalistRepository;
+import jakarta.validation.Valid;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * Serves the journalist master-data pages. This task (P3-T02) implements the paginated list at
@@ -66,6 +71,41 @@ public class JournalistController {
         model.addAttribute("hasNext", page < totalPages);
 
         return "journalist/list";
+    }
+
+    /** Renders the empty create form. */
+    @GetMapping("/journalist/new")
+    public String newForm(Model model) {
+        addFormChrome(model);
+        model.addAttribute("journalistForm", new JournalistForm());
+        return "journalist/new";
+    }
+
+    /**
+     * Creates a journalist. On validation failure the form is redisplayed with in-form errors; on
+     * success it follows the Post/Redirect/Get pattern back to the list (so a refresh won't re-post).
+     */
+    @PostMapping("/journalist")
+    public String create(
+            @Valid @ModelAttribute("journalistForm") JournalistForm journalistForm,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        if (bindingResult.hasErrors()) {
+            addFormChrome(model);
+            return "journalist/new";
+        }
+
+        Journalist created = journalistRepository.create(journalistForm.toNewJournalist());
+        redirectAttributes.addFlashAttribute("flash", "Created " + created.fullName() + ".");
+        return "redirect:/journalist";
+    }
+
+    private void addFormChrome(Model model) {
+        model.addAttribute("activePage", "journalist");
+        model.addAttribute("imagebindStatus", "checking");
+        model.addAttribute("elasticsearchStatus", "checking");
     }
 
     private JournalistRow toRow(Journalist journalist) {

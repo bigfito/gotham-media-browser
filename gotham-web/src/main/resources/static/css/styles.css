@@ -1105,3 +1105,24 @@ a:hover { text-decoration: underline; }
   color: var(--ink-soft);
   margin: 0;
 }
+
+/* In-form validation error, shown under the offending field. */
+.field-error {
+  color: var(--coral-deep);
+  font-size: 0.85rem;
+  margin: 0.35rem 0 0;
+}
+
+/* One-shot success/notice banner (Post/Redirect/Get flash). */
+.flash {
+  border-radius: var(--radius);
+  padding: 0.85rem 1.1rem;
+  margin: 0 0 1.25rem;
+  font-weight: 500;
+}
+
+.flash--ok {
+  background: color-mix(in srgb, var(--mint) 35%, var(--surface));
+  border: 1px solid var(--mint-deep);
+  color: var(--ink);
+}

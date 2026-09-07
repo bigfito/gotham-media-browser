@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<!--
+  P3-T03 journalist create form (GET /journalist/new -> POST /journalist).
+  Ported from ui-mockups/journalist-new.html: shared chrome + validated form.
+  Expected validation errors are shown in-form; the global error page is only
+  for unexpected failures.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/chrome :: head('New journalist — Gotham News & Media Browser')}"></head>
+<body th:attr="data-page='journalist'">
+
+<header th:replace="~{fragments/chrome :: header}"></header>
+
+<div class="shell shell--narrow">
+    <header class="crud-hero">
+        <div>
+            <p class="crud-hero__eyebrow">POST /journalist · gotham-journalists</p>
+            <h1 class="crud-hero__title">New journalist</h1>
+            <p class="crud-hero__lede">ES assigns <code>_id</code> on create. <code>full_name</code> is derived from first + last.</p>
+        </div>
+        <a class="nav-link" th:href="@{/journalist}" href="/journalist">Back to list</a>
+    </header>
+
+    <form class="crud-form" th:action="@{/journalist}" th:object="${journalistForm}" method="post">
+        <section class="form-section">
+            <h2>Identity</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="first_name">First name</label>
+                    <input id="first_name" th:field="*{firstName}" type="text" required autocomplete="given-name"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">error</p>
+                </div>
+                <div class="field">
+                    <label for="last_name">Last name</label>
+                    <input id="last_name" th:field="*{lastName}" type="text" required autocomplete="family-name"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">error</p>
+                </div>
+                <div class="field form-grid__full">
+                    <label for="email">Email</label>
+                    <input id="email" th:field="*{email}" type="email" required autocomplete="email"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">error</p>
+                </div>
+                <div class="field form-grid__full">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" th:field="*{bio}" rows="5" placeholder="Optional short biography"></textarea>
+                    <p class="field-error" th:if="${#fields.hasErrors('bio')}" th:errors="*{bio}">error</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn-sky" type="submit">Create journalist</button>
+            <a class="btn btn-ghost" th:href="@{/journalist}" href="/journalist">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<footer th:replace="~{fragments/chrome :: footer}"></footer>
+
+</body>
+</html>
