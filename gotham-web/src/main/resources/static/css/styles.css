@@ -1083,3 +1083,25 @@ a:hover { text-decoration: underline; }
   border-radius: 4px;
   padding: 0.1rem 0.35rem;
 }
+
+/* Empty state for master-data tables (e.g. /journalist with no rows). */
+.empty-state {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.empty-state__title {
+  font-family: var(--font-brand);
+  font-size: 1.25rem;
+  color: var(--ink);
+  margin: 0 0 0.35rem;
+}
+
+.empty-state__hint {
+  color: var(--ink-soft);
+  margin: 0;
+}
