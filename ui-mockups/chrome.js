@@ -62,4 +62,31 @@
   }
 
   document.querySelectorAll("[data-search-panel]").forEach(setupModePanels);
+
+  /* Keep pagination mock labels in sync with size ∈ {25,50,100} → ES from/size */
+  const sizeSelect = document.getElementById("size");
+  const esHint = document.querySelector(".results-meta__es");
+  const showing = document.querySelector("[data-showing-range]");
+  if (sizeSelect && (esHint || showing)) {
+    function syncSize() {
+      const size = Number(sizeSelect.value);
+      if (![25, 50, 100].includes(size)) return;
+      const page = 1;
+      const from = (page - 1) * size;
+      const end = size; /* mock first page */
+      if (esHint) {
+        esHint.innerHTML = `ES <code>from=${from}</code> · <code>size=${size}</code> · <code>track_total_hits</code>`;
+      }
+      if (showing) showing.textContent = `1–${end}`;
+      const links = document.querySelectorAll(".pagination__pages a");
+      links.forEach((a) => {
+        try {
+          const url = new URL(a.getAttribute("href"), window.location.href);
+          url.searchParams.set("size", String(size));
+          a.setAttribute("href", url.pathname + url.search);
+        } catch (_) { /* ignore */ }
+      });
+    }
+    sizeSelect.addEventListener("change", syncSize);
+  }
 })();
