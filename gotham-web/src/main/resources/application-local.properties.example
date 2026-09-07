@@ -1,0 +1,20 @@
+# -----------------------------------------------------------------------------
+#  application-local.properties  (LOCAL OVERRIDE — DO NOT COMMIT the real file)
+#
+#  Copy this file to "application-local.properties" (same folder) and fill REAL
+#  values. The committed application.properties imports it via:
+#      spring.config.import=optional:file:./application-local.properties
+#  so these values override the placeholders at runtime.
+#
+#  The real application-local.properties is gitignored (**/application-local.properties).
+#  For containerized runs use .env instead (see .env.example).
+# -----------------------------------------------------------------------------
+
+# --- Elasticsearch (Elastic Cloud Serverless) ---
+gotham.elasticsearch.endpoint=https://your-real-endpoint.es.cloud:443
+gotham.elasticsearch.api-key=YOUR_REAL_BASE64_API_KEY
+
+# --- Google Cloud Storage (public bucket) ---
+gotham.gcs.project-id=your-real-project
+gotham.gcs.bucket=your-real-public-bucket
+gotham.gcs.credentials-file=secrets/gcp-sa.json
