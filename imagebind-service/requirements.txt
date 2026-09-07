@@ -1,0 +1,4 @@
+# Base HTTP stack — always installed. Light enough for a fast CI/stub build.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20

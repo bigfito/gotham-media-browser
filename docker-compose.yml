@@ -36,14 +36,34 @@ services:
   imagebind-service:
     build:
       context: ./imagebind-service
+      args:
+        # Set to "false" for a fast image that only serves the deterministic stub.
+        INSTALL_IMAGEBIND: "true"
     image: imagebind-service:dev
     container_name: imagebind-service
     ports:
       - "8081:8081"
+    environment:
+      # "imagebind" = real Meta model (default); "stub" = deterministic, no weights.
+      IMAGEBIND_BACKEND: imagebind
+      IMAGEBIND_DEVICE: cpu
+    volumes:
+      # Persist the ~4.5 GB imagebind_huge weights across restarts (ImageBind
+      # writes them to ./.checkpoints relative to the app's workdir /app).
+      - imagebind-cache:/app/.checkpoints
+    # Loading imagebind_huge peaks well above its 4.5 GB on-disk size. Give Docker
+    # Desktop enough RAM (Settings → Resources ≥ 12 GB) or the loader is OOM-killed
+    # (exit 137). The stub backend needs almost none.
+    mem_limit: 12g
     healthcheck:
+      # /health answers 200 as soon as the server is up (model warms up in the
+      # background), so the stack does not block on the first weight download.
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/health')"]
       interval: 10s
       timeout: 3s
       retries: 5
-      start_period: 5s
+      start_period: 10s
     restart: unless-stopped
+
+volumes:
+  imagebind-cache:
