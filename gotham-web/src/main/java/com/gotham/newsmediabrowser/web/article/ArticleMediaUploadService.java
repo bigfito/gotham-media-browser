@@ -1,6 +1,7 @@
 package com.gotham.newsmediabrowser.web.article;
 
 import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
+import com.gotham.newsmediabrowser.common.imagebind.ImageBindClient;
 import com.gotham.newsmediabrowser.common.media.GcsStorageService;
 import com.gotham.newsmediabrowser.common.media.MediaType;
 import java.awt.image.BufferedImage;
@@ -28,9 +29,11 @@ public class ArticleMediaUploadService {
     private static final Logger log = LoggerFactory.getLogger(ArticleMediaUploadService.class);
 
     private final GcsStorageService storageService;
+    private final ImageBindClient imageBindClient;
 
-    public ArticleMediaUploadService(GcsStorageService storageService) {
+    public ArticleMediaUploadService(GcsStorageService storageService, ImageBindClient imageBindClient) {
         this.storageService = storageService;
+        this.imageBindClient = imageBindClient;
     }
 
     /**
@@ -89,10 +92,30 @@ public class ArticleMediaUploadService {
             }
         }
 
+        List<Float> assetVector = embedAsset(type, data, originalFilename, contentType);
+
         return new ArticleMultimedia(
                 UUID.randomUUID().toString(), type, storageUri, contentType, position,
                 null, null, null, null, null, originalFilename, (long) data.length, null,
-                width, height, null, null, null, null, null, null);
+                width, height, null, null, null, null, null, null, assetVector);
+    }
+
+    /**
+     * Embeds the asset with ImageBind, or returns {@code null} (logged) if the embedder is
+     * unavailable — the media is still stored, just without its {@code asset_vector}.
+     */
+    private List<Float> embedAsset(MediaType type, byte[] data, String filename, String contentType) {
+        try {
+            float[] vector = imageBindClient.embedMedia(type, data, filename, contentType);
+            List<Float> list = new ArrayList<>(vector.length);
+            for (float value : vector) {
+                list.add(value);
+            }
+            return list;
+        } catch (RuntimeException e) {
+            log.warn("Skipping asset_vector for {} — ImageBind unavailable: {}", filename, e.toString());
+            return null;
+        }
     }
 
     private byte[] readBytes(MultipartFile file) {

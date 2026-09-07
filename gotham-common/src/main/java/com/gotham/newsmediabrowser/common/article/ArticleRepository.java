@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.gotham.newsmediabrowser.common.error.DependencyException;
+import com.gotham.newsmediabrowser.common.imagebind.ImageBindClient;
 import com.gotham.newsmediabrowser.common.index.IndexDefinition;
 import java.io.IOException;
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -25,9 +27,12 @@ import org.springframework.stereotype.Repository;
  * <p>On every write the denormalized projection fields ({@code journalist_names} /
  * {@code journalist_bios}) are recomputed from the structured bylines via {@link ArticleProjections},
  * and the nested {@code journalists[]} snapshots are rebuilt — so the document never drifts from its
- * structured data. Multimedia and vectors are added in P5/P6; this repository covers text, metadata
- * and bylines. Writes refresh immediately for a consistent list view at this prototype's volume; any
- * Elasticsearch failure surfaces as a {@link DependencyException} (HTTP 503).
+ * structured data. On write the {@code article_embedding} is computed from the article's text via
+ * {@link ImageBindClient} (P6-T03); per-asset {@code asset_vector}s are computed upstream at upload
+ * and carried on the nested multimedia. If the embedder is unavailable the write still succeeds
+ * without the article vector (logged at WARN), so Elasticsearch stays the only hard CRUD dependency.
+ * Writes refresh immediately for a consistent list view at this prototype's volume; any Elasticsearch
+ * failure surfaces as a {@link DependencyException} (HTTP 503).
  */
 @Repository
 public class ArticleRepository {
@@ -37,11 +42,15 @@ public class ArticleRepository {
     private static final String SERVICE = "Elasticsearch";
     /** Page size used when sweeping every article that nests a journalist (cascade-strip). */
     private static final int SWEEP_PAGE_SIZE = 500;
+    /** Heavy vector fields excluded from list results (only needed for search + edit round-trip). */
+    private static final List<String> VECTOR_FIELDS = List.of("article_embedding", "multimedia.asset_vector");
 
     private final ElasticsearchClient client;
+    private final ImageBindClient imageBindClient;
 
-    public ArticleRepository(ElasticsearchClient client) {
+    public ArticleRepository(ElasticsearchClient client, ImageBindClient imageBindClient) {
         this.client = client;
+        this.imageBindClient = imageBindClient;
     }
 
     /** Creates a new article, stamping creation/update time. Elasticsearch generates the id. */
@@ -63,7 +72,10 @@ public class ArticleRepository {
     /** Finds an article by id, or empty if there is no such document. */
     public Optional<Article> findById(String id) {
         try {
-            var response = client.get(request -> request.index(INDEX).id(id), Map.class);
+            // includes("*") re-includes the dense_vectors that ES 9 serverless excludes from _source
+            // by default, so an edit re-save preserves each asset_vector instead of wiping it.
+            var response = client.get(request -> request.index(INDEX).id(id)
+                    .sourceIncludes("*"), Map.class);
             if (!response.found() || response.source() == null) {
                 return Optional.empty();
             }
@@ -126,6 +138,7 @@ public class ArticleRepository {
                     .query(query)
                     .from(from)
                     .size(size)
+                    .source(src -> src.filter(f -> f.excludes(VECTOR_FIELDS)))
                     .trackTotalHits(track -> track.enabled(true))
                     .sort(sort -> sort.field(field -> field.field("created_at").order(SortOrder.Desc))),
                     Map.class);
@@ -216,7 +229,52 @@ public class ArticleRepository {
         document.put("multimedia", ArticleProjections.orderedByPosition(article.multimedia()).stream()
                 .map(this::toNestedMultimedia)
                 .toList());
+
+        // Article-level embedding, recomputed on every write from the current text (P6-T03).
+        List<Float> articleEmbedding = embedArticleText(article);
+        if (articleEmbedding != null) {
+            document.put("article_embedding", articleEmbedding);
+        }
         return document;
+    }
+
+    /**
+     * Embeds the article's text with ImageBind, or returns {@code null} (logged) if the embedder is
+     * unavailable — the article still saves, just without its semantic vector.
+     */
+    private List<Float> embedArticleText(Article article) {
+        String text = buildEmbeddingText(article);
+        if (text.isBlank()) {
+            return null;
+        }
+        try {
+            return toFloatList(imageBindClient.embedText(text));
+        } catch (RuntimeException e) {
+            log.warn("Skipping article_embedding — ImageBind unavailable: {}", e.toString());
+            return null;
+        }
+    }
+
+    /** Composes the text that represents the article for semantic search. */
+    private String buildEmbeddingText(Article article) {
+        ArticleMetadata metadata = article.metadata() != null ? article.metadata() : ArticleMetadata.empty();
+        return Stream.of(
+                        article.title(), article.subtitle(), article.summary(), article.body(),
+                        metadata.section(), String.join(" ", metadata.tags()))
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::strip)
+                .collect(java.util.stream.Collectors.joining("\n"));
+    }
+
+    private List<Float> toFloatList(float[] vector) {
+        if (vector == null) {
+            return null;
+        }
+        List<Float> list = new ArrayList<>(vector.length);
+        for (float value : vector) {
+            list.add(value);
+        }
+        return list;
     }
 
     private Map<String, Object> toNestedMultimedia(ArticleMultimedia media) {
@@ -242,6 +300,9 @@ public class ArticleRepository {
         nested.put("frame_rate", media.frameRate());
         nested.put("sample_rate_hz", media.sampleRateHz());
         nested.put("channels", media.channels());
+        if (media.assetVector() != null && !media.assetVector().isEmpty()) {
+            nested.put("asset_vector", media.assetVector());
+        }
         return nested;
     }
 
@@ -319,7 +380,8 @@ public class ArticleRepository {
                 asInteger(nested.get("bitrate_kbps")),
                 asDouble(nested.get("frame_rate")),
                 asInteger(nested.get("sample_rate_hz")),
-                asInteger(nested.get("channels")));
+                asInteger(nested.get("channels")),
+                asFloatList(nested.get("asset_vector")));
     }
 
     private ArticleJournalist fromNestedJournalist(Map<String, Object> nested) {
@@ -364,6 +426,18 @@ public class ArticleRepository {
     @SuppressWarnings("unchecked")
     private Map<String, Object> asMap(Object value) {
         return (Map<String, Object>) value;
+    }
+
+    /** Reads a JSON number array back into a {@code List<Float>} (for {@code asset_vector}). */
+    private List<Float> asFloatList(Object value) {
+        if (!(value instanceof List<?> list) || list.isEmpty()) {
+            return null;
+        }
+        List<Float> floats = new ArrayList<>(list.size());
+        for (Object element : list) {
+            floats.add(element instanceof Number number ? number.floatValue() : 0f);
+        }
+        return floats;
     }
 
     @SuppressWarnings("unchecked")

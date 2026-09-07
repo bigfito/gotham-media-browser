@@ -41,7 +41,8 @@ class ArticleRepositoryIT {
 
     @Test
     void createReadUpdateFilterNestedQueryDelete() {
-        ArticleRepository repository = new ArticleRepository(client);
+        ArticleRepository repository = new ArticleRepository(client,
+                new com.gotham.newsmediabrowser.common.imagebind.StubImageBindClient());
         String marker = "IT-" + System.nanoTime();
         String journalistId = "j_" + marker;
 

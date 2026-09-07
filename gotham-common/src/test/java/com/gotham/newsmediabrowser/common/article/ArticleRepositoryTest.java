@@ -16,7 +16,8 @@ import org.mockito.Mockito;
 class ArticleRepositoryTest {
 
     private final ArticleRepository repository = new ArticleRepository(
-            Mockito.mock(co.elastic.clients.elasticsearch.ElasticsearchClient.class));
+            Mockito.mock(co.elastic.clients.elasticsearch.ElasticsearchClient.class),
+            new com.gotham.newsmediabrowser.common.imagebind.StubImageBindClient());
 
     private final Journalist lois =
             new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace reporter", null, null);
@@ -86,11 +87,11 @@ class ArticleRepositoryTest {
         ArticleMultimedia image = new ArticleMultimedia("m2", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
                 "https://storage.googleapis.com/b/media/image/x.png", "image/png", 1,
                 "A caption", "Credit", "Photo title", null, "Alt text", "x.png", 1234L, null,
-                800, 600, null, null, null, null, null, null);
+                800, 600, null, null, null, null, null, null, List.of(0.1f, 0.2f, 0.3f));
         ArticleMultimedia audio = new ArticleMultimedia("m1", com.gotham.newsmediabrowser.common.media.MediaType.AUDIO,
                 "https://storage.googleapis.com/b/media/audio/y.mp3", "audio/mpeg", 0,
                 null, null, "Clip", "Desc", null, "y.mp3", 5678L, null,
-                null, null, 30000L, "mp3", 128, null, 44100, 2);
+                null, null, 30000L, "mp3", 128, null, 44100, 2, null);
         Article article = new Article("art1", "T", null, null, null, "t", ArticleStatus.PUBLISHED, "en",
                 null, null, null, ArticleMetadata.empty(), List.of(), List.of(image, audio));
 
@@ -108,12 +109,27 @@ class ArticleRepositoryTest {
                 .containsEntry("position", 0)
                 .containsEntry("duration_ms", 30000L);
 
+        // The asset_vector is written for the element that has one and omitted for the one that doesn't.
+        assertThat(nested.get(1)).containsKey("asset_vector");
+        assertThat(nested.get(0)).doesNotContainKey("asset_vector");
+
         Article roundTripped = repository.fromSource("art1", document);
         assertThat(roundTripped.multimedia()).extracting(ArticleMultimedia::multimediaElementId)
                 .containsExactly("m1", "m2");
         assertThat(roundTripped.multimedia().get(1).width()).isEqualTo(800);
         assertThat(roundTripped.multimedia().get(0).mediaType())
                 .isEqualTo(com.gotham.newsmediabrowser.common.media.MediaType.AUDIO);
+        // asset_vector round-trips so it survives an edit save.
+        assertThat(roundTripped.multimedia().get(1).assetVector()).containsExactly(0.1f, 0.2f, 0.3f);
+        assertThat(roundTripped.multimedia().get(0).assetVector()).isNull();
+    }
+
+    @Test
+    void toDocumentComputesA1024DimArticleEmbedding() {
+        @SuppressWarnings("unchecked")
+        List<Float> embedding = (List<Float>) repository.toDocument(sampleArticle()).get("article_embedding");
+
+        assertThat(embedding).hasSize(1024);
     }
 
     @Test
