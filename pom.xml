@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Spring Boot BOM parent: it fixes managed dependency versions (Spring, Jackson,
+      Elasticsearch client 9.4.5, JUnit, ...) so children declare deps WITHOUT <version>.
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.gotham</groupId>
+    <artifactId>gotham-news-media-browser</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Gotham News &amp; Media Browser</name>
+    <description>Single-brand news &amp; multimedia browser prototype (Elastic Cloud Serverless + public GCS).</description>
+
+    <properties>
+        <!-- Build baseline: JDK 25 LTS (matches Spring Boot 4.1.1). Set JAVA_HOME to the Java 25 home. -->
+        <java.version>25</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!-- P0 modules. gotham-datagen (Java console) is added in P10, not here. -->
+    <modules>
+        <module>gotham-common</module>
+        <module>gotham-web</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Share the internal module version across the reactor so children omit it. -->
+            <dependency>
+                <groupId>com.gotham</groupId>
+                <artifactId>gotham-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!--
+                  Failsafe is WIRED here but not bound to any module yet: integration
+                  suites (it-es / it-imagebind / it-datagen-helpers) arrive in P9/P10.
+                  Surefire (unit tests) is already managed by the Spring Boot parent,
+                  so `mvn test` runs unit tests only.
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

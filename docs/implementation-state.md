@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T13:00:00Z  
+**Last updated:** 2026-09-07T13:10:00Z  
 **Active phase:** P0  
-**Prototype status:** `not_started`  
-**Next task:** `P0-T01` (or `P0-T03` — both have no deps)
+**Prototype status:** `in_progress`  
+**Next task:** `P0-T02` (Docker Compose skeleton — dep P0-T01 done) or `P0-T03` (no deps)
 
 ---
 
@@ -54,7 +54,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 
 | Phase | Title | Tasks done | Status |
 |-------|-------|------------|--------|
-| P0 | Scaffold & agent harness | 0/5 | pending |
+| P0 | Scaffold & agent harness | 1/5 | in_progress |
 | P1 | Config, health, ES client, error pages | 0/4 | pending |
 | P2 | Index bootstrap | 0/2 | pending |
 | P3 | `/journalist` — list + create + edit form | 0/3 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 0 / **42** tasks done
+**Totals:** 1 / **42** tasks done
 
 ---
 
@@ -76,7 +76,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 
 | ID | Phase | Title | Status | Depends on | Claimed by | Started | Completed | Notes |
 |----|-------|-------|--------|------------|------------|---------|-----------|-------|
-| P0-T01 | P0 | Parent POM + gotham-common + gotham-web skeleton | pending | — | | | | |
+| P0-T01 | P0 | Parent POM + gotham-common + gotham-web skeleton | done | — | JavaMentor | 2026-09-07T13:05:00Z | 2026-09-07T13:10:00Z | Parent (Boot 4.1.1, Java 25) + gotham-common + gotham-web. `mvn test` green (2 unit tests, JDK 25); `mvn -DskipTests package` builds boot jar. |
 | P0-T02 | P0 | Docker Compose skeleton | pending | P0-T01 | | | | |
 | P0-T03 | P0 | Agent entrypoints | pending | — | | | | |
 | P0-T04 | P0 | Shared Thymeleaf layout from mockups | pending | P0-T01 | | | | |
