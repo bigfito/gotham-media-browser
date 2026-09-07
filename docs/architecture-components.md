@@ -19,8 +19,8 @@
 | Embeddings | Meta ImageBind (OSS), Docker helper, sync HTTP, **1024-d** |
 | Modalities | Image, audio, video (+ text queries via ImageBind text) |
 | App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
-| ES credentials | Endpoint + API key **hardcoded** in `application.properties` |
-| GCS credentials | Bucket/project hardcoded in properties; SA JSON **secret file** under `secrets/` |
+| ES credentials | Endpoint + API key: **placeholders** in committed `application.properties`; real values in untracked `application-local.properties` (or env) |
+| GCS credentials | Bucket/project: placeholders in properties (real values in untracked override); SA JSON **secret file** `secrets/gcp-sa.json` |
 | Landing | `/` — two panels: articles · multimedia |
 | Journalist CRUD | `/journalist` — full CRUD on `gotham-journalists` |
 | Journalist delete | **Cascade-strip** nested bylines + reindex articles, then delete master |
@@ -169,7 +169,7 @@ external:
 
 ## Follow-ups for operators
 
-1. Paste real Elastic Cloud endpoint + API key into `gotham-web` `application.properties`  
-2. Paste GCS project/bucket into `application.properties`; place SA JSON at `secrets/gcs-sa.json` (never commit)  
+1. Put real Elastic Cloud endpoint + API key into `gotham-web` `application-local.properties` (untracked) — not the committed `application.properties`  
+2. Put real GCS project/bucket into `application-local.properties` (untracked); place SA JSON at `secrets/gcp-sa.json` (never commit)  
 3. Confirm CPU ImageBind on the Mac for in-repo `imagebind-service`  
 4. For P10: `docker compose --profile datagen up -d`; raise Docker Desktop memory; expect long CPU wall-clock for 125×5 s videos

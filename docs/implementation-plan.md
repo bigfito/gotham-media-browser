@@ -24,7 +24,8 @@
 12. **Never** leave users on Whitelabel/stack-trace pages — unexpected failures must use the global error page with a clear reason ([`ui-design-errors.md`](./ui-design-errors.md)).  
 13. **`gotham-datagen` is a Java console app** (`main`) — never Spring Boot.  
 14. **Datagen helpers** (Ollama, ComfyUI, Kokoro) run **only** as Docker Compose profile `datagen` containers.  
-15. **Tests are mandatory:** every coding task adds/updates **unit tests** (backend + frontend/MockMvc). Do not mark `done` until `mvn test` passes for affected modules. Integration suites for ES / ImageBind / helpers are required per [`testing-strategy.md`](./testing-strategy.md) (tasks **P9-T03**, **P10-T06**).
+15. **Tests are mandatory:** every coding task adds/updates **unit tests** (backend + frontend/MockMvc). Do not mark `done` until `mvn test` passes for affected modules. Integration suites for ES / ImageBind / helpers are required per [`testing-strategy.md`](./testing-strategy.md) (tasks **P9-T03**, **P10-T06**).  
+16. **Compact context at each phase boundary (token-saving gate):** after the **last** task of a phase is marked `done` (phase count reaches N/N), **pause before starting the next phase and compact the context window** so the next phase starts lean. In Claude Code run **`/compact`**; on other harnesses use the equivalent summarize/compaction step, or start a fresh session that re-reads [`implementation-state.md`](./implementation-state.md). Never compact mid-task (only at a phase boundary, with the state file already updated and committed).
 
 ### Stack lock (do not change without human approval)
 
@@ -76,21 +77,25 @@ gotham-news-media-browser/
 
 ### Credentials & secrets (locked)
 
+**Secrets policy (decided 2026-09-07):** `application.properties` is **committed with safe placeholders only**. Real values are supplied by an **untracked override** — `application-local.properties` (gitignored, imported via `spring.config.import=optional:...`) or environment variables (Spring relaxed binding). Secrets are **never** committed and **never** logged/echoed in health details.
+
 | Secret / param | How it is provided |
 |----------------|-------------------|
-| Elasticsearch endpoint | **Hardcoded** in `gotham-web/.../application.properties` as a global property |
-| Elasticsearch API key | **Hardcoded** in the same `application.properties` |
-| GCS bucket / project ids | **Hardcoded** in `application.properties` |
-| GCS service account JSON key | **Secret file** under `secrets/` (e.g. `secrets/gcs-sa.json`); path referenced from properties; **never commit** the real JSON — commit `secrets/gcs-sa.json.example` + `.gitignore` |
+| Elasticsearch endpoint | Placeholder in committed `application.properties`; **real value** in untracked `application-local.properties` (or env `GOTHAM_ELASTICSEARCH_ENDPOINT`) |
+| Elasticsearch API key | Placeholder in committed `application.properties`; **real value** in untracked `application-local.properties` (or env `GOTHAM_ELASTICSEARCH_API_KEY`) |
+| GCS bucket / project ids | Placeholder in committed `application.properties`; **real value** in untracked override (or env) |
+| GCS service account JSON key | **Secret file** under `secrets/` (e.g. `secrets/gcp-sa.json`); path referenced from properties; **never commit** the real JSON — commit `secrets/gcp-sa.json.example` + `.gitignore` |
 
-Example property names (agents must use these unless renaming everywhere):
+Example committed `application.properties` (placeholders + optional local override import):
 
 ```properties
+# Committed: placeholders only. Real values go in application-local.properties (gitignored) or env.
+spring.config.import=optional:file:./application-local.properties
 gotham.elasticsearch.endpoint=https://YOUR-ES-ENDPOINT
 gotham.elasticsearch.api-key=YOUR_API_KEY
 gotham.gcs.project-id=YOUR_GCP_PROJECT
 gotham.gcs.bucket=YOUR_PUBLIC_BUCKET
-gotham.gcs.credentials-file=secrets/gcs-sa.json
+gotham.gcs.credentials-file=secrets/gcp-sa.json
 gotham.imagebind.base-url=http://imagebind-service:8081
 ```
 
@@ -102,8 +107,8 @@ gotham.imagebind.base-url=http://imagebind-service:8081
 P0  Scaffold & agent harness (multi-module Maven)
 P1  Config, health, ES client, **global fault-tolerant error pages**
 P2  Index bootstrap (mappings → Elastic)
-P3  /journalist CRUD (cascade-strip on delete)
-P4  /article CRUD (story + metadata + bylines, no media yet)
+P3  /journalist — list + create + edit form (gotham-journalists master writes)
+P4  /article CRUD + journalist cascade-strip delete (needs article repo P4-T02)
 P5  GCS + multimedia nested CRUD + HTML5 playback
 P6  imagebind-service (in-repo) + write-time embeddings
 P7  Public search: landing + /results full-text
@@ -125,8 +130,8 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 | P0 | P0-T01 … P0-T05 (**5**) |
 | P1 | P1-T01 … P1-T04 (**4**) |
 | P2 | P2-T01 … P2-T02 (**2**) |
-| P3 | P3-T01 … P3-T04 (**4**) |
-| P4 | P4-T01 … P4-T04 (**4**) |
+| P3 | P3-T01 … P3-T03 (**3**) |
+| P4 | P4-T01 … P4-T05 (**5**) |
 | P5 | P5-T01 … P5-T03 (**3**) |
 | P6 | P6-T01 … P6-T03 (**3**) |
 | P7 | P7-T01 … P7-T04 (**4**) |
@@ -176,26 +181,26 @@ See [`testing-strategy.md`](./testing-strategy.md).
 - **Depends on:** P0-T01
 
 ### P0-T05 — Secrets scaffolding
-- **Create:** `secrets/README.md`, `secrets/gcs-sa.json.example`, ensure real `secrets/gcs-sa.json` is gitignored.  
-- **Do:** Document that operators place the real SA JSON key as a secret file locally / in CI secret store.  
-- **Verification:** Example file committed; `git check-ignore -v secrets/gcs-sa.json` matches ignore rule (create empty ignored file in test or assert pattern).  
+- **Create:** `secrets/README.md`, `secrets/gcp-sa.json.example`, and `gotham-web/.../application-local.properties.example` (documenting ES/GCS real-value keys); ensure real `secrets/gcp-sa.json` and `application-local.properties` are gitignored.  
+- **Do:** Document that operators place the real SA JSON key as a secret file locally / in CI secret store, and real ES/GCS values in `application-local.properties` (or env) — never in the committed `application.properties`.  
+- **Verification:** Example files committed; `git check-ignore -v secrets/gcp-sa.json` and `git check-ignore -v gotham-web/src/main/resources/application-local.properties` match ignore rules.  
 - **Depends on:** P0-T01
 
 ---
 
 ## Phase 1 — Config, health, ES client, global fault-tolerant error pages
 
-**Goal:** Hardcoded properties drive ES client; header legends get health; branded error pages cover all endpoints.
+**Goal:** External config (placeholders + untracked override) drives the ES client; header legends get health; branded error pages cover all endpoints.
 
 ### P1-T01 — `@ConfigurationProperties` bound to `application.properties`
 - **Create:** In `gotham-common`: properties for elasticsearch endpoint + api-key, gcs.*, imagebind.base-url, media limits.  
-- **Do:** Values come from **hardcoded** `gotham-web` `application.properties` (placeholders until human pastes real values). GCS credentials loaded from **secret file path**.  
+- **Do:** Committed `application.properties` holds **placeholders**; real ES/GCS values come from untracked `application-local.properties` (or env). GCS credentials loaded from the **secret file path**. Never log secret values (mask in any health/diagnostic output).  
 - **Verification:** Unit test in `gotham-common` or `gotham-web` binds a test `application.properties`.  
 - **Depends on:** P0-T01, P0-T05
 
 ### P1-T02 — Elasticsearch Java client bean
 - **Create:** Client in `gotham-common` (or web config) using endpoint + API key from properties.  
-- **Verification:** With real properties filled, ping/info succeeds; with placeholders, app starts but health reports Unavailable.  
+- **Verification:** With real values filled, a **Serverless-supported** call succeeds (cluster `info` / index `exists` — **not** `ping()`/cluster-health); with placeholders, app starts but health reports Unavailable. Never log the API key.  
 - **Depends on:** P1-T01
 
 ### P1-T03 — Health endpoints for chrome
@@ -232,9 +237,9 @@ See [`testing-strategy.md`](./testing-strategy.md).
 
 ---
 
-## Phase 3 — `/journalist` CRUD
+## Phase 3 — `/journalist` (master writes only)
 
-**Goal:** Full CRUD on `gotham-journalists`. **Delete = cascade-strip.**
+**Goal:** `gotham-journalists` master data — domain/repo, list, create. Journalist **edit + cascade-strip delete** are relocated to **P4-T03** because they reindex article documents and require the article repository (**P4-T02**); this keeps every dependency forward-only (ID order = a valid execution order).
 
 ### P3-T01 — Journalist domain + repository
 - **Create:** In `gotham-common`: model + ES repository (index/get/update/delete/search `from`/`size`).  
@@ -252,15 +257,11 @@ See [`testing-strategy.md`](./testing-strategy.md).
 - **Verification:** Creates doc; `_id` on edit.  
 - **Depends on:** P3-T02
 
-### P3-T04 — Journalist edit + cascade-strip delete
-- **Do:** `GET/POST /journalist/{id}` for updates.  
-- **Do:** `POST /journalist/{id}/delete` **cascade-strips**: find articles with nested `journalists.journalist_id` = id → remove nested element → rebuild journalist projections → reindex articles → delete journalist master doc.  
-- **Verification:** After delete, journalist is gone; previously linked articles no longer nest that id; failures use branded error page.  
-- **Depends on:** P3-T03, P4-T02  
-
 ---
 
-## Phase 4 — `/article` CRUD (no media binaries yet)
+## Phase 4 — `/article` CRUD + journalist edit/cascade-strip delete (no media binaries yet)
+
+**Note:** Journalist **edit + cascade-strip delete** live here (**P4-T03**) because they reindex article documents and depend on the article repository (**P4-T02**). Placing them after P4-T02 keeps every dependency forward-only, so the "lowest-ID pending task whose deps are done" rule can be followed without back-tracking.
 
 ### P4-T01 — Article domain + projection helpers
 - **Create:** In `gotham-common`; enums for status + `contribution_role`; projection builders.  
@@ -272,15 +273,21 @@ See [`testing-strategy.md`](./testing-strategy.md).
 - **Verification:** Index/get/update/delete + nested journalist query.  
 - **Depends on:** P4-T01, P2-T02
 
-### P4-T03 — Article list + create/edit (text + metadata + bylines)
+### P4-T03 — Journalist edit + cascade-strip delete
+- **Do:** `GET/POST /journalist/{id}` for updates; on update, reindex nested byline snapshots in every article nesting that `journalist_id`.  
+- **Do:** `POST /journalist/{id}/delete` **cascade-strips**: find articles with nested `journalists.journalist_id` = id (via the P4-T02 nested query) → remove nested element → rebuild journalist projections → reindex articles → delete journalist master doc.  
+- **Verification:** Update persists and refreshes article snapshots; after delete the journalist is gone and previously linked articles no longer nest that id; failures use the branded error page.  
+- **Depends on:** P4-T02, P3-T03
+
+### P4-T04 — Article list + create/edit (text + metadata + bylines)
 - **Do:** Port forms without media upload (or disabled). Nest journalist snapshots on save. Match `ui-mockups/article*.html` (media fields deferred to P5).  
 - **Verification:** Create/update with ≥1 journalist; validation errors stay in-form.  
 - **Depends on:** P4-T02, P3-T03, P0-T04, P1-T04
 
-### P4-T04 — Article delete
+### P4-T05 — Article delete
 - **Do:** `POST /article/{id}/delete` removes ES doc (GCS cleanup in P5-T03).  
 - **Verification:** Doc gone; unknown id → branded 404 error page.  
-- **Depends on:** P4-T03
+- **Depends on:** P4-T04
 
 ---
 
@@ -295,7 +302,7 @@ See [`testing-strategy.md`](./testing-strategy.md).
 ### P5-T02 — Multimedia on article create/update
 - **Do:** App-assigned `multimedia_element_id`; nest metadata; projections; HTML5 on edit (`<img>` / `<audio controls>` / `<video controls>`). Support multiple files per type (needed later by datagen 5+5+5).  
 - **Verification:** Image/audio/video fixtures play in edit UI; vectors deferred to P6.  
-- **Depends on:** P5-T01, P4-T03
+- **Depends on:** P5-T01, P4-T04
 
 ### P5-T03 — Remove media + article delete cleans GCS
 - **Do:** Remove nested media element + delete GCS object; on article delete, delete all related GCS objects then ES doc.  
@@ -334,7 +341,7 @@ See [`testing-strategy.md`](./testing-strategy.md).
 ### P7-T02 — Article FTS service
 - **Do:** Implement cookbook §4 ([`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)): `multi_match`, field remap, filters, journalist nested filter, `from`/`size`, `track_total_hits`.  
 - **Verification:** Sample queries return expected hits; pagination `size` ∈ {25,50,100}.  
-- **Depends on:** P4-T03, P2-T02
+- **Depends on:** P4-T04, P2-T02
 
 ### P7-T03 — Multimedia FTS + inner_hits
 - **Do:** Implement cookbook §7: nested BM25 + `inner_hits` for asset cards.  
@@ -392,7 +399,7 @@ See [`testing-strategy.md`](./testing-strategy.md).
 - **Do:** Cover index bootstrap, journalist/article CRUD + cascade-strip, FTS smoke, ImageBind health + 1024-d embed, write-path embeddings when service up; MockMvc/IT coverage for critical `/journalist`, `/article`, `/results` flows against real ES (or documented assumption skip).  
 - **Don’t:** Require datagen helpers here (that is P10-T06).  
 - **Verification:** `mvn -Pit-es failsafe:integration-test failsafe:verify` and `mvn -Pit-imagebind …` pass on the lab with deps up; when deps absent, tests are skipped via assumptions (not red failures). Document operator commands in runbook.  
-- **Depends on:** P9-T02, P6-T03, P5-T02, P8-T03, P3-T04, P4-T04
+- **Depends on:** P9-T02, P6-T03, P5-T02, P8-T03, P4-T03, P4-T05
 
 ### P9-T04 — Hardening sync pass
 - **Do:** Align README/AGENTS/mockups with shipped behavior; confirm error pages still cover all routes; confirm testing docs match shipped Surefire/Failsafe layout.  
@@ -457,7 +464,7 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - **Do:** Unit tests for orchestration with mocked helpers + mocked web API (skip flags, abort-if-Ollama-down).  
 - **Don’t:** Write directly to Elasticsearch or GCS; don’t run inside the `gotham-web` process.  
 - **Verification:** `mvn -pl gotham-datagen test` green; against running `gotham-web` + **Docker** helpers (manual or P10-T06): creates docs; media counts match defaults; skip flags honored.  
-- **Depends on:** P10-T03, P3-T03, P4-T03, P5-T02, P6-T03
+- **Depends on:** P10-T03, P3-T03, P4-T04, P5-T02, P6-T03
 
 ### P10-T05 — Datagen runbook + verification report
 - **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video, **IT profile** `it-datagen-helpers`.  
@@ -492,8 +499,8 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 
 | # | Decision |
 |---|----------|
-| Q1 | ES **endpoint + API key hardcoded** in backend `application.properties` |
-| Q2 | GCS ids/bucket hardcoded in `application.properties`; **SA JSON key file treated as secret** (`secrets/`) |
+| Q1 | ES **endpoint + API key**: placeholders in committed `application.properties`; **real values in untracked `application-local.properties` (or env)** — revised 2026-09-07 from the original "hardcoded" to avoid committing secrets |
+| Q2 | GCS ids/bucket: placeholders in `application.properties` (real values in untracked override); **SA JSON key file treated as secret** (`secrets/gcp-sa.json`) |
 | Q3 | ImageBind **built in-repo** |
 | Q4 | Layout: Maven modules + `imagebind-service/` in same package — **yes** |
 | Q5 | Journalist delete: **cascade-strip** (+ reindex affected articles) |

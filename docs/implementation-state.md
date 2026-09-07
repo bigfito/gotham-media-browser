@@ -5,7 +5,7 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T04:40:00Z  
+**Last updated:** 2026-09-07T13:00:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`  
 **Next task:** `P0-T01` (or `P0-T03` — both have no deps)
@@ -19,7 +19,8 @@
 3. On blocker → `blocked` + `notes` with reason.  
 4. Never mark `done` without meeting the plan’s Verification section **and** required unit tests (`mvn test`).  
 5. Bump **Last updated** on every change; refresh phase counts in Progress summary.  
-6. **One git commit per task** (message includes task id).
+6. **One git commit per task** (message includes task id).  
+7. **At each phase boundary, compact context to save tokens:** when a phase reaches N/N `done` (and its last task is committed), **pause and compact the context window before the next phase** — Claude Code `/compact`, or the equivalent summarize/fresh-session step on other harnesses. Only at phase boundaries, never mid-task.
 
 Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 
@@ -29,9 +30,10 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 
 | Key | Value |
 |-----|--------|
-| ES endpoint + API key | Hardcoded in `gotham-web` `application.properties` |
-| GCS bucket/project | Hardcoded in `application.properties` |
-| GCS SA JSON | Secret file under `secrets/` (gitignored); path in properties |
+| ES endpoint + API key | Placeholders in committed `application.properties`; real values in untracked `application-local.properties` (or env) — never committed |
+| GCS bucket/project | Placeholders in `application.properties`; real values in untracked override |
+| GCS SA JSON | Secret file `secrets/gcp-sa.json` (gitignored); path in properties |
+| Build JDK | **JDK 25 LTS** (`JAVA_HOME` set to the Java 25 home; Maven 3.9.x) |
 | ImageBind | Built **in-repo** under `imagebind-service/` |
 | Maven | **Multi-module**: parent + `gotham-common` + `gotham-web` (+ **`gotham-datagen` Java console module in P10 — not Spring Boot**) |
 | Journalist delete | **Cascade-strip** + reindex articles |
@@ -44,6 +46,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | Datagen volumes | **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) each |
 | Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA GPU** (CPU inference inside Docker Desktop) |
 | Extra agent formats | None (Markdown plan + state only) |
+| Context compaction | **Pause and compact context at every phase boundary** (Claude Code `/compact`, or equivalent) to save tokens; never mid-task |
 
 ---
 
@@ -54,8 +57,8 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P0 | Scaffold & agent harness | 0/5 | pending |
 | P1 | Config, health, ES client, error pages | 0/4 | pending |
 | P2 | Index bootstrap | 0/2 | pending |
-| P3 | `/journalist` CRUD | 0/4 | pending |
-| P4 | `/article` CRUD (no media) | 0/4 | pending |
+| P3 | `/journalist` — list + create + edit form | 0/3 | pending |
+| P4 | `/article` CRUD + journalist cascade-strip delete | 0/5 | pending |
 | P5 | GCS + multimedia | 0/3 | pending |
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
@@ -87,19 +90,19 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P3-T01 | P3 | Journalist domain + repository | pending | P2-T02 | | | | |
 | P3-T02 | P3 | Journalist list UI (GET /journalist) | pending | P3-T01, P0-T04, P1-T04 | | | | |
 | P3-T03 | P3 | Journalist create | pending | P3-T02 | | | | |
-| P3-T04 | P3 | Journalist edit + cascade-strip delete | pending | P3-T03, P4-T02 | | | | |
 | P4-T01 | P4 | Article domain + projection helpers | pending | P3-T01 | | | | |
 | P4-T02 | P4 | Article repository | pending | P4-T01, P2-T02 | | | | |
-| P4-T03 | P4 | Article list + create/edit (text + metadata + bylines) | pending | P4-T02, P3-T03, P0-T04, P1-T04 | | | | |
-| P4-T04 | P4 | Article delete | pending | P4-T03 | | | | |
+| P4-T03 | P4 | Journalist edit + cascade-strip delete | pending | P4-T02, P3-T03 | | | | |
+| P4-T04 | P4 | Article list + create/edit (text + metadata + bylines) | pending | P4-T02, P3-T03, P0-T04, P1-T04 | | | | |
+| P4-T05 | P4 | Article delete | pending | P4-T04 | | | | |
 | P5-T01 | P5 | GCS storage service | pending | P1-T01, P0-T05 | | | | |
-| P5-T02 | P5 | Multimedia on article create/update | pending | P5-T01, P4-T03 | | | | |
+| P5-T02 | P5 | Multimedia on article create/update | pending | P5-T01, P4-T04 | | | | |
 | P5-T03 | P5 | Remove media + article delete cleans GCS | pending | P5-T02 | | | | |
 | P6-T01 | P6 | In-repo imagebind-service | pending | P0-T02 | | | | |
 | P6-T02 | P6 | Java ImageBind client + stub mode | pending | P1-T01 | | | | |
 | P6-T03 | P6 | Embed on article write | pending | P6-T02, P5-T02 | | | | |
 | P7-T01 | P7 | Landing GET / | pending | P0-T04, P1-T04 | | | | |
-| P7-T02 | P7 | Article FTS service | pending | P4-T03, P2-T02 | | | | |
+| P7-T02 | P7 | Article FTS service | pending | P4-T04, P2-T02 | | | | |
 | P7-T03 | P7 | Multimedia FTS + inner_hits | pending | P5-T02 | | | | |
 | P7-T04 | P7 | Results Thymeleaf pages | pending | P7-T01, P7-T02, P7-T03 | | | | |
 | P8-T01 | P8 | Semantic kNN | pending | P6-T03, P7-T04 | | | | |
@@ -107,12 +110,12 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P8-T03 | P8 | Multimedia vector (file) search | pending | P8-T01, P7-T01, P1-T04 | | | | |
 | P9-T01 | P9 | Static seed fixtures | pending | P6-T03, P5-T02 | | | | |
 | P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03, P9-T01 | | | | |
-| P9-T03 | P9 | Integration tests: Elasticsearch + ImageBind + web | pending | P9-T02, P6-T03, P5-T02, P8-T03, P3-T04, P4-T04 | | | | |
+| P9-T03 | P9 | Integration tests: Elasticsearch + ImageBind + web | pending | P9-T02, P6-T03, P5-T02, P8-T03, P4-T03, P4-T05 | | | | |
 | P9-T04 | P9 | Hardening sync pass | pending | P9-T03 | | | | |
 | P10-T01 | P10 | Parent POM + Java console gotham-datagen skeleton | pending | P0-T01, P9-T04 | | | | |
 | P10-T02 | P10 | Compose profile datagen (Ollama · ComfyUI · Kokoro containers) | pending | P0-T02, P10-T01 | | | | |
 | P10-T03 | P10 | Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan) | pending | P10-T02 | | | | |
-| P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | pending | P10-T03, P3-T03, P4-T03, P5-T02, P6-T03 | | | | |
+| P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | pending | P10-T03, P3-T03, P4-T04, P5-T02, P6-T03 | | | | |
 | P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |
 | P10-T06 | P10 | Integration tests: datagen helpers + orchestrator | pending | P10-T05, P10-T02, P9-T03 | | | | |
 
@@ -122,7 +125,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 
 | Date | Task | Blocker | Resolution |
 |------|------|---------|------------|
-| | | | |
+| 2026-09-07 | P3/P4 | Cross-phase back-edge: old `P3-T04` (journalist edit + cascade-strip delete) depended on `P4-T02`, so ID order was not a valid execution order. | Relocated journalist edit + cascade-strip delete into Phase 4 as `P4-T03` (after `P4-T02`). Article create/edit → `P4-T04`, article delete → `P4-T05`. All dependencies now forward-only; total stays **42** (P3 3, P4 5). |
 
 ---
 
@@ -136,7 +139,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 - Task in progress:
 - Branch:
 - application.properties filled? ES? GCS?
-- secrets/gcs-sa.json present locally?
+- secrets/gcp-sa.json present locally? application-local.properties filled?
 - mvn test green?
 - Integration profiles run? it-es / it-imagebind / it-datagen-helpers?
 - Docker Desktop memory OK for datagen profile?

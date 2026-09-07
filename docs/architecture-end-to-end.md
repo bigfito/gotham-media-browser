@@ -191,7 +191,7 @@ external:
   GCS public bucket
 ```
 
-**Credentials (locked):** Elasticsearch endpoint + API key and GCS bucket/project ids are **hardcoded** in `gotham-web` `application.properties`. The GCS service account JSON key is a **secret file** under `secrets/` (gitignored; path in properties). Do not commit real keys.
+**Credentials (locked):** committed `application.properties` carries **placeholders only**; the real Elasticsearch endpoint + API key and GCS bucket/project ids are supplied via an **untracked** `application-local.properties` (or environment variables). The GCS service account JSON key is a **secret file** under `secrets/gcp-sa.json` (gitignored; path in properties). Do not commit real keys, and never log/echo them in health details.
 
 **Lab hardware (locked):** MacBook Pro **M4 · 32 GB · no NVIDIA GPU**. Datagen helpers run as **Docker containers** (CPU inside Docker Desktop — no Metal passthrough).
 
@@ -271,7 +271,7 @@ gotham-news-media-browser/
 | Results filters wired to IA query params | ✓ |
 | Article `mode=vector` → HTTP 400 error page | ✓ |
 | Multi-module Maven (`gotham-common` + `gotham-web`; Java console `gotham-datagen` in P10) | ✓ |
-| ES/GCS props hardcoded; SA JSON secret file | ✓ |
+| ES/GCS props: placeholders committed + real values in untracked override; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
 | Synthetic data last phase P10 (Docker helpers mandatory; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5; console app not Spring Boot) | ✓ |
 | Implementation plan ↔ state (**42** tasks, P0–P10) | ✓ |

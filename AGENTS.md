@@ -23,6 +23,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 5. Run the task Verification steps (**include `mvn test`** for coding tasks)  
 6. Commit once with message including task id (e.g. "P3-T02 Journalist list UI")  
 7. Mark task done in implementation-state.md; update Last updated + phase counts  
+8. If that task was the LAST in its phase (phase count now N/N): **pause and compact the context window** before starting the next phase — in Claude Code run `/compact`; on other harnesses use their equivalent context-compaction/summarize step (or start a fresh session from implementation-state.md). Then resume at step 1.  
 ```
 
 ## Project shape (IntelliJ)
@@ -45,8 +46,9 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Pagination: `size` ∈ {25, 50, 100} → ES `from`/`size`  
 - Java 25 · Spring Boot 4.1.1 · Thymeleaf · multi-module Maven  
 - Package: `com.gotham.newsmediabrowser`  
-- ES endpoint + API key: hardcoded in `application.properties`  
+- ES endpoint + API key: **placeholders** in committed `application.properties`; real values in untracked `application-local.properties` (or env) — **never commit secrets**  
 - GCS SA JSON: **secret file** under `secrets/` (never commit real key)  
+- Build on **JDK 25** (`JAVA_HOME` → the Java 25 LTS home), matching Spring Boot 4.1.1's baseline  
 - **Fault tolerance:** every unexpected failure shows branded error page with **reason** (see `docs/ui-design-errors.md`); no Whitelabel stack dumps to users  
 - **Synthetic data:** only in **P10** via Java **console** `gotham-datagen` (not Spring Boot); load through HTTP CRUD — never bypass to ES/GCS from the generator  
 - **Testing:** unit tests for **all** backend + frontend (MockMvc); integration tests for Elasticsearch, ImageBind, and datagen helpers  

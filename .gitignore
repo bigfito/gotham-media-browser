@@ -1,0 +1,14 @@
+# Build output
+**/target/
+
+# Secrets — never commit real keys (examples are allowed)
+secrets/*.json
+!secrets/*.json.example
+
+# Local, untracked config overrides holding REAL values (ES endpoint/api-key, GCS ids).
+# application.properties (committed) only carries safe placeholders.
+**/application-local.properties
+
+# IDE
+.idea/
+*.iml

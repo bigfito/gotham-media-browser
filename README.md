@@ -33,9 +33,9 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
 ## Credentials (prototype)
 
-- Elasticsearch endpoint + API key: hardcoded in `gotham-web` `application.properties`  
-- GCS bucket/project: hardcoded in `application.properties`  
-- GCS service account JSON: **secret file** under `secrets/` (gitignored)
+- Elasticsearch endpoint + API key: **placeholders** in committed `application.properties`; real values in untracked `application-local.properties` (or env)  
+- GCS bucket/project: placeholders in `application.properties`; real values in the untracked override  
+- GCS service account JSON: **secret file** under `secrets/gcp-sa.json` (gitignored)
 
 ## Routes
 
