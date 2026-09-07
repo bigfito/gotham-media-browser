@@ -104,49 +104,49 @@
       },
       "section": {
         "type": "keyword",
+        "copy_to": [
+          "article_search_text"
+        ],
         "fields": {
           "text": {
             "type": "text",
-            "analyzer": "gotham_english",
-            "copy_to": [
-              "article_search_text"
-            ]
+            "analyzer": "gotham_english"
           }
         }
       },
       "tags": {
         "type": "keyword",
+        "copy_to": [
+          "article_search_text"
+        ],
         "fields": {
           "text": {
             "type": "text",
-            "analyzer": "gotham_english",
-            "copy_to": [
-              "article_search_text"
-            ]
+            "analyzer": "gotham_english"
           }
         }
       },
       "location": {
         "type": "keyword",
+        "copy_to": [
+          "article_search_text"
+        ],
         "fields": {
           "text": {
             "type": "text",
-            "analyzer": "gotham_english",
-            "copy_to": [
-              "article_search_text"
-            ]
+            "analyzer": "gotham_english"
           }
         }
       },
       "source": {
         "type": "keyword",
+        "copy_to": [
+          "article_search_text"
+        ],
         "fields": {
           "text": {
             "type": "text",
-            "analyzer": "gotham_english",
-            "copy_to": [
-              "article_search_text"
-            ]
+            "analyzer": "gotham_english"
           }
         }
       },
