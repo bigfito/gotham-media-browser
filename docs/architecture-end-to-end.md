@@ -48,7 +48,7 @@ flowchart LR
 | Component | Role |
 |-----------|------|
 | `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends, **global error pages** |
-| `gotham-datagen` | **P10 (last):** synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
+| `gotham-datagen` | **P10 (last):** independent Java app — synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
 | `imagebind-service` | Sync HTTP embed text/image/audio/video → `float[1024]` |
 | Ollama / ComfyUI / Kokoro | Optional Compose profile `datagen` — text / image+video / audio generation |
 | `gotham-journalists` | Journalist master documents (ES auto `_id`) |
@@ -192,7 +192,7 @@ external:
 
 **Credentials (locked):** Elasticsearch endpoint + API key and GCS bucket/project ids are **hardcoded** in `gotham-web` `application.properties`. The GCS service account JSON key is a **secret file** under `secrets/` (gitignored; path in properties). Do not commit real keys.
 
-**Synthetic load:** `gotham-datagen` (Maven CLI) posts to `/journalist` and `/article` only — see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
+**Synthetic load:** independent Java app `gotham-datagen` posts to `/journalist` and `/article` only — defaults **15** / **25** / **5+5+5** (5 s videos); see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
 ---
 
@@ -268,5 +268,5 @@ gotham-news-media-browser/
 | Multi-module Maven (`gotham-common` + `gotham-web`; `gotham-datagen` in P10) | ✓ |
 | ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
-| Synthetic data last phase P10 (Qwen / FLUX / Kokoro / Wan via HTTP CRUD) | ✓ |
+| Synthetic data last phase P10 (independent Java app; Qwen / FLUX / Kokoro / Wan via HTTP CRUD; 15/25/5+5+5) | ✓ |
 | Implementation plan ↔ state (41 tasks, P0–P10) | ✓ |

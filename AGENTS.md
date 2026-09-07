@@ -28,9 +28,10 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 ## Project shape (IntelliJ)
 
 - Open **parent** `pom.xml` in IntelliJ IDEA Ultimate as a **Maven multi-module** project.  
-- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** added in **P10** (last phase).  
+- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** independent Java app added in **P10** (last phase).  
 - `imagebind-service/` is in-repo Docker/Python — not a Maven module.  
-- Optional Compose profile `datagen`: Ollama (Qwen), ComfyUI (FLUX/Wan), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).
+- Optional Compose profile `datagen`: Ollama (Qwen), ComfyUI (FLUX/Wan), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).  
+- Datagen defaults: 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article.
 
 ## Hard constraints
 
@@ -44,7 +45,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - ES endpoint + API key: hardcoded in `application.properties`  
 - GCS SA JSON: **secret file** under `secrets/` (never commit real key)  
 - **Fault tolerance:** every unexpected failure shows branded error page with **reason** (see `docs/ui-design-errors.md`); no Whitelabel stack dumps to users  
-- **Synthetic data:** only in **P10** via `gotham-datagen`; load through HTTP CRUD — never bypass to ES/GCS from the generator  
+- **Synthetic data:** only in **P10** via independent Java app `gotham-datagen`; load through HTTP CRUD — never bypass to ES/GCS from the generator  
 
 ## Do not
 

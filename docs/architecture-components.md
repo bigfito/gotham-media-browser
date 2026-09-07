@@ -70,7 +70,7 @@ Flow:
 | parent `gotham-news-media-browser` | BOM, Java 25, module list (IntelliJ Ultimate import) |
 | `gotham-common` | Config properties, ES/GCS/ImageBind clients, repositories, projections, domain |
 | `gotham-web` | Spring Boot app, Thymeleaf controllers/views, static assets, global error handling |
-| `gotham-datagen` | **P10 (last):** CLI orchestrator — generate text/media → `POST /journalist` & `/article` |
+| `gotham-datagen` | **P10 (last):** independent Java app — generate text/media → `POST /journalist` & `/article` |
 
 ### 2. `gotham-web` (runtime)
 - Dual-panel landing; entity-scoped `/results`; `/journalist` + `/article` CRUD  
@@ -85,8 +85,9 @@ Flow:
 - Sync embed text / image / audio / video → `float[1024]` · **built in-repo**
 
 ### 4. `gotham-datagen` (P10)
-- Java Spring Boot CLI; **no** public UI  
+- **Independent** Spring Boot Java application (own process / jar); **no** public UI  
 - Calls modality helpers over HTTP, then loads data **only** through live CRUD APIs  
+- Defaults: **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) per article  
 - Helpers (Compose profile `datagen`): Ollama + Qwen 2.5 14B · ComfyUI + FLUX.1 [schnell] / Wan2.1 · Kokoro-82M  
 - Spec: [`synthetic-data-generation.md`](./synthetic-data-generation.md)
 
