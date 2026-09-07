@@ -51,6 +51,8 @@ Default checked: title, caption, description, alt_text.
 Backend maps checked `fields` into a `multi_match` / `bool` should over those ES fields.  
 Checkbox values `section`, `tags`, `location`, and `source` are remapped to analyzable `*.text` subfields.
 
+**Elasticsearch Query DSL for FTS / Semantic / Hybrid / Vector:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)
+
 ## Multimedia playback (results)
 
 Multimedia result cards use **HTML5** native elements against public `storage_uri` URLs (GCS HTTPS):

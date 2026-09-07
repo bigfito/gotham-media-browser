@@ -2,7 +2,7 @@
 
 **Indexes:** `gotham-journalists` · `gotham-media-browser`  
 **IDs:** ES auto `_id` (top-level) · app `multimedia_element_id` (nested)  
-**Related:** [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
+**Related:** [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **SVG:** [`../diagrams/gotham-media-browser-denormalized.svg`](../diagrams/gotham-media-browser-denormalized.svg)
 
 ## Capability matrix

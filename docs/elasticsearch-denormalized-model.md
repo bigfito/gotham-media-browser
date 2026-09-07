@@ -31,9 +31,11 @@ Article nested field `journalists.journalist_id` **must** equal a `gotham-journa
 | Multimedia | Landing panel 2 | ✓ | ✓ | ✓ | ✓ |
 | Journalist | **No UI** | as **`journalist` param** on article FTS only | ✗ | ✗ | ✗ |
 
+**Query DSL cookbook (all modes):** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)
+
 ### Article FTS journalist parameter
 - Query param `journalist` = journalist `_id` (preferred) or name token  
-- Implemented as nested filter / match on `journalists.journalist_id` or `journalists.full_name`
+- Implemented as nested filter / match on `journalists.journalist_id` or `journalists.full_name` (see cookbook §4)
 
 ### Status
 Articles carry `status`: `DRAFT` | `PUBLISHED` | `ARCHIVED`.  
@@ -89,7 +91,7 @@ _id  (ES auto)
 |-------|---------|
 | Journalist create | Index `gotham-journalists` (auto `_id`) |
 | Journalist update | Update journalist doc; reindex all articles nesting that `journalist_id` |
-| Journalist delete | Block if referenced, or remove from articles + reindex, then delete journalist |
+| Journalist delete | **Cascade-strip** nested bylines from articles, rebuild projections, reindex, then delete journalist |
 | Article create | Resolve journalists by id; upload media; embed; index article (auto `_id`) |
 | Article update | Same; reuse article `_id` |
 | Media add/update/delete | GCS + embed + reindex parent article `_id` |

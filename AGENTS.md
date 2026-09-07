@@ -11,7 +11,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 1. [`docs/implementation-state.md`](docs/implementation-state.md) — **what to do next**  
 2. [`docs/implementation-plan.md`](docs/implementation-plan.md) — task details & verification  
 3. [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md) — system design  
-4. Spec linked from the task (CRUD / search IA / mappings)
+4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) for query modes)
 
 ## Work loop
 

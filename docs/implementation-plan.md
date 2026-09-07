@@ -288,10 +288,11 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - **Depends on:** P0-T04
 
 ### P7-T02 — Article FTS service
-- **Do:** Field remap `section`→`section.text`, etc.; filters; pagination.  
+- **Do:** Implement cookbook §4 ([`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)): `multi_match`, field remap, filters, journalist nested filter, `from`/`size`, `track_total_hits`.  
 - **Depends on:** P4-T03, P2-T02
 
 ### P7-T03 — Multimedia FTS + inner_hits
+- **Do:** Implement cookbook §7: nested BM25 + `inner_hits` for asset cards.  
 - **Depends on:** P5-T02
 
 ### P7-T04 — Results Thymeleaf pages
@@ -301,13 +302,18 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 ## Phase 8 — Semantic · Hybrid · Vector
 
+**Goal:** Complete search mode matrix per [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md).
+
 ### P8-T01 — Semantic kNN
+- **Do:** Cookbook §5 (articles) + §8 (multimedia nested kNN + `inner_hits`); text → ImageBind → `query_vector` length 1024.  
 - **Depends on:** P6-T03, P7-T04
 
 ### P8-T02 — Hybrid RRF
+- **Do:** Cookbook §6 / §9 using `retriever.rrf`; shared filters; document pagination approach.  
 - **Depends on:** P8-T01, P7-T02
 
 ### P8-T03 — Multimedia vector (file) search
+- **Do:** Cookbook §10: multipart → ImageBind → same nested kNN as semantic; reject article vector mode with 400 error page.  
 - **Depends on:** P8-T01, P7-T01
 
 ---

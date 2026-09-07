@@ -1,7 +1,7 @@
 # Gotham News & Media Browser — Frontend Information Architecture
 
 **UI:** Thymeleaf (server-rendered)  
-**Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md) · [`ui-design-errors.md`](./ui-design-errors.md)  
+**Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md) · [`ui-design-errors.md`](./ui-design-errors.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Mockups:** [`../ui-mockups/`](../ui-mockups/)
 
 ## Route map

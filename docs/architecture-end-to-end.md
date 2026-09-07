@@ -13,6 +13,7 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 |---------|-----|
 | Logical ER (design aid) | [`er-design.md`](./er-design.md) |
 | ES indexes & write rules | [`elasticsearch-denormalized-model.md`](./elasticsearch-denormalized-model.md) |
+| ES search methods (Query DSL) | [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md) |
 | Index diagrams | [`elasticsearch-denormalized-diagram.md`](./elasticsearch-denormalized-diagram.md) |
 | Components & search modes | [`architecture-components.md`](./architecture-components.md) |
 | Routes & IA | [`frontend-information-architecture.md`](./frontend-information-architecture.md) |
