@@ -107,6 +107,12 @@ Shows **all copyrights** from the project license lineage, **MIT License** link,
 | `index.html` | Dual-panel landing |
 | `results-articles.html` | Article results + ES-synced pagination |
 | `results-multimedia.html` | Multimedia results (HTML5 players) + pagination |
+| `journalist.html` | `GET /journalist` list |
+| `journalist-new.html` | `GET/POST /journalist/new` |
+| `journalist-edit.html` | `GET/POST /journalist/{id}` |
+| `article.html` | `GET /article` list |
+| `article-new.html` | `GET/POST /article/new` |
+| `article-edit.html` | `GET/POST /article/{id}` (bylines + HTML5 media) |
 | `styles.css` | Light pastel theme |
 | `chrome.js` | Shared header/footer, service legends, mode toggles |
 | `media/` | Sample IMAGE / AUDIO / VIDEO fixtures for HTML5 playback |

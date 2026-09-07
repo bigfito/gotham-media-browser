@@ -19,7 +19,7 @@ flowchart LR
     M3["Hybrid"]
     M4["Vector"]
   end
-  subgraph J["Journalists — admin only"]
+  subgraph J["Journalists — /journalist CRUD"]
     J1["No search UI"]
     J2["Feeds article bylines"]
   end

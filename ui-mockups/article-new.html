@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>New article — Gotham News & Media Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="article" data-imagebind-status="down" data-elasticsearch-status="up">
+  <div id="site-header"></div>
+
+  <div class="shell">
+    <header class="crud-hero">
+      <div>
+        <p class="crud-hero__eyebrow">POST /article · gotham-media-browser</p>
+        <h1 class="crud-hero__title">New article</h1>
+        <p class="crud-hero__lede">Writes one denormalized document: story, metadata, nested journalists, nested multimedia, embeddings.</p>
+      </div>
+      <a class="nav-link" href="article.html">Back to list</a>
+    </header>
+
+    <form class="crud-form" action="article.html" method="post" enctype="multipart/form-data">
+      <section class="form-section">
+        <h2>Story</h2>
+        <div class="form-grid">
+          <div class="field form-grid__full">
+            <label for="title">Title</label>
+            <input id="title" name="title" type="text" required />
+          </div>
+          <div class="field form-grid__full">
+            <label for="subtitle">Subtitle</label>
+            <input id="subtitle" name="subtitle" type="text" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="summary">Summary</label>
+            <textarea id="summary" name="summary" rows="3" required></textarea>
+          </div>
+          <div class="field form-grid__full">
+            <label for="body">Body</label>
+            <textarea id="body" name="body" rows="8" required></textarea>
+          </div>
+          <div class="field">
+            <label for="slug">Slug</label>
+            <input id="slug" name="slug" type="text" class="mono" placeholder="gotham-transit-expansion" />
+          </div>
+          <div class="field">
+            <label for="language">Language</label>
+            <input id="language" name="language" type="text" value="en" />
+          </div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="DRAFT" selected>DRAFT</option>
+              <option value="PUBLISHED">PUBLISHED</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="published_at">Published at</label>
+            <input id="published_at" name="published_at" type="datetime-local" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Metadata</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="section">Section</label>
+            <input id="section" name="section" type="text" placeholder="Politics" />
+          </div>
+          <div class="field">
+            <label for="tags">Tags</label>
+            <input id="tags" name="tags" type="text" placeholder="transit, council (comma-separated → keyword[])" />
+          </div>
+          <div class="field">
+            <label for="location">Location</label>
+            <input id="location" name="location" type="text" />
+          </div>
+          <div class="field">
+            <label for="source">Source</label>
+            <input id="source" name="source" type="text" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="seo_title">SEO title</label>
+            <input id="seo_title" name="seo_title" type="text" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="seo_description">SEO description</label>
+            <textarea id="seo_description" name="seo_description" rows="2"></textarea>
+          </div>
+          <div class="field form-grid__full">
+            <label for="seo_keywords">SEO keywords</label>
+            <input id="seo_keywords" name="seo_keywords" type="text" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Bylines</h2>
+        <p class="form-section__hint">Select journalists from <code>gotham-journalists</code>. Nested snapshot written on save.</p>
+        <div class="byline-list">
+          <label class="byline-row">
+            <input type="checkbox" name="journalist_ids" value="j_lois_lane" checked />
+            <span class="byline-row__name">Lois Lane</span>
+            <input type="number" name="byline_order_j_lois_lane" min="1" value="1" aria-label="Byline order Lois Lane" />
+            <input type="text" name="role_j_lois_lane" value="lead" aria-label="Role Lois Lane" />
+          </label>
+          <label class="byline-row">
+            <input type="checkbox" name="journalist_ids" value="j_clark_kent" />
+            <span class="byline-row__name">Clark Kent</span>
+            <input type="number" name="byline_order_j_clark_kent" min="1" value="2" aria-label="Byline order Clark Kent" />
+            <input type="text" name="role_j_clark_kent" value="contributor" aria-label="Role Clark Kent" />
+          </label>
+          <label class="byline-row">
+            <input type="checkbox" name="journalist_ids" value="j_vicki_vale" />
+            <span class="byline-row__name">Vicki Vale</span>
+            <input type="number" name="byline_order_j_vicki_vale" min="1" value="3" aria-label="Byline order Vicki Vale" />
+            <input type="text" name="role_j_vicki_vale" value="contributor" aria-label="Role Vicki Vale" />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Multimedia</h2>
+        <p class="form-section__hint">IMAGE ≤ 10&nbsp;MiB · AUDIO ≤ 20&nbsp;MiB / 5&nbsp;min · VIDEO ≤ 50&nbsp;MiB / 90&nbsp;s. Public GCS + ImageBind on save.</p>
+        <div class="field">
+          <label for="media_files">Add media files</label>
+          <input id="media_files" name="media_files" type="file" accept="image/*,audio/*,video/*" multiple />
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button class="btn btn-coral" type="submit">Create article</button>
+        <a class="btn btn-ghost" href="article.html">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="chrome.js"></script>
+</body>
+</html>

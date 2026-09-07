@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit article — Gotham News & Media Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="article" data-imagebind-status="down" data-elasticsearch-status="up">
+  <div id="site-header"></div>
+
+  <div class="shell">
+    <header class="crud-hero">
+      <div>
+        <p class="crud-hero__eyebrow">POST /article/{id} · gotham-media-browser</p>
+        <h1 class="crud-hero__title">Edit article</h1>
+        <p class="crud-hero__lede">Same ES <code>_id</code> on reindex. Nested media use app-assigned <code>multimedia_element_id</code>.</p>
+      </div>
+      <a class="nav-link" href="article.html">Back to list</a>
+    </header>
+
+    <form class="crud-form" action="article.html" method="post" enctype="multipart/form-data">
+      <section class="form-section">
+        <h2>Story</h2>
+        <div class="form-grid">
+          <div class="field form-grid__full">
+            <label for="id">Elasticsearch _id</label>
+            <input id="id" name="id" type="text" value="a_transit_vote" readonly class="mono" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="title">Title</label>
+            <input id="title" name="title" type="text" value="Gotham Transit Expansion Clears Final Vote" required />
+          </div>
+          <div class="field form-grid__full">
+            <label for="subtitle">Subtitle</label>
+            <input id="subtitle" name="subtitle" type="text" value="Council funds the cross-river line after a marathon session" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="summary">Summary</label>
+            <textarea id="summary" name="summary" rows="3" required>City council approved funding for the cross-river line after a marathon session.</textarea>
+          </div>
+          <div class="field form-grid__full">
+            <label for="body">Body</label>
+            <textarea id="body" name="body" rows="8" required>Gotham’s transit authority secured final appropriations for the east–west river crossing. Floor debate focused on contingency reserves and station naming.</textarea>
+          </div>
+          <div class="field">
+            <label for="slug">Slug</label>
+            <input id="slug" name="slug" type="text" class="mono" value="gotham-transit-expansion-clears-final-vote" />
+          </div>
+          <div class="field">
+            <label for="language">Language</label>
+            <input id="language" name="language" type="text" value="en" />
+          </div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="DRAFT">DRAFT</option>
+              <option value="PUBLISHED" selected>PUBLISHED</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="published_at">Published at</label>
+            <input id="published_at" name="published_at" type="datetime-local" value="2026-09-06T18:30" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Metadata</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="section">Section</label>
+            <input id="section" name="section" type="text" value="Politics" />
+          </div>
+          <div class="field">
+            <label for="tags">Tags</label>
+            <input id="tags" name="tags" type="text" value="transit, council, funding" />
+          </div>
+          <div class="field">
+            <label for="location">Location</label>
+            <input id="location" name="location" type="text" value="Gotham City Hall" />
+          </div>
+          <div class="field">
+            <label for="source">Source</label>
+            <input id="source" name="source" type="text" value="Gotham News" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="seo_title">SEO title</label>
+            <input id="seo_title" name="seo_title" type="text" value="Gotham Transit Expansion Clears Final Vote" />
+          </div>
+          <div class="field form-grid__full">
+            <label for="seo_description">SEO description</label>
+            <textarea id="seo_description" name="seo_description" rows="2">Council approves funding for the cross-river transit line.</textarea>
+          </div>
+          <div class="field form-grid__full">
+            <label for="seo_keywords">SEO keywords</label>
+            <input id="seo_keywords" name="seo_keywords" type="text" value="gotham, transit, council" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Bylines</h2>
+        <p class="form-section__hint">Nested <code>journalists[]</code> with <code>journalist_id</code> = master <code>_id</code>.</p>
+        <div class="byline-list">
+          <label class="byline-row">
+            <input type="checkbox" name="journalist_ids" value="j_lois_lane" checked />
+            <span class="byline-row__name">Lois Lane <code class="mono">j_lois_lane</code></span>
+            <input type="number" name="byline_order_j_lois_lane" min="1" value="1" aria-label="Byline order Lois Lane" />
+            <input type="text" name="role_j_lois_lane" value="lead" aria-label="Role Lois Lane" />
+          </label>
+          <label class="byline-row">
+            <input type="checkbox" name="journalist_ids" value="j_clark_kent" checked />
+            <span class="byline-row__name">Clark Kent <code class="mono">j_clark_kent</code></span>
+            <input type="number" name="byline_order_j_clark_kent" min="1" value="2" aria-label="Byline order Clark Kent" />
+            <input type="text" name="role_j_clark_kent" value="contributor" aria-label="Role Clark Kent" />
+          </label>
+          <label class="byline-row">
+            <input type="checkbox" name="journalist_ids" value="j_vicki_vale" />
+            <span class="byline-row__name">Vicki Vale <code class="mono">j_vicki_vale</code></span>
+            <input type="number" name="byline_order_j_vicki_vale" min="1" value="3" aria-label="Byline order Vicki Vale" />
+            <input type="text" name="role_j_vicki_vale" value="contributor" aria-label="Role Vicki Vale" />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Multimedia</h2>
+        <p class="form-section__hint">HTML5 playback against public <code>storage_uri</code>. Replace or add files within local ImageBind limits.</p>
+
+        <div class="media-edit-list">
+          <article class="media-edit-row">
+            <div class="media-edit-row__player">
+              <img src="media/chamber.jpg" alt="Council chamber after the vote" width="400" height="250" />
+            </div>
+            <div class="media-edit-row__fields">
+              <div class="result__meta">
+                <span class="chip">IMAGE</span>
+                <code class="mono">mm_chamber_01</code>
+              </div>
+              <div class="field">
+                <label>Title</label>
+                <input type="text" name="mm_chamber_01_title" value="Council chamber after the vote" />
+              </div>
+              <div class="field">
+                <label>Caption</label>
+                <input type="text" name="mm_chamber_01_caption" value="Chamber floor as the vote was called" />
+              </div>
+              <div class="field">
+                <label>Alt text</label>
+                <input type="text" name="mm_chamber_01_alt" value="Council chamber after the vote" />
+              </div>
+              <label class="check-inline"><input type="checkbox" name="mm_chamber_01_delete" /> Remove on save</label>
+            </div>
+          </article>
+
+          <article class="media-edit-row">
+            <div class="media-edit-row__player media-edit-row__player--audio">
+              <audio controls preload="metadata" src="media/debate.mp3"></audio>
+            </div>
+            <div class="media-edit-row__fields">
+              <div class="result__meta">
+                <span class="chip">AUDIO</span>
+                <code class="mono">mm_debate_01</code>
+              </div>
+              <div class="field">
+                <label>Title</label>
+                <input type="text" name="mm_debate_01_title" value="Floor debate excerpt — funding clause" />
+              </div>
+              <div class="field">
+                <label>Caption</label>
+                <input type="text" name="mm_debate_01_caption" value="Audio from the funding clause exchange" />
+              </div>
+              <div class="field">
+                <label>Description</label>
+                <input type="text" name="mm_debate_01_description" value="Short clip from council debate" />
+              </div>
+              <label class="check-inline"><input type="checkbox" name="mm_debate_01_delete" /> Remove on save</label>
+            </div>
+          </article>
+
+          <article class="media-edit-row">
+            <div class="media-edit-row__player">
+              <video controls preload="metadata" poster="media/chamber.jpg" src="media/gallery.mp4"></video>
+            </div>
+            <div class="media-edit-row__fields">
+              <div class="result__meta">
+                <span class="chip">VIDEO</span>
+                <code class="mono">mm_gallery_01</code>
+              </div>
+              <div class="field">
+                <label>Title</label>
+                <input type="text" name="mm_gallery_01_title" value="Gallery reaction, east steps" />
+              </div>
+              <div class="field">
+                <label>Caption</label>
+                <input type="text" name="mm_gallery_01_caption" value="Public gallery after adjournment" />
+              </div>
+              <div class="field">
+                <label>Credit</label>
+                <input type="text" name="mm_gallery_01_credit" value="Gotham News Video" />
+              </div>
+              <label class="check-inline"><input type="checkbox" name="mm_gallery_01_delete" /> Remove on save</label>
+            </div>
+          </article>
+        </div>
+
+        <div class="field" style="margin-top:1rem">
+          <label for="media_files">Add more media</label>
+          <input id="media_files" name="media_files" type="file" accept="image/*,audio/*,video/*" multiple />
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button class="btn btn-coral" type="submit">Save article</button>
+        <button class="btn btn-danger" type="submit" formaction="article.html">Delete article</button>
+        <a class="btn btn-ghost" href="article.html">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="chrome.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit journalist — Gotham News & Media Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="journalist" data-imagebind-status="down" data-elasticsearch-status="up">
+  <div id="site-header"></div>
+
+  <div class="shell shell--narrow">
+    <header class="crud-hero">
+      <div>
+        <p class="crud-hero__eyebrow">POST /journalist/{id} · gotham-journalists</p>
+        <h1 class="crud-hero__title">Edit journalist</h1>
+        <p class="crud-hero__lede">Updating reindexes nested bylines on articles that reference this <code>_id</code>.</p>
+      </div>
+      <a class="nav-link" href="journalist.html">Back to list</a>
+    </header>
+
+    <form class="crud-form" action="journalist.html" method="post">
+      <section class="form-section">
+        <h2>Record</h2>
+        <div class="form-grid">
+          <div class="field form-grid__full">
+            <label for="id">Elasticsearch _id</label>
+            <input id="id" name="id" type="text" value="j_lois_lane" readonly class="mono" />
+          </div>
+          <div class="field">
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" value="Lois" required />
+          </div>
+          <div class="field">
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" value="Lane" required />
+          </div>
+          <div class="field form-grid__full">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" value="lois.lane@gotham.news" required />
+          </div>
+          <div class="field form-grid__full">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="5">City desk investigative reporter covering transit, council, and civic infrastructure.</textarea>
+          </div>
+          <div class="field">
+            <label for="created_at">Created</label>
+            <input id="created_at" type="text" value="2026-01-12T09:14:00Z" readonly />
+          </div>
+          <div class="field">
+            <label for="updated_at">Updated</label>
+            <input id="updated_at" type="text" value="2026-09-06T18:02:00Z" readonly />
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button class="btn btn-sky" type="submit">Save changes</button>
+        <button class="btn btn-danger" type="submit" formaction="journalist.html" formmethod="post">Delete</button>
+        <a class="btn btn-ghost" href="journalist.html">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="chrome.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Articles — Gotham News & Media Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="article" data-imagebind-status="down" data-elasticsearch-status="up">
+  <div id="site-header"></div>
+
+  <div class="shell">
+    <header class="crud-hero">
+      <div>
+        <p class="crud-hero__eyebrow">GET /article · index gotham-media-browser</p>
+        <h1 class="crud-hero__title">Articles</h1>
+        <p class="crud-hero__lede">Denormalized documents with nested journalists and multimedia. ES auto <code>_id</code>.</p>
+      </div>
+      <a class="btn btn-coral" href="article-new.html">New article</a>
+    </header>
+
+    <div class="results-toolbar">
+      <div class="results-meta">
+        <strong>124</strong> articles · showing <strong data-showing-range>1–25</strong>
+        <span class="results-meta__es">ES <code>from=0</code> · <code>size=25</code> · <code>track_total_hits</code></span>
+      </div>
+      <div class="toolbar-controls">
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option selected>All</option>
+            <option>DRAFT</option>
+            <option>PUBLISHED</option>
+            <option>ARCHIVED</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="size">Per page</label>
+          <select id="size" name="size">
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">_id</th>
+            <th scope="col">Title</th>
+            <th scope="col">Status</th>
+            <th scope="col">Section</th>
+            <th scope="col">Bylines</th>
+            <th scope="col">Media</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="mono">a_transit_vote</code></td>
+            <td>Gotham Transit Expansion Clears Final Vote</td>
+            <td><span class="chip chip--published">Published</span></td>
+            <td>Politics</td>
+            <td>Lois Lane · Clark Kent</td>
+            <td>3</td>
+            <td class="data-table__actions">
+              <a href="article-edit.html">Edit</a>
+              <button type="button" class="linkish linkish--danger">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td><code class="mono">a_budget_tunnel</code></td>
+            <td>Budget Office Flags Overruns on Tunnel Segment</td>
+            <td><span class="chip chip--published">Published</span></td>
+            <td>Business</td>
+            <td>Lois Lane</td>
+            <td>2</td>
+            <td class="data-table__actions">
+              <a href="article-edit.html">Edit</a>
+              <button type="button" class="linkish linkish--danger">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td><code class="mono">a_station_names</code></td>
+            <td>Draft Brief: Station Naming Committee</td>
+            <td><span class="chip chip--draft">Draft</span></td>
+            <td>Politics</td>
+            <td>Clark Kent</td>
+            <td>0</td>
+            <td class="data-table__actions">
+              <a href="article-edit.html">Edit</a>
+              <button type="button" class="linkish linkish--danger">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pagination" aria-label="Pagination">
+      <div class="pagination__pages">
+        <span class="pagination__disabled">Prev</span>
+        <span class="is-current" aria-current="page">1</span>
+        <a href="?page=2&amp;size=25">2</a>
+        <a href="?page=3&amp;size=25">3</a>
+        <a href="?page=2&amp;size=25">Next</a>
+      </div>
+      <p class="pagination__hint"><code>from = (page − 1) × size</code> · size 25 / 50 / 100</p>
+    </nav>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="chrome.js"></script>
+</body>
+</html>

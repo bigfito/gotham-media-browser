@@ -19,12 +19,13 @@
 | Modalities | Image, audio, video (+ text queries via ImageBind text) |
 | App stack | Java 25 · Spring Boot 4.1.1 · Maven 3.9.x · Thymeleaf · ES Java API Client 9.4.x |
 | Landing | `/` — two panels: articles · multimedia |
-| Admin | `/admin` — CRUD journalists & articles (status: DRAFT / PUBLISHED / ARCHIVED) |
+| Journalist CRUD | `/journalist` — full CRUD on `gotham-journalists` |
+| Article CRUD | `/article` — full CRUD on denormalized `gotham-media-browser` docs (status: DRAFT / PUBLISHED / ARCHIVED) |
 | Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
-| Journalist UI search | **No** dedicated journalist search UI |
+| Journalist UI search | **No** dedicated public journalist search UI |
 | Journalist as search param | **Yes** — article full-text accepts `journalist` filter/param |
 | Runtime | Local Docker Compose |
-| Users / auth | Out of scope (`/admin` open) |
+| Users / auth | Out of scope (`/journalist` and `/article` open) |
 
 ## System context
 
@@ -43,18 +44,18 @@ flowchart LR
 | Entity | ID | Notes |
 |--------|----|-------|
 | Journalist | ES auto `_id` on `gotham-journalists` | Returned after index; stored on article as `journalists.journalist_id` (`keyword`) |
-| Article | ES auto `_id` on `gotham-media-browser` | Used in routes `/articles/{id}` |
-| Multimedia element | **App-assigned** `multimedia_element_id` (`keyword`) | Nested objects have no ES `_id`; required for admin delete/update of a single asset |
+| Article | ES auto `_id` on `gotham-media-browser` | Used in routes `/article/{id}` |
+| Multimedia element | **App-assigned** `multimedia_element_id` (`keyword`) | Nested objects have no ES `_id`; required for `/article` delete/update of a single asset |
 
 Flow:
-1. Admin creates journalist → ES generates `_id` → keep for bylines.  
-2. Admin creates/updates article → resolve journalists by `_id` from `gotham-journalists` → nest snapshot + ids on article doc → ES auto `_id` for article.  
+1. Create journalist via `/journalist` → ES generates `_id` → keep for bylines.  
+2. Create/update article via `/article` → resolve journalists by `_id` from `gotham-journalists` → nest snapshot + ids on article doc → ES auto `_id` for article.  
 3. Media upload → app generates `multimedia_element_id` → GCS object key includes article `_id` + element id → ImageBind → nest on article → reindex article (same `_id`).
 
 ## Components
 
 ### 1. `gotham-web`
-- Dual-panel landing; entity-scoped `/results`; `/admin` CRUD  
+- Dual-panel landing; entity-scoped `/results`; `/journalist` + `/article` CRUD  
 - Articles panel methods: Full-text · Semantic · Hybrid  
 - Multimedia panel methods: Full-text · Semantic · Hybrid · Vector  
 - Article FTS supports query params: `q`, `mode`, `status`, `section`, `language`, **`journalist`** (id or name), dates, sort, page  
@@ -66,8 +67,8 @@ Flow:
 ### 3. Elastic indexes
 | Index | Grain | Role |
 |-------|-------|------|
-| `gotham-journalists` | 1 journalist | Master data for admin + article bylines |
-| `gotham-media-browser` | 1 article | Public browse/search; nested journalists + multimedia |
+| `gotham-journalists` | 1 journalist | Master data for `/journalist` + article bylines |
+| `gotham-media-browser` | 1 article | Public browse/search + `/article` CRUD; nested journalists + multimedia |
 
 ### 4. GCS
 - Public objects; ES stores `storage_uri` (e.g. `https://storage.googleapis.com/...` or `gs://...` resolved to public HTTPS in UI)  
@@ -83,13 +84,13 @@ Chosen for **local CPU** synchronous ImageBind:
 | AUDIO | **20 MiB** | **5 minutes** |
 | VIDEO | **50 MiB** | **90 seconds** |
 
-Reject uploads over limit in admin with clear validation messages.
+Reject uploads over limit on `/article` forms with clear validation messages.
 
 ## Article status
 
 `DRAFT` | `PUBLISHED` | `ARCHIVED`
 
-- Admin CRUD must set/change status.  
+- `/article` CRUD must set/change status.  
 - Public `/` and `/results` **can return all statuses**; results expose a **status** filter (default may show all or PUBLISHED — UI should offer all three).
 
 ## Search semantics

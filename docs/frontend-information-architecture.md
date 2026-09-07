@@ -1,7 +1,7 @@
 # Gotham News & Media Browser — Frontend Information Architecture
 
 **UI:** Thymeleaf (server-rendered)  
-**Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md)  
+**Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md)  
 **Mockups:** [`../ui-mockups/`](../ui-mockups/)
 
 ## Route map
@@ -10,10 +10,20 @@
 |-------|---------|
 | `GET /` | Landing — **two panels**: article search + multimedia search |
 | `GET /results` | Results — filters, sorting, pagination |
-| `GET /articles/{id}` | Article detail (`{id}` = ES article `_id`) |
-| `GET /admin` | Admin hub |
-| `/admin/journalists/**` | Journalist CRUD → index `gotham-journalists` |
-| `/admin/articles/**` | Article CRUD (+ metadata, status, media) → `gotham-media-browser` |
+| `GET /journalist` | List journalists (`gotham-journalists`) |
+| `GET /journalist/new` | Create journalist form |
+| `GET /journalist/{id}` | Edit journalist (`{id}` = ES `_id`) |
+| `POST /journalist` | Create journalist |
+| `POST /journalist/{id}` | Update journalist |
+| `POST /journalist/{id}/delete` | Delete journalist (block if referenced) |
+| `GET /article` | List articles (`gotham-media-browser`) |
+| `GET /article/new` | Create article form (denormalized doc) |
+| `GET /article/{id}` | Edit / view article (`{id}` = ES `_id`) |
+| `POST /article` | Create article (+ nest journalists, upload media) |
+| `POST /article/{id}` | Update article |
+| `POST /article/{id}/delete` | Delete article (+ GCS objects) |
+
+No `/admin` hub. CRUD lives on **`/journalist`** and **`/article`** only.
 
 ## Allowed search methods
 
@@ -22,12 +32,10 @@
 | Articles | ✓ | ✓ | ✓ | ✗ |
 | Multimedia | ✓ | ✓ | ✓ | ✓ |
 
-**No journalist search UI.** Article full-text accepts a **`journalist`** parameter (filter).  
-**Full-text attribute checkboxes:** fields come from the denormalized ES text attributes (title, body, caption, …).  
-**Chrome:** shared header + footer on all pages.  
-**Header legends:** ImageBind availability · Elasticsearch availability.  
-**Footer:** copyrights (Packt 2020 + contributors 2026), MIT License, year 2026.  
-**Theme:** light pastel background and accents.
+**No journalist search UI** on the public landing. Journalist master data is managed only via `/journalist`.  
+Article full-text search still accepts a **`journalist`** filter parameter.  
+**Full-text attribute checkboxes:** denormalized ES text attributes.  
+**Chrome:** shared header + footer; ImageBind + Elasticsearch availability legends; MIT footer (2026).
 
 ## 1. Landing (`/`) — two panels
 
@@ -74,20 +82,28 @@ Total page count = `ceil(hits.total.value / size)`. Changing `size` resets `page
 - Media URLs are **public GCS** HTTPS links (no signing).  
 - Multimedia results render with **HTML5** `<img>` / `<audio controls>` / `<video controls>`.
 
-## 3. Admin
+## 3. Journalist CRUD (`/journalist`) → `gotham-journalists`
 
-### Journalists (`gotham-journalists`)
-- CRUD on master journalist documents (ES auto `_id`)  
-- Fields: first name, last name, email, bio  
-- Delete: block if referenced by articles, or cascade-strip + reindex articles  
+| Field | Notes |
+|-------|--------|
+| `first_name`, `last_name` | Required; `full_name` derived on write |
+| `email` | Keyword, unique in app validation |
+| `bio` | Optional text |
+| `_id` | Elasticsearch auto-id (read-only in UI) |
 
-### Articles (`gotham-media-browser`)
-- CRUD with **status**: DRAFT | PUBLISHED | ARCHIVED  
-- Select journalists from `gotham-journalists`  
-- Upload media within local limits; public GCS; ImageBind; nested on article  
-- `{id}` in URLs is the article ES `_id`  
+Delete: block if any article nests this `journalist_id`, or cascade-strip + reindex articles (product choice; mock shows block).
 
-### Local upload limits (enforce in forms)
+## 4. Article CRUD (`/article`) → `gotham-media-browser`
+
+Denormalized document form covers:
+
+- Core: title, subtitle, summary, body, slug, status, language, published_at  
+- Metadata: section, tags, location, source, seo_*  
+- Nested **journalists[]**: pick from `gotham-journalists` (`journalist_id`, byline_order, contribution_role); snapshot names/bio/email at write  
+- Nested **multimedia[]**: upload IMAGE/AUDIO/VIDEO within local limits; app-assigned `multimedia_element_id`; public GCS `storage_uri`; ImageBind `asset_vector`  
+- Projections refreshed on write: `journalist_*`, `multimedia_*`, `article_search_text`, `article_embedding`
+
+### Local upload limits
 | IMAGE | 10 MiB |
 | AUDIO | 20 MiB / 5 min |
 | VIDEO | 50 MiB / 90 s |
@@ -99,8 +115,9 @@ flowchart TD
   L["/ two panels"]
   L -->|articles| RA["/results?entity=article"]
   L -->|multimedia| RM["/results?entity=multimedia"]
-  L --> A["/admin"]
-  A --> J["journalists → gotham-journalists"]
-  A --> C["articles → gotham-media-browser"]
+  L --> J["/journalist → gotham-journalists"]
+  L --> C["/article → gotham-media-browser"]
   J -.->|byline ids| C
+  RA --> C
+  RM --> C
 ```
