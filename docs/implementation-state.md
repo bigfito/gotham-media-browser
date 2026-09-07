@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T00:35:00Z  
-**Active phase:** P5 (P4 complete — **compact context now** before starting P5)  
+**Last updated:** 2026-09-08T01:05:00Z  
+**Active phase:** P5 (in progress — P5-T01 done)  
 **Prototype status:** `in_progress`  
-**Next task:** `P5-T01` (GCS storage service — deps P1-T01, P0-T05 done)
+**Next task:** `P5-T02` (Multimedia on article create/update — deps P5-T01, P4-T04 done)
 
 ---
 
@@ -59,14 +59,14 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P2 | Index bootstrap | 2/2 | done |
 | P3 | `/journalist` — list + create + edit form | 3/3 | done |
 | P4 | `/article` CRUD + journalist cascade-strip delete | 5/5 | done |
-| P5 | GCS + multimedia | 0/3 | pending |
+| P5 | GCS + multimedia | 1/3 | in progress |
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 19 / **42** tasks done
+**Totals:** 20 / **42** tasks done
 
 ---
 
@@ -95,7 +95,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P4-T03 | P4 | Journalist edit + cascade-strip delete | done | P4-T02, P3-T03 | JavaMentor | 2026-09-07T23:10:00Z | 2026-09-07T23:35:00Z | JournalistService (gotham-common @Service, orchestrates Journalist+Article repos): update() saves master then refreshes each nesting article's byline snapshot (preserving byline_order+role); cascadeDelete() strips the nested byline from every affected article (findByJournalistId), reindexes (projections rebuilt), then deletes master. Article reindex before master change so a mid-sweep failure is retry-safe (no multi-doc txn in ES). Controller: GET /journalist/{id} (prefill; unknown->NotFoundException 404 branded), POST /journalist/{id} (@Valid; preserves createdAt; invalid->in-form errors, no cascade), POST /journalist/{id}/delete (cascade + flash). journalist/edit.html ported from mockup (readonly _id+timestamps, separate confirm delete form, .danger-zone CSS). Added JournalistService @MockitoBean to existing slice tests. Tests: JournalistServiceTest(3 Mockito: reindex preserves order/role, cascade strips+deletes in order, empty-affected still deletes) + JournalistEditControllerTest(5). mvn test green (72). LIVE vs real Serverless: edit Lois->Louise refreshed article snapshot (full_name/email + journalist_names) keeping byline_order/role; cascade-delete -> master 404, article nested count 0 + journalist_names []; unknown id edit -> branded 404. Demo data cleaned. |
 | P4-T04 | P4 | Article list + create/edit (text + metadata + bylines) | done | P4-T02, P3-T03, P0-T04, P1-T04 | JavaMentor | 2026-09-07T23:45:00Z | 2026-09-08T00:05:00Z | ArticleController: GET /article (status+size filters, pagination, chips, bylines column; media col deferred), GET /article/new, POST /article, GET /article/{id} (prefill; unknown->404 branded), POST /article/{id}. ArticleForm (Bean Validation: title/summary/body @NotBlank, status, @NotEmpty journalistIds; bylineOrder/role bound as Map keyed by journalist id; tags CSV->keyword[]; publishedAt datetime-local->UTC Instant; toNewArticle snapshots selected journalists via lookup; fromArticle prefill). buildOrReject rejects unresolvable byline + unparseable date as in-form errors. Templates article/list.html + shared article/form.html (new+edit) ported from mockups, NO media upload (P5). No media/GCS/embeddings yet. Tests: ArticleControllerTest(@WebMvcTest,7). mvn test green (79). LIVE vs real Serverless: create w/ byline -> ES doc has nested snapshot + journalist_names/journalist_bios projections; list chips + status filter; edit prefilled; update (title/status DRAFT/role CO_AUTHOR) 302; no-journalist + empty-title -> in-form errors; unknown id -> branded 404. Demo data cleaned. |
 | P4-T05 | P4 | Article delete | done | P4-T04 | JavaMentor | 2026-09-08T00:15:00Z | 2026-09-08T00:35:00Z | POST /article/{id}/delete on ArticleController: articleRepository.deleteById; unknown id -> NotFoundException (branded 404). Delete form added to list rows (confirm) + .danger-zone delete on the edit form (shown only when articleId present). GCS cleanup deferred to P5-T03. Tests: +2 in ArticleControllerTest (delete existing -> redirect+flash+deleteById; delete unknown -> branded 404). mvn test green (81). LIVE vs real Serverless: delete existing -> 302, ES _doc 404 (gone), list back to 0; delete unknown id -> branded 404 error page. Demo data cleaned. |
-| P5-T01 | P5 | GCS storage service | pending | P1-T01, P0-T05 | | | | |
+| P5-T01 | P5 | GCS storage service | done | P1-T01, P0-T05 | JavaMentor | 2026-09-08T00:45:00Z | 2026-09-08T01:05:00Z | Added GCP libraries-bom (26.50.0) to parent depMgmt + google-cloud-storage to gotham-common (BOM-managed, resolved 2.44.1 line). MediaType enum {IMAGE,AUDIO,VIDEO} (fromContentType). GcsClientConfig @Bean Storage: creds from secret file (fail-fast CRED-001 if present-but-invalid; degrade to ADC/NoCredentials if absent), lazy getService (no boot network). GcsStorageService @Service: upload enforces per-type size + audio/video duration limits BEFORE upload (MediaLimitException 413), stores object media/<type>/<uuid>-<sanitized>, returns public storage_uri https://storage.googleapis.com/<bucket>/<obj>; delete parses object from our URI; StorageException->DependencyException(503). Bucket uses UBLA + had PAP enforced -> per-object ACL impossible; user authorized public access (SA has Storage Admin) so provisioned bucket public ONCE via gcloud (isolated CLOUDSDK_CONFIG): --no-public-access-prevention + allUsers:objectViewer (documented in secrets/README; noted in [[gcs-connection]] memory). Service uploads with NO ACL. Unit GcsStorageServiceTest(6). Live GcsStorageServiceIT (@Tag integration, env GCS_BUCKET/GCS_PROJECT/GCS_CREDENTIALS_FILE): upload -> public GET 200 (body match) -> delete PASSED. mvn test green (87; IT excluded). |
 | P5-T02 | P5 | Multimedia on article create/update | pending | P5-T01, P4-T04 | | | | |
 | P5-T03 | P5 | Remove media + article delete cleans GCS | pending | P5-T02 | | | | |
 | P6-T01 | P6 | In-repo imagebind-service | pending | P0-T02 | | | | |

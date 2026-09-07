@@ -29,6 +29,12 @@
             <artifactId>elasticsearch-java</artifactId>
         </dependency>
 
+        <!-- Google Cloud Storage client (version pinned by the GCP libraries BOM in the parent). -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-storage</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

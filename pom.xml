@@ -27,6 +27,8 @@
         <!-- Build baseline: JDK 25 LTS (matches Spring Boot 4.1.1). Set JAVA_HOME to the Java 25 home. -->
         <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- GCP client versions come from the Google libraries BOM (imported below). -->
+        <google-cloud-libraries-bom.version>26.50.0</google-cloud-libraries-bom.version>
     </properties>
 
     <!-- P0 modules. gotham-datagen (Java console) is added in P10, not here. -->
@@ -42,6 +44,18 @@
                 <groupId>com.gotham</groupId>
                 <artifactId>gotham-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <!--
+              Google Cloud client BOM: fixes google-cloud-storage (and its transitive gax/grpc/
+              auth) versions so gotham-common declares the storage client WITHOUT a <version>.
+              Kept outside the Spring Boot BOM, which does not manage GCP clients.
+            -->
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>${google-cloud-libraries-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

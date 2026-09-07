@@ -33,6 +33,23 @@ So every `secrets/*.json` is ignored **except** the `*.example`.
    `src/main/resources` so it never bundles into the jar), copied from
    `application-local.properties.example`. In Docker, use `.env` instead (see `.env.example`).
 
+## Bucket must be publicly readable (one-time)
+
+Uploaded media is served straight from `https://storage.googleapis.com/<bucket>/<object>`
+(the `storage_uri` on each nested multimedia element). The bucket uses **uniform
+bucket-level access**, so public read is granted by **bucket IAM**, not per-object ACLs.
+Provision it once (the service account needs Storage Admin):
+
+```bash
+gcloud storage buckets update gs://<bucket> --no-public-access-prevention
+gcloud storage buckets add-iam-policy-binding gs://<bucket> \
+  --member=allUsers --role=roles/storage.objectViewer
+```
+
+`GcsStorageService` therefore uploads objects **without** setting an ACL; readability
+comes entirely from that bucket policy. If the bucket is not public, uploads still
+succeed but the public `storage_uri` returns HTTP 403.
+
 ## CI / production
 
 Inject the key from the platform secret store (never commit it), and mount/write it to
