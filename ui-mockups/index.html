@@ -16,11 +16,11 @@
     <p class="hero-line">Search the desk in two lanes — articles for the story, multimedia for the asset.</p>
 
     <section class="panels" aria-label="Search panels">
-      <form class="panel panel--articles" action="results-articles.html" method="get" data-search-panel data-seed-terms="transit|funding|vote">
+      <form class="panel panel--articles" action="results-articles.html" method="get" data-search-panel>
         <div>
           <div class="panel__eyebrow">Panel 1</div>
           <h1 class="panel__title">Articles</h1>
-          <p class="panel__hint">Full-text is multi-term (check terms to include). Semantic and hybrid use a single query.</p>
+          <p class="panel__hint">Full-text searches selected denormalized text attributes. Semantic and hybrid use embeddings.</p>
         </div>
 
         <div class="methods" role="radiogroup" aria-label="Article search method" data-methods>
@@ -29,19 +29,31 @@
           <label><input type="radio" name="mode" value="hybrid" /><span>Hybrid</span></label>
         </div>
 
-        <div class="terms-box is-visible" data-terms>
-          <div class="terms-box__title">Full-text terms</div>
-          <div class="term-add">
-            <input type="text" data-term-input placeholder="Add a term, press Enter" aria-label="Add full-text term" />
-            <button class="btn btn-mint" type="button" data-term-add>Add</button>
-          </div>
-          <ul class="term-list" data-term-list></ul>
-          <input type="hidden" name="q" data-terms-query value="" />
+        <div class="field">
+          <label for="article-q">Query</label>
+          <input id="article-q" type="search" name="q" placeholder="e.g. transit funding vote" />
         </div>
 
-        <div class="field" data-single-query style="display:none">
-          <label for="article-q">Query</label>
-          <input id="article-q" type="search" name="q_single" placeholder="e.g. transit funding vote" />
+        <div class="attr-box is-visible" data-attrs>
+          <div class="attr-box__title">Full-text attributes</div>
+          <p class="attr-box__hint">From the article denormalized model — check fields to include in BM25.</p>
+          <div class="attr-grid">
+            <label><input type="checkbox" name="fields" value="title" checked /> title</label>
+            <label><input type="checkbox" name="fields" value="subtitle" checked /> subtitle</label>
+            <label><input type="checkbox" name="fields" value="summary" checked /> summary</label>
+            <label><input type="checkbox" name="fields" value="body" checked /> body</label>
+            <label><input type="checkbox" name="fields" value="section" /> section</label>
+            <label><input type="checkbox" name="fields" value="tags" /> tags</label>
+            <label><input type="checkbox" name="fields" value="location" /> location</label>
+            <label><input type="checkbox" name="fields" value="source" /> source</label>
+            <label><input type="checkbox" name="fields" value="seo_title" /> seo_title</label>
+            <label><input type="checkbox" name="fields" value="seo_description" /> seo_description</label>
+            <label><input type="checkbox" name="fields" value="seo_keywords" /> seo_keywords</label>
+            <label><input type="checkbox" name="fields" value="journalist_names" /> journalist_names</label>
+            <label><input type="checkbox" name="fields" value="journalist_bios" /> journalist_bios</label>
+            <label><input type="checkbox" name="fields" value="journalist_search_text" /> journalist_search_text</label>
+            <label><input type="checkbox" name="fields" value="article_search_text" /> article_search_text</label>
+          </div>
         </div>
 
         <div class="field" data-journalist-field>
@@ -55,11 +67,11 @@
         </div>
       </form>
 
-      <form class="panel panel--media" action="results-multimedia.html" method="get" data-search-panel data-media-panel data-seed-terms="council|chamber">
+      <form class="panel panel--media" action="results-multimedia.html" method="get" data-search-panel>
         <div>
           <div class="panel__eyebrow">Panel 2</div>
           <h1 class="panel__title">Multimedia</h1>
-          <p class="panel__hint">Full-text uses checked terms. Vector opens a media file picker.</p>
+          <p class="panel__hint">Full-text uses nested media text fields. Vector opens a media file picker.</p>
         </div>
 
         <div class="methods" role="radiogroup" aria-label="Multimedia search method" data-methods>
@@ -69,19 +81,23 @@
           <label><input type="radio" name="mode" value="vector" /><span>Vector</span></label>
         </div>
 
-        <div class="terms-box is-visible" data-terms>
-          <div class="terms-box__title">Full-text terms</div>
-          <div class="term-add">
-            <input type="text" data-term-input placeholder="Add a term, press Enter" aria-label="Add full-text term" />
-            <button class="btn btn-mint" type="button" data-term-add>Add</button>
-          </div>
-          <ul class="term-list" data-term-list></ul>
-          <input type="hidden" name="q" data-terms-query value="" />
+        <div class="field">
+          <label for="media-q">Query</label>
+          <input id="media-q" type="search" name="q" placeholder="e.g. council chamber after vote" />
         </div>
 
-        <div class="field" data-single-query style="display:none">
-          <label for="media-q">Query</label>
-          <input id="media-q" type="search" name="q_single" placeholder="e.g. council chamber after vote" />
+        <div class="attr-box is-visible" data-attrs>
+          <div class="attr-box__title">Full-text attributes</div>
+          <p class="attr-box__hint">From nested multimedia (+ flattened media text) in the denormalized model.</p>
+          <div class="attr-grid">
+            <label><input type="checkbox" name="fields" value="multimedia.title" checked /> multimedia.title</label>
+            <label><input type="checkbox" name="fields" value="multimedia.caption" checked /> multimedia.caption</label>
+            <label><input type="checkbox" name="fields" value="multimedia.description" checked /> multimedia.description</label>
+            <label><input type="checkbox" name="fields" value="multimedia.alt_text" checked /> multimedia.alt_text</label>
+            <label><input type="checkbox" name="fields" value="multimedia.credit" /> multimedia.credit</label>
+            <label><input type="checkbox" name="fields" value="multimedia_text" /> multimedia_text</label>
+            <label><input type="checkbox" name="fields" value="multimedia_search_text" /> multimedia_search_text</label>
+          </div>
         </div>
 
         <div class="drop" data-drop aria-live="polite">

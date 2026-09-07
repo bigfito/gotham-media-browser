@@ -23,8 +23,9 @@
 | Multimedia | ✓ | ✓ | ✓ | ✓ |
 
 **No journalist search UI.** Article full-text accepts a **`journalist`** parameter (filter).  
-**Full-text is multi-term:** users add terms as checkboxes; only checked terms are queried.  
-**Chrome:** shared header + footer on all pages.
+**Full-text attribute checkboxes:** fields come from the denormalized ES text attributes (title, body, caption, …).  
+**Chrome:** shared header + footer on all pages.  
+**Theme:** light pastel background and accents.
 
 ## 1. Landing (`/`) — two panels
 
@@ -46,6 +47,7 @@
 | `entity` | both | `article` \| `multimedia` |
 | `q` | both | Text query |
 | `mode` | both | `fulltext` \| `semantic` \| `hybrid` \| `vector` |
+| `fields` | full-text | Multi-select denormalized text attributes (see UI design doc) |
 | `status` | article (+ optional multimedia via parent) | `DRAFT` \| `PUBLISHED` \| `ARCHIVED` (multi-select OK) |
 | `journalist` | **article full-text** | Journalist ES `_id` or name (filter / FTS param) |
 | `section` | both | Section facet |

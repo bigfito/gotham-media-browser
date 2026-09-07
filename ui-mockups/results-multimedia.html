@@ -15,7 +15,7 @@
   <div class="shell">
     <section class="results-header">
       <span class="entity-badge entity-badge--media">Entity · Multimedia</span>
-      <form class="results-search" action="results-multimedia.html" method="get" data-search-panel data-media-panel data-seed-terms="council|chamber">
+      <form class="results-search" action="results-multimedia.html" method="get" data-search-panel>
         <input type="hidden" name="entity" value="multimedia" />
         <div class="methods" role="radiogroup" aria-label="Multimedia search method" data-methods>
           <label><input type="radio" name="mode" value="fulltext" checked /><span>Full-text</span></label>
@@ -24,19 +24,23 @@
           <label><input type="radio" name="mode" value="vector" /><span>Vector</span></label>
         </div>
 
-        <div class="terms-box is-visible" data-terms>
-          <div class="terms-box__title">Full-text terms</div>
-          <div class="term-add">
-            <input type="text" data-term-input placeholder="Add a term" aria-label="Add full-text term" />
-            <button class="btn btn-mint" type="button" data-term-add>Add</button>
-          </div>
-          <ul class="term-list" data-term-list></ul>
-          <input type="hidden" name="q" data-terms-query value="" />
+        <div class="results-search__row">
+          <input type="search" name="q" value="council chamber" aria-label="Query" />
+          <button class="btn btn-coral" type="submit">Update</button>
         </div>
 
-        <div class="field" data-single-query style="display:none">
-          <label for="q">Query</label>
-          <input id="q" type="search" name="q_single" />
+        <div class="attr-box is-visible" data-attrs>
+          <div class="attr-box__title">Full-text attributes</div>
+          <p class="attr-box__hint">Denormalized multimedia text fields included in this query.</p>
+          <div class="attr-grid">
+            <label><input type="checkbox" name="fields" value="multimedia.title" checked /> multimedia.title</label>
+            <label><input type="checkbox" name="fields" value="multimedia.caption" checked /> multimedia.caption</label>
+            <label><input type="checkbox" name="fields" value="multimedia.description" checked /> multimedia.description</label>
+            <label><input type="checkbox" name="fields" value="multimedia.alt_text" checked /> multimedia.alt_text</label>
+            <label><input type="checkbox" name="fields" value="multimedia.credit" /> multimedia.credit</label>
+            <label><input type="checkbox" name="fields" value="multimedia_text" /> multimedia_text</label>
+            <label><input type="checkbox" name="fields" value="multimedia_search_text" /> multimedia_search_text</label>
+          </div>
         </div>
 
         <div class="drop" data-drop aria-live="polite">
@@ -45,11 +49,6 @@
           <div style="margin-top:0.65rem">
             <input type="file" name="media" accept="image/*,audio/*,video/*" />
           </div>
-        </div>
-
-        <div class="results-search__row">
-          <span></span>
-          <button class="btn btn-coral" type="submit">Update</button>
         </div>
       </form>
     </section>
@@ -94,7 +93,7 @@
 
       <main>
         <div class="results-toolbar">
-          <div class="results-meta"><strong>12</strong> assets · terms <strong>council</strong>, <strong>chamber</strong></div>
+          <div class="results-meta"><strong>12</strong> assets · fields <strong>title</strong>, <strong>caption</strong>, <strong>description</strong>, <strong>alt_text</strong></div>
           <div class="field" style="min-width:12rem">
             <label for="sort">Sort</label>
             <select id="sort">

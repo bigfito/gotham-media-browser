@@ -1,65 +1,63 @@
 # UI Design — Search Landing & Results
 
 **Product:** Gotham News & Media Browser  
-**Pages:** `/` (search landing), `/results` (results)  
-**Theme:** Light pastel  
+**Theme:** Light pastel (compatible soft wash background)  
+**Chrome:** Shared header + footer on all pages  
 **Mockups:** `ui-mockups/`
 
-## Visual direction
+## Background
 
-Soft **pastel newsroom** — airy surfaces, mint / sky / coral accents, shared chrome on every page.
+Solid light wash `#F7F9FC` → soft tint `#EEF5F8` (no dark ink, no heavy vignette). Pastel accents stay on controls/panels only.
 
-| Token | Value | Role |
-|-------|-------|------|
-| `--bg` | `#F4F7FB` | Page wash |
-| `--surface` | `#FFFFFF` | Panels |
-| `--ink` | `#2C3E5A` | Primary text |
-| `--mint` | `#9FD5C5` | Full-text terms / secondary CTA |
-| `--sky` | `#9EC5E8` | Articles accent |
-| `--coral` | `#EFB0B8` | Multimedia accent |
-| Brand font | **Fraunces** | Wordmark / titles |
-| UI font | **Sora** | Controls |
+## Full-text attributes (from denormalized model)
 
-Atmosphere: pastel radial washes (sky, coral, mint). No dark theme.
+When **Full-text** is selected, the UI shows **checkboxes for text attributes** from the ES denormalized document — not free-form keyword chips.
+
+### Articles panel / article results
+| Checkbox value | Source field |
+|----------------|--------------|
+| `title` | article title |
+| `subtitle` | subtitle |
+| `summary` | summary |
+| `body` | body |
+| `section` | metadata section |
+| `tags` | metadata tags |
+| `location` | metadata location |
+| `source` | metadata source |
+| `seo_title` | SEO title |
+| `seo_description` | SEO description |
+| `seo_keywords` | SEO keywords |
+| `journalist_names` | flattened bylines |
+| `journalist_bios` | flattened bios |
+| `journalist_search_text` | journalist catch-all projection |
+| `article_search_text` | article catch-all projection |
+
+Default checked: `title`, `subtitle`, `summary`, `body`.  
+Also: optional **journalist** filter param on full-text.
+
+### Multimedia panel / media results
+| Checkbox value | Source field |
+|----------------|--------------|
+| `multimedia.title` | nested media title |
+| `multimedia.caption` | nested caption |
+| `multimedia.description` | nested description |
+| `multimedia.alt_text` | nested alt text |
+| `multimedia.credit` | nested credit |
+| `multimedia_text` | flattened media text |
+| `multimedia_search_text` | catch-all projection |
+
+Default checked: title, caption, description, alt_text.
+
+Backend maps checked `fields` into a `multi_match` / `bool` should over those ES fields.
 
 ## Shared chrome
-
-Every page includes the same **header** and **footer** via `chrome.js` mounts (`#site-header`, `#site-footer`):
-
-- Header: brand wordmark + nav (Search · Article results · Media results · Admin)
-- Footer: prototype label + quick links
-
-Thymeleaf will later replace `chrome.js` with `layout.html` fragments.
-
-## Landing (`/`) — two panels
-
-| Panel | Methods | Full-text UX |
-|-------|---------|--------------|
-| Articles | Full-text · Semantic · Hybrid | Multi-term **checkboxes** + journalist filter |
-| Multimedia | Full-text · Semantic · Hybrid · Vector | Multi-term **checkboxes**; Vector shows file drop |
-
-### Multi-term full-text
-1. User adds terms (input + Add / Enter).  
-2. Each term appears as a **checked checkbox**.  
-3. Unchecking excludes that term from the submitted query.  
-4. Checked terms are joined into `q` (and may also post as repeated `term=` params in the Spring app).  
-5. Semantic / Hybrid switch back to a single query field.
-
-## Results (`/results`)
-
-- Same shared header/footer  
-- Entity badge + method tabs for that entity only  
-- Full-text mode keeps the multi-term checkbox builder  
-- Filters, sort, pagination unchanged in structure  
+`chrome.js` injects header/footer; Thymeleaf will use layout fragments later.
 
 ## Mockups
-
-| File | Page |
+| File | Role |
 |------|------|
-| `ui-mockups/index.html` | Landing |
-| `ui-mockups/results-articles.html` | Article results |
-| `ui-mockups/results-multimedia.html` | Multimedia results |
-| `ui-mockups/styles.css` | Pastel theme |
-| `ui-mockups/chrome.js` | Shared header/footer + terms helper |
-
-Preview: `python3 -m http.server -d ui-mockups 8765`
+| `index.html` | Dual-panel landing |
+| `results-articles.html` | Article results |
+| `results-multimedia.html` | Multimedia results |
+| `styles.css` | Light pastel theme |
+| `chrome.js` | Shared header/footer + mode toggles |
