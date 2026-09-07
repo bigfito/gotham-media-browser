@@ -61,7 +61,8 @@ Flow:
 - Multimedia panel methods: Full-text · Semantic · Hybrid · Vector  
 - Results query params: `entity`, `q`, `mode`, `fields`, `status`, `section`, `language`, **`journalist`** (article FTS), `mediaType`, `published_from` / `published_to`, `sort`, `page`, `size` ∈ {25, 50, 100}  
 - Services: ES (both indexes), GCS (public URLs), ImageBind  
-- Health: ImageBind `http://imagebind-service:8081/health` · ES via `/api/health/elasticsearch`
+- Health: ImageBind `http://imagebind-service:8081/health` · ES via `/api/health/elasticsearch`  
+- **Fault tolerance:** global `@ControllerAdvice` / error templates for **all** endpoints — branded error page with **reason** + reference id; Whitelabel off; client timeouts on ES/ImageBind/GCS (see [`ui-design-errors.md`](./ui-design-errors.md))
 
 ### 2. `imagebind-service`
 - Sync embed text / image / audio / video → `float[1024]`  

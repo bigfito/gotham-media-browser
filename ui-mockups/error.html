@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Something went wrong — Gotham News & Media Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="home" data-imagebind-status="down" data-elasticsearch-status="down">
+  <div id="site-header"></div>
+
+  <div class="shell shell--narrow">
+    <section class="error-page" role="alert">
+      <p class="error-page__eyebrow">Error · HTTP 503</p>
+      <h1 class="error-page__title">A required service is unavailable</h1>
+      <p class="error-page__lede">We couldn’t complete that request. Nothing was partially saved when the failure was detected mid-write.</p>
+
+      <div class="error-page__reason">
+        <h2>Reason</h2>
+        <p>Elasticsearch could not be reached while loading articles. Check the Elasticsearch availability legend above, then try again.</p>
+      </div>
+
+      <p class="error-page__ref">Reference <code>req_7f3a9c21</code></p>
+
+      <div class="form-actions">
+        <a class="btn btn-sky" href="index.html">Back to search</a>
+        <a class="btn btn-ghost" href="journalist.html">Journalists</a>
+        <a class="btn btn-ghost" href="article.html">Articles</a>
+      </div>
+    </section>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="chrome.js"></script>
+</body>
+</html>

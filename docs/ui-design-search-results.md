@@ -114,6 +114,7 @@ Shows **all copyrights** from the project license lineage, **MIT License** link,
 | `article.html` | `GET /article` list |
 | `article-new.html` | `GET /article/new` (form posts to `POST /article`) |
 | `article-edit.html` | `GET/POST /article/{id}` (bylines + HTML5 media) |
+| `error.html` | Global fault-tolerant error page (reason + reference id) |
 | `styles.css` | Light pastel theme |
 | `chrome.js` | Shared header/footer, service legends, mode toggles |
 | `media/` | Sample IMAGE / AUDIO / VIDEO fixtures for HTML5 playback |

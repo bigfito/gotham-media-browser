@@ -18,6 +18,7 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 | Routes & IA | [`frontend-information-architecture.md`](./frontend-information-architecture.md) |
 | Search / results UI | [`ui-design-search-results.md`](./ui-design-search-results.md) |
 | CRUD UI | [`ui-design-crud.md`](./ui-design-crud.md) |
+| Error / fault-tolerance UX | [`ui-design-errors.md`](./ui-design-errors.md) |
 | Implementation plan | [`implementation-plan.md`](./implementation-plan.md) |
 | Implementation state | [`implementation-state.md`](./implementation-state.md) |
 | Mappings | [`../elasticsearch/`](../elasticsearch/) |
@@ -40,7 +41,7 @@ flowchart LR
 
 | Component | Role |
 |-----------|------|
-| `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends |
+| `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends, **global error pages** |
 | `imagebind-service` | Sync HTTP embed text/image/audio/video → `float[1024]` |
 | `gotham-journalists` | Journalist master documents (ES auto `_id`) |
 | `gotham-media-browser` | One denormalized article doc + nested journalists + nested multimedia |
@@ -149,6 +150,19 @@ Journalist update reindexes articles nesting that `journalist_id`. Article delet
 
 ---
 
+## 5b. Fault tolerance & errors
+
+All user-facing endpoints must fail **safely and visibly**:
+
+- Branded Thymeleaf error page (shared chrome) with **HTTP status**, **human-readable reason**, and **reference id**  
+- No Whitelabel / stack traces in the browser; full detail only in logs  
+- Bounded timeouts on ES, ImageBind, and GCS; dependency outages → `503` with named service  
+- Expected validation → form field errors; unexpected failures → error page  
+
+Spec: [`ui-design-errors.md`](./ui-design-errors.md) · mockup: `ui-mockups/error.html`
+
+---
+
 ## 6. Local Docker Compose (target)
 
 ```text
@@ -218,4 +232,4 @@ gotham-news-media-browser/
 | `canonical_url` on article forms + mapping | ✓ |
 | `source.text` copy_to `article_search_text` | ✓ |
 | Results filters wired to IA query params | ✓ |
-| Stale semantic_text / 768-d diagram replaced | ✓ |
+| Fault-tolerant error pages (all endpoints) | ✓ |

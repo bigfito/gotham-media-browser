@@ -2,7 +2,7 @@
 
 **Plan:** [`implementation-plan.md`](./implementation-plan.md)  
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
-**Last updated:** 2026-09-07T03:05:00Z  
+**Last updated:** 2026-09-07T03:15:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`
 
@@ -33,6 +33,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | Journalist delete | **Cascade-strip** + reindex articles |
 | Commits | One per task |
 | Package | `com.gotham.newsmediabrowser` |
+| Fault tolerance | Global error pages with reason on **all** endpoints (`docs/ui-design-errors.md`) |
 | Extra agent formats | None (Markdown plan + state only) |
 
 ---
@@ -42,7 +43,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | Phase | Title | Tasks done | Status |
 |-------|-------|------------|--------|
 | P0 | Scaffold & agent harness | 0/5 | pending |
-| P1 | Config, health, ES client | 0/3 | pending |
+| P1 | Config, health, ES client, error pages | 0/4 | pending |
 | P2 | Index bootstrap | 0/2 | pending |
 | P3 | `/journalist` CRUD | 0/4 | pending |
 | P4 | `/article` CRUD (no media) | 0/4 | pending |
@@ -52,7 +53,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
 | P9 | Demo readiness | 0/3 | pending |
 
-**Totals:** 0 / 34 tasks done
+**Totals:** 0 / 35 tasks done
 
 ---
 
@@ -68,6 +69,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P1-T01 | P1 | Configuration properties | pending | P0-T01, P0-T05 | | | | |
 | P1-T02 | P1 | Elasticsearch Java client bean | pending | P1-T01 | | | | |
 | P1-T03 | P1 | Health endpoints for chrome | pending | P1-T02, P0-T04 | | | | |
+| P1-T04 | P1 | Global fault tolerance & error pages | pending | P0-T04, P1-T01 | | | | |
 | P2-T01 | P2 | Mapping JSON on classpath | pending | P0-T01 | | | | |
 | P2-T02 | P2 | Idempotent index bootstrap | pending | P1-T02, P2-T01 | | | | |
 | P3-T01 | P3 | Journalist domain + repository | pending | P2-T02 | | | | |

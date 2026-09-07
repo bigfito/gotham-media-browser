@@ -1,7 +1,7 @@
 # Gotham News & Media Browser — Frontend Information Architecture
 
 **UI:** Thymeleaf (server-rendered)  
-**Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md)  
+**Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md) · [`ui-design-errors.md`](./ui-design-errors.md)  
 **Mockups:** [`../ui-mockups/`](../ui-mockups/)
 
 ## Route map
@@ -35,9 +35,20 @@ No `/admin` hub. CRUD lives on **`/journalist`** and **`/article`** only.
 **No journalist search UI** on the public landing. Journalist master data is managed only via `/journalist`.  
 Article full-text search still accepts a **`journalist`** filter parameter.  
 **Full-text attribute checkboxes:** denormalized ES text attributes.  
-**Chrome:** shared header + footer; ImageBind + Elasticsearch availability legends; footer © 2020 Packt · © 2026 · MIT.
+**Chrome:** shared header + footer; ImageBind + Elasticsearch availability legends; footer © 2020 Packt · © 2026 · MIT.  
+**Fault tolerance:** unexpected failures on **any** endpoint render a branded error page with a clear **reason** (see [`ui-design-errors.md`](./ui-design-errors.md)); expected validation stays on forms.
 
-## 1. Landing (`/`) — two panels
+## Error & recovery
+
+| Outcome | UX |
+|---------|-----|
+| Field validation | Re-show form with messages |
+| Not found / bad route | `404` error page + reason |
+| Dependency down (ES, ImageBind, GCS) | `503` error page naming the service |
+| Media over limit | `413` error page or form message |
+| Unexpected exception | `500` error page + sanitized reason + reference id |
+
+Whitelabel errors are disabled. Server logs keep the full stack keyed by reference id.
 
 ```text
 ┌────────────────────────────┬────────────────────────────────┐

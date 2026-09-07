@@ -41,13 +41,15 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Java 25 · Spring Boot 4.1.1 · Thymeleaf · multi-module Maven  
 - Package: `com.gotham.newsmediabrowser`  
 - ES endpoint + API key: hardcoded in `application.properties`  
-- GCS SA JSON: **secret file** under `secrets/` (never commit real key)
+- GCS SA JSON: **secret file** under `secrets/` (never commit real key)  
+- **Fault tolerance:** every unexpected failure shows branded error page with **reason** (see `docs/ui-design-errors.md`); no Whitelabel stack dumps to users  
 
 ## Do not
 
 - Skip updating the state file  
 - Mark done without verification  
 - Commit real `secrets/*.json` keys  
+- Ship endpoints without going through global error handling  
 - Rewrite the design docs unless a task says to  
 
 ## UI reference

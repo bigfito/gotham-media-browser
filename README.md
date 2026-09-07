@@ -17,6 +17,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | Frontend IA | `docs/frontend-information-architecture.md` |
 | Search UI | `docs/ui-design-search-results.md` |
 | CRUD UI | `docs/ui-design-crud.md` |
+| Error UX | `docs/ui-design-errors.md` |
 | Mappings | `elasticsearch/*.mapping.json` |
 | Mockups | `ui-mockups/` (open `index.html`) |
 

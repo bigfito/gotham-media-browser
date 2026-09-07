@@ -1012,3 +1012,74 @@ a:hover { text-decoration: underline; }
   font-size: 0.86rem;
   color: var(--ink-soft);
 }
+
+/* ——— Error page (fault tolerance UX) ——— */
+.error-page {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.5rem 0 2rem;
+}
+
+.error-page__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.error-page__title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.error-page__lede {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  max-width: 36rem;
+}
+
+.error-page__reason {
+  margin-top: 0.35rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.error-page__reason h2 {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-family: var(--font-ui);
+}
+
+.error-page__reason p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.error-page__ref {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.error-page__ref code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  background: #eef4f9;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+}

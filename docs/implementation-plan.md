@@ -20,7 +20,8 @@
 8. Do **not** introduce an RDBMS, `/admin`, Elastic `semantic_text`, or auth.  
 9. Prefer matching existing mockups under `ui-mockups/` and specs under `docs/`.  
 10. After each task: run the task’s **Verification** commands; leave the tree buildable.  
-11. **Commit once per task** (message includes task id, e.g. `P3-T02 Journalist list UI`).
+11. **Commit once per task** (message includes task id, e.g. `P3-T02 Journalist list UI`).  
+12. **Never** leave users on Whitelabel/stack-trace pages — unexpected failures must use the global error page with a clear reason ([`ui-design-errors.md`](./ui-design-errors.md)).
 
 ### Stack lock (do not change without human approval)
 
@@ -89,7 +90,7 @@ gotham.imagebind.base-url=http://imagebind-service:8081
 
 ```text
 P0  Scaffold & agent harness (multi-module Maven)
-P1  Config, health, ES client plumbing
+P1  Config, health, ES client, **global fault-tolerant error pages**
 P2  Index bootstrap (mappings → Elastic)
 P3  /journalist CRUD (cascade-strip on delete)
 P4  /article CRUD (story + metadata + bylines, no media yet)
@@ -161,6 +162,15 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - **Do:** Layout model/fragment for Available/Unavailable.  
 - **Verification:** MockMvc or manual: legends flip with dependency state.  
 - **Depends on:** P1-T02, P0-T04
+
+### P1-T04 — Global fault tolerance & user error pages
+- **Do:** Disable Whitelabel errors. Add Thymeleaf `error.html` (+ optional status-specific templates) matching [`ui-design-errors.md`](./ui-design-errors.md) and `ui-mockups/error.html`.  
+- **Do:** `@ControllerAdvice` (and/or `ErrorController`) covering **all** endpoints: map domain + unexpected exceptions to the error view with **HTTP status**, **human reason**, and **reference id**; log full stack server-side only.  
+- **Do:** Bounded timeouts on ES / ImageBind / GCS clients; dependency failures → **503** error page naming the service (no secrets).  
+- **Do:** Prefer in-form field errors for expected validation; use the error page for unexpected failures.  
+- **Verification:** Force 404 (unknown id), 500 (thrown exception), and simulated ES-down path → branded error page with reason + reference id + chrome; no stack trace in HTML.  
+- **Depends on:** P0-T04, P1-T01  
+- **Spec:** [`ui-design-errors.md`](./ui-design-errors.md)
 
 ---
 
@@ -325,6 +335,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - [ ] `/journalist` + `/article` CRUD; journalist delete **cascade-strips**  
 - [ ] Search modes per capability matrix  
 - [ ] Header health legends + MIT footer  
+- [ ] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps)  
 - [ ] State file tasks completed  
 
 ---
@@ -342,3 +353,4 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 | Q7 | Package: **`com.gotham.newsmediabrowser`** |
 | Q8 | No extra Antigravity/Claude task format beyond Markdown plan + state |
 | Extra | **Multi-module Maven** for IntelliJ IDEA Ultimate (`gotham-common` + `gotham-web` + parent) |
+| Extra | **Fault-tolerant UX:** global error pages with reason on all endpoints ([`ui-design-errors.md`](./ui-design-errors.md)) |
