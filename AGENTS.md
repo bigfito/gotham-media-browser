@@ -11,7 +11,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 1. [`docs/implementation-state.md`](docs/implementation-state.md) — **what to do next**  
 2. [`docs/implementation-plan.md`](docs/implementation-plan.md) — task details & verification  
 3. [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md) — system design  
-4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) for query modes / [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md) for P10)
+4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) / [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md) / [`docs/testing-strategy.md`](docs/testing-strategy.md))
 
 ## Work loop
 
@@ -20,9 +20,9 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 2. Pick lowest-ID pending task whose Depends-on tasks are done
 3. Claim: status=in_progress, claimed_by=<you>, started_at=<UTC>
 4. Implement ONLY that task
-5. Run the task Verification steps
-6. Commit once with message including task id (e.g. "P3-T02 Journalist list UI")
-7. Mark task done in implementation-state.md; update Last updated + phase counts
+5. Run the task Verification steps (**include `mvn test`** for coding tasks)  
+6. Commit once with message including task id (e.g. "P3-T02 Journalist list UI")  
+7. Mark task done in implementation-state.md; update Last updated + phase counts  
 ```
 
 ## Project shape (IntelliJ)
@@ -33,7 +33,8 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - P10 helpers: **mandatory Docker** Compose profile `datagen` — Ollama (Qwen 7B), `comfyui-service` (SDXL-Turbo + Wan 1.3B), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).  
 - Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  
 - Datagen defaults: 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article.  
-- Plan/state: **40** tasks (P0–P10).
+- Plan/state: **42** tasks (P0–P10).  
+- Testing: unit + MockMvc always; Failsafe ITs for ES / ImageBind / helpers — [`docs/testing-strategy.md`](docs/testing-strategy.md).
 
 ## Hard constraints
 
@@ -48,11 +49,12 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - GCS SA JSON: **secret file** under `secrets/` (never commit real key)  
 - **Fault tolerance:** every unexpected failure shows branded error page with **reason** (see `docs/ui-design-errors.md`); no Whitelabel stack dumps to users  
 - **Synthetic data:** only in **P10** via Java **console** `gotham-datagen` (not Spring Boot); load through HTTP CRUD — never bypass to ES/GCS from the generator  
+- **Testing:** unit tests for **all** backend + frontend (MockMvc); integration tests for Elasticsearch, ImageBind, and datagen helpers  
 
 ## Do not
 
 - Skip updating the state file  
-- Mark done without verification  
+- Mark done without verification **or without unit tests** for code changes  
 - Commit real `secrets/*.json` keys  
 - Ship endpoints without going through global error handling  
 - Implement `gotham-datagen` before P10 / before CRUD+media+embeddings are done  

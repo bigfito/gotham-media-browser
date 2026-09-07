@@ -21,12 +21,13 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | CRUD UI | `docs/ui-design-crud.md` |
 | Error UX | `docs/ui-design-errors.md` |
 | Synthetic data (P10) | `docs/synthetic-data-generation.md` |
+| Testing | `docs/testing-strategy.md` |
 | Mappings | `elasticsearch/*.mapping.json` |
 | Mockups | `ui-mockups/` (open `index.html`) |
 
 ## Locked stack
 
-Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`; profile **`datagen`** = Ollama / ComfyUI / Kokoro containers) · ImageBind 1024-d · M4 32 GB lab (CPU-in-container helpers; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B) · **40** implementation tasks (P0–P10)
+Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`; profile **`datagen`** = Ollama / ComfyUI / Kokoro containers) · ImageBind 1024-d · M4 32 GB lab · **unit + integration tests** (ES / ImageBind / helpers) · **42** implementation tasks (P0–P10)
 
 Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 

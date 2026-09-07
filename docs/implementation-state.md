@@ -4,7 +4,8 @@
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
-**Last updated:** 2026-09-07T04:30:00Z  
+**Testing:** [`testing-strategy.md`](./testing-strategy.md)  
+**Last updated:** 2026-09-07T04:40:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`  
 **Next task:** `P0-T01` (or `P0-T03` — both have no deps)
@@ -14,9 +15,9 @@
 ## How agents update this file
 
 1. Claim one `pending` task → `in_progress` (set `claimed_by`, `started_at`).  
-2. On finish → `done` (set `completed_at`, brief `notes`).  
+2. On finish → `done` (set `completed_at`, brief `notes` including **test commands run**).  
 3. On blocker → `blocked` + `notes` with reason.  
-4. Never mark `done` without meeting the plan’s Verification section.  
+4. Never mark `done` without meeting the plan’s Verification section **and** required unit tests (`mvn test`).  
 5. Bump **Last updated** on every change; refresh phase counts in Progress summary.  
 6. **One git commit per task** (message includes task id).
 
@@ -37,6 +38,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | Commits | One per task |
 | Package | `com.gotham.newsmediabrowser` |
 | Fault tolerance | Global error pages with reason on **all** endpoints (`docs/ui-design-errors.md`) |
+| Testing | **Unit tests** for all backend + frontend (MockMvc); **integration tests** for ES, ImageBind, datagen helpers |
 | Synthetic data | **Last phase P10** — Java **console** `gotham-datagen` via HTTP CRUD; helpers **must** be Docker containers |
 | Datagen models | Qwen 2.5 **7B** · **SDXL-Turbo** · Kokoro-82M · Wan2.1 **1.3B** |
 | Datagen volumes | **15** journalists · **25** articles · **5** IMAGE + **5** AUDIO + **5** VIDEO (5 s) each |
@@ -58,10 +60,10 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
-| P9 | Demo smoke + static fixtures | 0/3 | pending |
-| P10 | Synthetic data generation (**last**) | 0/5 | pending |
+| P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
+| P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 0 / **40** tasks done
+**Totals:** 0 / **42** tasks done
 
 ---
 
@@ -105,12 +107,14 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P8-T03 | P8 | Multimedia vector (file) search | pending | P8-T01, P7-T01, P1-T04 | | | | |
 | P9-T01 | P9 | Static seed fixtures | pending | P6-T03, P5-T02 | | | | |
 | P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03, P9-T01 | | | | |
-| P9-T03 | P9 | Hardening sync pass | pending | P9-T02 | | | | |
-| P10-T01 | P10 | Parent POM + Java console gotham-datagen skeleton | pending | P0-T01, P9-T03 | | | | |
+| P9-T03 | P9 | Integration tests: Elasticsearch + ImageBind + web | pending | P9-T02, P6-T03, P5-T02, P8-T03, P3-T04, P4-T04 | | | | |
+| P9-T04 | P9 | Hardening sync pass | pending | P9-T03 | | | | |
+| P10-T01 | P10 | Parent POM + Java console gotham-datagen skeleton | pending | P0-T01, P9-T04 | | | | |
 | P10-T02 | P10 | Compose profile datagen (Ollama · ComfyUI · Kokoro containers) | pending | P0-T02, P10-T01 | | | | |
 | P10-T03 | P10 | Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan) | pending | P10-T02 | | | | |
 | P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | pending | P10-T03, P3-T03, P4-T03, P5-T02, P6-T03 | | | | |
 | P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |
+| P10-T06 | P10 | Integration tests: datagen helpers + orchestrator | pending | P10-T05, P10-T02, P9-T03 | | | | |
 
 ---
 
@@ -133,6 +137,8 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 - Branch:
 - application.properties filled? ES? GCS?
 - secrets/gcs-sa.json present locally?
+- mvn test green?
+- Integration profiles run? it-es / it-imagebind / it-datagen-helpers?
 - Docker Desktop memory OK for datagen profile?
 - Next recommended task:
 - Risks / notes:

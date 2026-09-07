@@ -34,7 +34,7 @@
 | Runtime | Local Docker Compose: web + ImageBind always; profile **`datagen`** for helper containers |
 | Lab hardware | **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU-in-container for helpers) |
 | Users / auth | Out of scope (`/journalist` and `/article` open) |
-| Implementation | [`implementation-plan.md`](./implementation-plan.md) · [`implementation-state.md`](./implementation-state.md) |
+| Implementation | [`implementation-plan.md`](./implementation-plan.md) · [`implementation-state.md`](./implementation-state.md) · [`testing-strategy.md`](./testing-strategy.md) |
 
 ## System context
 

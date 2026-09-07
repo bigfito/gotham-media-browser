@@ -21,6 +21,7 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 | CRUD UI | [`ui-design-crud.md`](./ui-design-crud.md) |
 | Error / fault-tolerance UX | [`ui-design-errors.md`](./ui-design-errors.md) |
 | Synthetic data (P10 last) | [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
+| Testing strategy | [`testing-strategy.md`](./testing-strategy.md) |
 | Implementation plan | [`implementation-plan.md`](./implementation-plan.md) |
 | Implementation state | [`implementation-state.md`](./implementation-state.md) |
 | Mappings | [`../elasticsearch/`](../elasticsearch/) |
@@ -232,6 +233,7 @@ gotham-news-media-browser/
 │   ├── ui-design-crud.md
 │   ├── ui-design-errors.md
 │   ├── synthetic-data-generation.md
+│   ├── testing-strategy.md
 │   ├── implementation-plan.md
 │   └── implementation-state.md
 ├── elasticsearch/
@@ -272,5 +274,6 @@ gotham-news-media-browser/
 | ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
 | Synthetic data last phase P10 (Docker helpers mandatory; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5; console app not Spring Boot) | ✓ |
-| Implementation plan ↔ state (**40** tasks, P0–P10) | ✓ |
+| Implementation plan ↔ state (**42** tasks, P0–P10) | ✓ |
 | Lab: MacBook Pro M4 · 32 GB · helpers CPU-in-Docker | ✓ |
+| Unit tests (backend + MockMvc frontend) + ITs for ES / ImageBind / helpers | ✓ |

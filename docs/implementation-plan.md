@@ -23,7 +23,8 @@
 11. **Commit once per task** (message includes task id, e.g. `P3-T02 Journalist list UI`).  
 12. **Never** leave users on Whitelabel/stack-trace pages — unexpected failures must use the global error page with a clear reason ([`ui-design-errors.md`](./ui-design-errors.md)).  
 13. **`gotham-datagen` is a Java console app** (`main`) — never Spring Boot.  
-14. **Datagen helpers** (Ollama, ComfyUI, Kokoro) run **only** as Docker Compose profile `datagen` containers.
+14. **Datagen helpers** (Ollama, ComfyUI, Kokoro) run **only** as Docker Compose profile `datagen` containers.  
+15. **Tests are mandatory:** every coding task adds/updates **unit tests** (backend + frontend/MockMvc). Do not mark `done` until `mvn test` passes for affected modules. Integration suites for ES / ImageBind / helpers are required per [`testing-strategy.md`](./testing-strategy.md) (tasks **P9-T03**, **P10-T06**).
 
 ### Stack lock (do not change without human approval)
 
@@ -37,6 +38,7 @@
 | Compose | `gotham-web` + `imagebind-service`; P10 profile **`datagen`** = Ollama + ComfyUI + Kokoro **Docker containers (mandatory)** |
 | Embeddings | Meta ImageBind **built in-repo**, sync HTTP, **1024-d** |
 | Synthetic data | Maven module **`gotham-datagen`** — Java **console** app, not Spring Boot (phase **P10**, last) — see [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
+| Testing | JUnit 5 · Surefire unit/MockMvc · Failsafe ITs for **ES**, **ImageBind**, **datagen helpers** — see [`testing-strategy.md`](./testing-strategy.md) |
 | Storage | Elastic Cloud Serverless + **public** GCS |
 | Config file | `application.properties` (not YAML for secrets/endpoints) |
 | Base package | `com.gotham.newsmediabrowser` |
@@ -112,8 +114,9 @@ P10 Synthetic data generation (Java console `gotham-datagen` + Docker helpers)  
 
 Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → P10`
 
-**Total tasks:** **40** (see inventory below + [`implementation-state.md`](./implementation-state.md)).  
-**Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).
+**Total tasks:** **42** (see inventory below + [`implementation-state.md`](./implementation-state.md)).  
+**Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).  
+**Canonical testing design:** [`testing-strategy.md`](./testing-strategy.md).
 
 ### Task inventory (authoritative IDs)
 
@@ -128,9 +131,16 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 | P6 | P6-T01 … P6-T03 (**3**) |
 | P7 | P7-T01 … P7-T04 (**4**) |
 | P8 | P8-T01 … P8-T03 (**3**) |
-| P9 | P9-T01 … P9-T03 (**3**) |
-| P10 | P10-T01 … P10-T05 (**5**) |
-| **Sum** | **40** |
+| P9 | P9-T01 … P9-T04 (**4**) |
+| P10 | P10-T01 … P10-T06 (**6**) |
+| **Sum** | **42** |
+
+### Testing cross-cut (all coding tasks)
+
+See [`testing-strategy.md`](./testing-strategy.md).
+
+- **Backend + frontend (Thymeleaf/MockMvc):** ship **unit tests** with every feature task; `mvn test` must pass before marking `done`.  
+- **Integration:** Elasticsearch + ImageBind + web → **P9-T03**; datagen helpers (Ollama/ComfyUI/Kokoro) + console orchestrator → **P10-T06**.  
 
 ---
 
@@ -141,9 +151,10 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 ### P0-T01 — Parent POM + `gotham-common` + `gotham-web` skeleton
 - **Create:** Parent `pom.xml` (`packaging` `pom`, modules `gotham-common`, `gotham-web`); both child modules; Java 25; Spring Boot 4.1.1 parent/BOM; package `com.gotham.newsmediabrowser`.  
 - **Do:** `gotham-web` has `@SpringBootApplication`, empty `application.properties` with **placeholder** ES/GCS/ImageBind keys (see credentials table); `gotham-common` empty library jar.  
+- **Do:** Wire **Surefire** (unit) + **Failsafe** (integration) plugins in parent; JUnit 5 on test classpath for both modules; placeholder `*Test` / empty `src/test/java` layout so `mvn test` succeeds.  
 - **Do:** Root `.gitignore` for `**/target/`, `secrets/*.json` (allow `*.example`), IDE files as appropriate.  
 - **Don’t:** Business logic; do **not** add `gotham-datagen` yet (P10).  
-- **Verification:** From package root: `mvn -q -DskipTests package` succeeds; IntelliJ can import parent POM as multi-module.  
+- **Verification:** From package root: `mvn -q test` and `mvn -q -DskipTests package` succeed; IntelliJ can import parent POM as multi-module.  
 - **Depends on:** —
 
 ### P0-T02 — Docker Compose skeleton
@@ -376,11 +387,18 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - **Verification:** Runbook steps executable against a configured lab; smoke exits non-zero on failure.  
 - **Depends on:** P8-T03, P7-T04, P1-T03, P9-T01
 
-### P9-T03 — Hardening sync pass
-- **Do:** Align README/AGENTS/mockups with shipped behavior; confirm error pages still cover all routes.  
+### P9-T03 — Integration tests: Elasticsearch + ImageBind + web
+- **Create:** Failsafe suites (`*IT`) + Maven profiles `it-es` and `it-imagebind` per [`testing-strategy.md`](./testing-strategy.md).  
+- **Do:** Cover index bootstrap, journalist/article CRUD + cascade-strip, FTS smoke, ImageBind health + 1024-d embed, write-path embeddings when service up; MockMvc/IT coverage for critical `/journalist`, `/article`, `/results` flows against real ES (or documented assumption skip).  
+- **Don’t:** Require datagen helpers here (that is P10-T06).  
+- **Verification:** `mvn -Pit-es failsafe:integration-test failsafe:verify` and `mvn -Pit-imagebind …` pass on the lab with deps up; when deps absent, tests are skipped via assumptions (not red failures). Document operator commands in runbook.  
+- **Depends on:** P9-T02, P6-T03, P5-T02, P8-T03, P3-T04, P4-T04
+
+### P9-T04 — Hardening sync pass
+- **Do:** Align README/AGENTS/mockups with shipped behavior; confirm error pages still cover all routes; confirm testing docs match shipped Surefire/Failsafe layout.  
 - **Don’t:** Start `gotham-datagen` (that is P10).  
-- **Verification:** Checklist in plan DoD (excluding P10) can be ticked for a smoke demo.  
-- **Depends on:** P9-T02
+- **Verification:** Checklist in plan DoD (excluding P10) can be ticked for a smoke demo; `mvn test` green.  
+- **Depends on:** P9-T03
 
 ---
 
@@ -415,9 +433,10 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 ### P10-T01 — Parent POM + Java console `gotham-datagen` skeleton
 - **Create:** `gotham-datagen/` as a **plain Java console** module (`public static void main`); package `com.gotham.newsmediabrowser.datagen`; add module to parent `pom.xml`.  
 - **Do:** Runnable jar via `Main-Class` manifest (shade optional); placeholder properties/CLI for `gotham.datagen.*` URLs/volumes/model id (`qwen2.5:7b-instruct`, 15 / 25 / 5+5+5 / 5 s). Use Java HTTP client (or lightweight lib) — **no** Spring Boot dependencies on this module.  
+- **Do:** JUnit 5 test skeleton so `mvn -pl gotham-datagen test` passes (e.g. CLI help / property defaults).  
 - **Don’t:** Add `@SpringBootApplication` / `spring-boot-maven-plugin` to `gotham-datagen`; don’t embed datagen inside `gotham-web`; don’t call generative APIs yet.  
-- **Verification:** `mvn -pl gotham-datagen -am -DskipTests package` produces a console jar; `java -jar … --help` (or equivalent) exits 0; IntelliJ shows a non-Boot application module.  
-- **Depends on:** P0-T01, P9-T03
+- **Verification:** `mvn -pl gotham-datagen -am test` and `package` succeed; `java -jar … --help` (or equivalent) exits 0; IntelliJ shows a non-Boot application module.  
+- **Depends on:** P0-T01, P9-T04
 
 ### P10-T02 — Compose profile `datagen` (Ollama · ComfyUI · Kokoro containers)
 - **Create/Update:** `docker-compose.yml` profile **`datagen`** with services: `ollama` (`ollama/ollama:latest`), `comfyui` (**build** `./comfyui-service` CPU multi-arch with SDXL-Turbo + Wan2.1 workflows), `kokoro` (`ghcr.io/remsky/kokoro-fastapi-cpu`); named volumes for models/checkpoints; document first-run `ollama pull qwen2.5:7b-instruct`.  
@@ -429,24 +448,28 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 ### P10-T03 — Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan)
 - **Create:** Clients in `gotham-datagen` for Ollama chat (`qwen2.5:7b-instruct`), ComfyUI T2I (SDXL-Turbo) + T2V (Wan2.1 **5 s** clips), Kokoro TTS; health-check each container before use.  
 - **Do:** Enforce product media caps and synthetic video target **5 s**; tolerate slow **CPU-in-container** generation (timeouts documented, not silent failures).  
-- **Verification:** Unit/integration tests or documented dry-run against mocked helpers; clients fail clearly when containers are down.  
+- **Do:** **Unit tests** with mocked HTTP servers for each client (success + down/error paths).  
+- **Verification:** `mvn -pl gotham-datagen test` green; clients fail clearly when containers are down.  
 - **Depends on:** P10-T02
 
 ### P10-T04 — Orchestrator → `POST /journalist` & `POST /article`
 - **Do:** Pipeline: Qwen 7B → **15** journalists → **25** articles (+ captions) → **5** images + **5** audios + **5** videos per article → multipart/form matching CRUD contracts → collect ids; print summary with reasons/reference ids on failures.  
+- **Do:** Unit tests for orchestration with mocked helpers + mocked web API (skip flags, abort-if-Ollama-down).  
 - **Don’t:** Write directly to Elasticsearch or GCS; don’t run inside the `gotham-web` process.  
-- **Verification:** Against running `gotham-web` + **Docker** helpers (or recorded stubs): creates docs visible via list UIs / ES; per-article media counts match defaults; `--skip-image`/`--skip-audio`/`--skip-video` honored; abort if Ollama down.  
+- **Verification:** `mvn -pl gotham-datagen test` green; against running `gotham-web` + **Docker** helpers (manual or P10-T06): creates docs; media counts match defaults; skip flags honored.  
 - **Depends on:** P10-T03, P3-T03, P4-T03, P5-T02, P6-T03
 
 ### P10-T05 — Datagen runbook + verification report
-- **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video.  
+- **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video, **IT profile** `it-datagen-helpers`.  
 - **Do:** Sample: `mvn -pl gotham-datagen -am package && java -jar gotham-datagen/target/gotham-datagen-*.jar` (or `exec:java` with `DatagenMain`).  
-- **Verification:** Runbook completes on the M4 lab with containers **or** documents skip-flag path; state file P10 tasks closable.  
+- **Verification:** Runbook completes on the M4 lab with containers **or** documents skip-flag path.  
 - **Depends on:** P10-T04
 
----
-
-## Definition of Done (prototype)
+### P10-T06 — Integration tests: datagen helpers + orchestrator
+- **Create:** Failsafe profile `it-datagen-helpers` per [`testing-strategy.md`](./testing-strategy.md).  
+- **Do:** Health + minimal generation against Docker **Ollama**, **ComfyUI**, **Kokoro**; small orchestrator run (reduced counts OK for IT) posting through live `/journalist` and `/article` when `gotham-web` is up.  
+- **Verification:** `mvn -Pit-datagen-helpers failsafe:integration-test failsafe:verify` passes on lab with `datagen` profile up; assumptions skip cleanly when containers absent. State file P10 closable.  
+- **Depends on:** P10-T05, P10-T02, P9-T03
 
 - [ ] IntelliJ opens parent POM as multi-module (`gotham-common`, `gotham-web`, and after P10 `gotham-datagen`)  
 - [ ] Compose brings up `gotham-web` + in-repo `imagebind-service`  
@@ -457,6 +480,8 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - [ ] Search modes per capability matrix  
 - [ ] Header health legends + MIT footer  
 - [ ] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps)  
+- [ ] **Unit tests** for backend + frontend (MockMvc) with `mvn test` green  
+- [ ] **Integration tests** for Elasticsearch + ImageBind (**P9-T03**) and datagen helpers (**P10-T06**)  
 - [ ] P9 static smoke path works without generative helpers  
 - [ ] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; **Java console** `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
 - [ ] State file tasks completed  
@@ -481,3 +506,4 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 | Extra | **Datagen volumes:** 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article; P9 static seed kept |
 | Extra | **Lab hardware:** MacBook Pro M4 · 32 GB · no NVIDIA; lighter models **Qwen 2.5 7B**, **SDXL-Turbo**, **Kokoro-82M**, **Wan2.1 1.3B** |
 | Extra | **Helpers mandatory as Docker containers** (Compose profile `datagen`: Ollama + `comfyui-service` + Kokoro CPU) |
+| Extra | **Testing:** unit tests for all backend + frontend (MockMvc); integration tests for ES, ImageBind, and datagen helpers ([`testing-strategy.md`](./testing-strategy.md)) |
