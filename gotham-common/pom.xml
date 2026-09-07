@@ -35,4 +35,30 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <!--
+                Default module resources. Re-declared explicitly because adding a second <resource>
+                below replaces Maven's implicit default; without this line src/main/resources would
+                stop being packaged.
+            -->
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+            </resource>
+            <!--
+                Ship the approved index mappings onto the classpath as elasticsearch/*.mapping.json,
+                reusing the SINGLE source of truth at the repository root (../elasticsearch) so the
+                JSON is never duplicated and cannot drift from the design docs that link to it.
+                P2-T02's idempotent bootstrap loads these from the classpath.
+            -->
+            <resource>
+                <directory>${project.basedir}/../elasticsearch</directory>
+                <targetPath>elasticsearch</targetPath>
+                <includes>
+                    <include>*.mapping.json</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 </project>

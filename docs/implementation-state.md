@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-07T15:20:00Z  
-**Active phase:** P2 (P1 complete — **compact context now** before starting P2)  
+**Last updated:** 2026-09-07T19:55:00Z  
+**Active phase:** P2 (in progress — P2-T01 done)  
 **Prototype status:** `in_progress`  
-**Next task:** `P2-T01` (Mapping JSON on classpath — dep P0-T01 done)
+**Next task:** `P2-T02` (Idempotent index bootstrap — deps P1-T02, P2-T01 done)
 
 ---
 
@@ -56,7 +56,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 |-------|-------|------------|--------|
 | P0 | Scaffold & agent harness | 5/5 | done |
 | P1 | Config, health, ES client, error pages | 4/4 | done |
-| P2 | Index bootstrap | 0/2 | pending |
+| P2 | Index bootstrap | 1/2 | in progress |
 | P3 | `/journalist` — list + create + edit form | 0/3 | pending |
 | P4 | `/article` CRUD + journalist cascade-strip delete | 0/5 | pending |
 | P5 | GCS + multimedia | 0/3 | pending |
@@ -66,7 +66,7 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 9 / **42** tasks done
+**Totals:** 10 / **42** tasks done
 
 ---
 
@@ -85,7 +85,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P1-T02 | P1 | Elasticsearch Java client bean | done | P1-T01 | JavaMentor | 2026-09-07T14:15:00Z | 2026-09-07T14:25:00Z | ElasticsearchClientConfig builds ElasticsearchClient via ElasticsearchClient.of(host,apiKey) (elasticsearch-java 9.4.5, rest5 transport). Starts with placeholders (client created, calls fail). Unit test creates bean. Real smoke (application-local.properties): cluster info GET / -> 200 serverless 9.6.0; HEAD gotham-media-browser -> 404 (index not yet created). API key never logged. |
 | P1-T03 | P1 | Health endpoints for chrome | done | P1-T02, P0-T04 | JavaMentor | 2026-09-07T14:30:00Z | 2026-09-07T14:50:00Z | HealthController /api/health/{elasticsearch,imagebind} (200 UP / 503 DOWN) + ElasticsearchHealthChecker (client.info(), Serverless-safe) + ImageBindHealthChecker (HTTP). chrome.js flips legends. 9 unit/slice tests. Live: GET / 200; ES health 200 UP (live serverless); ImageBind 503 DOWN; API key not in logs. Also moved application-local.properties to repo root (out of jar). |
 | P1-T04 | P1 | Global fault tolerance & user error pages | done | P0-T04, P1-T01 | JavaMentor | 2026-09-07T14:55:00Z | 2026-09-07T15:20:00Z | Domain exceptions (NotFound/Dependency/MediaLimit) in gotham-common; @ControllerAdvice + ErrorViewFactory (status/title/reason/reference id, stack logged server-side only) + GothamErrorController (/error) + branded error.html; Whitelabel off. Framework MVC exceptions keep their status via ErrorResponse. 8 tests. Live: unknown route -> 404 branded (no stack/Whitelabel). |
-| P2-T01 | P2 | Mapping JSON on classpath | pending | P0-T01 | | | | |
+| P2-T01 | P2 | Mapping JSON on classpath | done | P0-T01 | JavaMentor | 2026-09-07T19:45:00Z | 2026-09-07T19:55:00Z | Single source of truth kept at repo-root elasticsearch/*.mapping.json (docs still link there); gotham-common pom adds ../elasticsearch as a resource dir (targetPath elasticsearch, *.mapping.json) so both mappings ship on the classpath. IndexDefinition enum (JOURNALISTS, MEDIA_BROWSER) resolves resource path + loadMappingJson() (fail-fast if absent) — reused by P2-T02. IndexDefinitionTest (5 cases: parametrized load+valid JSON+_meta.index match, path convention, 1024-d vectors, missing-resource contract). mvn -pl gotham-common test green (14). Verified mappings present in target/classes and packaged jar under elasticsearch/. |
 | P2-T02 | P2 | Idempotent index bootstrap | pending | P1-T02, P2-T01 | | | | |
 | P3-T01 | P3 | Journalist domain + repository | pending | P2-T02 | | | | |
 | P3-T02 | P3 | Journalist list UI (GET /journalist) | pending | P3-T01, P0-T04, P1-T04 | | | | |
