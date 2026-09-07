@@ -37,6 +37,23 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Plan/state: **42** tasks (P0–P10).  
 - Testing: unit + MockMvc always; Failsafe ITs for ES / ImageBind / helpers — [`docs/testing-strategy.md`](docs/testing-strategy.md).
 
+## Build & verify (JDK 25)
+
+Set `JAVA_HOME` to the Java 25 LTS home first (Maven must run on JDK 25, not a newer default):
+
+```bash
+export JAVA_HOME="$(/usr/libexec/java_home -v 25)"   # macOS
+mvn test                     # unit + web-slice (required before marking a coding task done)
+mvn -DskipTests package      # build the gotham-web boot jar
+docker compose config        # validate the Compose stack (gotham-web + imagebind-service)
+```
+
+Integration suites run via Failsafe profiles later (`it-es`, `it-imagebind`, `it-datagen-helpers`) — see [`docs/testing-strategy.md`](docs/testing-strategy.md).
+
+## Source of truth
+
+[`docs/implementation-state.md`](docs/implementation-state.md) is **authoritative** for progress: its task board (42 tasks, P0–P10) drives what to do next and must match the task IDs and Depends-on in [`docs/implementation-plan.md`](docs/implementation-plan.md). Update it on every task transition.
+
 ## Hard constraints
 
 - No RDBMS · No `/admin` · No Elastic `semantic_text` · No auth  
