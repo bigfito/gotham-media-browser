@@ -83,7 +83,9 @@ Flow:
 - **Fault tolerance:** global `@ControllerAdvice` / error templates for **all** endpoints — branded error page with **reason** + reference id; Whitelabel off; client timeouts on ES/ImageBind/GCS (see [`ui-design-errors.md`](./ui-design-errors.md))
 
 ### 3. `imagebind-service`
-- Sync embed text / image / audio / video → `float[1024]` · **built in-repo**
+- Sync embed text / image / audio / video → `float[1024]` · **built in-repo** (FastAPI, CPU default)
+- Endpoints: `GET /health` · `POST /embed/text` (JSON) · `POST /embed/{image,audio,video}` (multipart `file`)
+- Real Meta ImageBind by default; **deterministic stub** backend for CI / no weights (Java side: `gotham.imagebind.stub=true`); loading the real model needs Docker RAM **≥ 12 GB**
 
 ### 4. `gotham-datagen` (P10)
 - **Java console application** (`public static void main`) — **not** Spring Boot; **no** public UI  

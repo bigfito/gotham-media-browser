@@ -20,7 +20,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Backing bean for the article create/edit forms (text + metadata + bylines; media is added in P5).
+ * Backing bean for the article create/edit forms (text + metadata + bylines; media files are bound
+ * separately as multipart uploads, and existing media can be flagged for removal via removeMediaIds).
  *
  * <p>Mutable with getters/setters for Spring MVC binding and Thymeleaf re-rendering. Per-journalist
  * byline order and role are bound as maps keyed by the journalist id, so the checkbox list and its

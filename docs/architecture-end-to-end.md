@@ -215,11 +215,12 @@ gotham-news-media-browser/
 ├── README.md
 ├── AGENTS.md
 ├── pom.xml                      # Maven parent (multi-module)
-├── gotham-common/               # (to be created in P0)
-├── gotham-web/                  # (to be created in P0)
+├── docker-compose.yml           # gotham-web + imagebind-service (+ datagen profile in P10)
+├── gotham-common/               # ✔ shared lib: config, ES/GCS/ImageBind clients, domain, index bootstrap
+├── gotham-web/                  # ✔ Spring Boot web: /journalist + /article CRUD, health, error pages
 ├── gotham-datagen/              # (P10 — Java console, not Spring Boot)
 ├── comfyui-service/             # (P10 — CPU ComfyUI container)
-├── imagebind-service/           # (to be created in P0/P6)
+├── imagebind-service/           # ✔ FastAPI Meta ImageBind wrapper (text/image/audio/video → 1024), Docker
 ├── secrets/                     # SA JSON secret (gitignored) + *.example
 ├── docs/
 │   ├── architecture-end-to-end.md   ← this file

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  P4-T04 article create/edit form (POST /article, POST /article/{id}), shared by new and edit.
-  Ported from ui-mockups/article-new.html minus the multimedia upload (deferred to P5). Selected
-  journalists are snapshotted into nested bylines on save.
+  Article create/edit form (POST /article, POST /article/{id}), shared by new and edit.
+  Ported from ui-mockups/article-new.html. Selected journalists are snapshotted into nested bylines
+  on save; multimedia is uploaded to public GCS (P5) and removable on edit. Embeddings land in P6.
 -->
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head th:replace="~{fragments/chrome :: head('Article — Gotham News & Media Browser')}"></head>
@@ -15,8 +15,8 @@
         <div>
             <p class="crud-hero__eyebrow">POST /article · gotham-media-browser</p>
             <h1 class="crud-hero__title" th:text="${heading}">New article</h1>
-            <p class="crud-hero__lede">Writes one denormalized document: story, metadata, and nested
-                journalist bylines. Multimedia + embeddings arrive in P5–P6.</p>
+            <p class="crud-hero__lede">Writes one denormalized document: story, metadata, nested
+                journalist bylines, and multimedia. Embeddings arrive in P6.</p>
         </div>
         <a class="nav-link" th:href="@{/article}" href="/article">Back to list</a>
     </header>
