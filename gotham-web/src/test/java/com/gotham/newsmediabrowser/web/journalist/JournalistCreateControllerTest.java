@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.journalist.JournalistRepository;
+import com.gotham.newsmediabrowser.common.journalist.JournalistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -31,6 +32,9 @@ class JournalistCreateControllerTest {
 
     @MockitoBean
     private JournalistRepository journalistRepository;
+
+    @MockitoBean
+    private JournalistService journalistService;
 
     @Test
     void newFormRendersEmptyWithChrome() throws Exception {

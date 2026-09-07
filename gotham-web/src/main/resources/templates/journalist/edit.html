@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!--
+  P4-T03 journalist edit (GET /journalist/{id} -> POST /journalist/{id}) + cascade-strip delete
+  (POST /journalist/{id}/delete). Ported from ui-mockups/journalist-edit.html. Saving reindexes the
+  nested byline snapshots on every article referencing this _id; deleting cascade-strips them.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/chrome :: head('Edit journalist — Gotham News & Media Browser')}"></head>
+<body th:attr="data-page='journalist'">
+
+<header th:replace="~{fragments/chrome :: header}"></header>
+
+<div class="shell shell--narrow">
+    <header class="crud-hero">
+        <div>
+            <p class="crud-hero__eyebrow">POST /journalist/{id} · gotham-journalists</p>
+            <h1 class="crud-hero__title">Edit journalist</h1>
+            <p class="crud-hero__lede">Saving reindexes nested bylines on articles that reference this
+                <code>_id</code>. <strong>Delete cascade-strips</strong> this journalist from all article
+                bylines, reindexes those articles, then removes the master document.</p>
+        </div>
+        <a class="nav-link" th:href="@{/journalist}" href="/journalist">Back to list</a>
+    </header>
+
+    <form class="crud-form" th:action="@{/journalist/{id}(id=${journalistId})}" th:object="${journalistForm}"
+          method="post">
+        <section class="form-section">
+            <h2>Record</h2>
+            <div class="form-grid">
+                <div class="field form-grid__full">
+                    <label for="id">Elasticsearch _id</label>
+                    <input id="id" type="text" th:value="${journalistId}" readonly class="mono"/>
+                </div>
+                <div class="field">
+                    <label for="first_name">First name</label>
+                    <input id="first_name" th:field="*{firstName}" type="text" required autocomplete="given-name"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">error</p>
+                </div>
+                <div class="field">
+                    <label for="last_name">Last name</label>
+                    <input id="last_name" th:field="*{lastName}" type="text" required autocomplete="family-name"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">error</p>
+                </div>
+                <div class="field form-grid__full">
+                    <label for="email">Email</label>
+                    <input id="email" th:field="*{email}" type="email" required autocomplete="email"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">error</p>
+                </div>
+                <div class="field form-grid__full">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" th:field="*{bio}" rows="5"></textarea>
+                    <p class="field-error" th:if="${#fields.hasErrors('bio')}" th:errors="*{bio}">error</p>
+                </div>
+                <div class="field">
+                    <label for="created_at">Created</label>
+                    <input id="created_at" type="text" th:value="${createdAt}" readonly/>
+                </div>
+                <div class="field">
+                    <label for="updated_at">Updated</label>
+                    <input id="updated_at" type="text" th:value="${updatedAt}" readonly/>
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn-sky" type="submit">Save changes</button>
+            <a class="btn btn-ghost" th:href="@{/journalist}" href="/journalist">Cancel</a>
+        </div>
+    </form>
+
+    <!-- Separate form so the destructive action confirms and is not tangled with Save. -->
+    <form class="danger-zone" th:action="@{/journalist/{id}/delete(id=${journalistId})}" method="post"
+          onsubmit="return confirm('Cascade-strip this journalist from all article bylines, then delete the master record?');">
+        <button class="btn btn-danger" type="submit">Delete journalist</button>
+    </form>
+</div>
+
+<footer th:replace="~{fragments/chrome :: footer}"></footer>
+
+</body>
+</html>

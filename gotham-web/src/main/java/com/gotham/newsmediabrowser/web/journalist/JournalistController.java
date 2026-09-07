@@ -1,8 +1,10 @@
 package com.gotham.newsmediabrowser.web.journalist;
 
+import com.gotham.newsmediabrowser.common.error.NotFoundException;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.journalist.JournalistPage;
 import com.gotham.newsmediabrowser.common.journalist.JournalistRepository;
+import com.gotham.newsmediabrowser.common.journalist.JournalistService;
 import jakarta.validation.Valid;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -13,13 +15,15 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * Serves the journalist master-data pages. This task (P3-T02) implements the paginated list at
- * {@code GET /journalist}; create/edit/delete are wired in P3-T03 and P4-T03.
+ * Serves the journalist master-data pages: the paginated list, create (P3-T03), and edit +
+ * cascade-strip delete (P4-T03). Editing/deleting ripple into article bylines via
+ * {@link JournalistService}.
  */
 @Controller
 public class JournalistController {
@@ -31,9 +35,11 @@ public class JournalistController {
             DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneOffset.UTC);
 
     private final JournalistRepository journalistRepository;
+    private final JournalistService journalistService;
 
-    public JournalistController(JournalistRepository journalistRepository) {
+    public JournalistController(JournalistRepository journalistRepository, JournalistService journalistService) {
         this.journalistRepository = journalistRepository;
+        this.journalistService = journalistService;
     }
 
     @GetMapping("/journalist")
@@ -100,6 +106,71 @@ public class JournalistController {
         Journalist created = journalistRepository.create(journalistForm.toNewJournalist());
         redirectAttributes.addFlashAttribute("flash", "Created " + created.fullName() + ".");
         return "redirect:/journalist";
+    }
+
+    /** Renders the edit form for an existing journalist. */
+    @GetMapping("/journalist/{id}")
+    public String editForm(@PathVariable String id, Model model) {
+        Journalist journalist = journalistRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Journalist " + id + " was not found."));
+        addFormChrome(model);
+        model.addAttribute("journalistForm", toForm(journalist));
+        addRecordChrome(model, journalist);
+        return "journalist/edit";
+    }
+
+    /**
+     * Saves edits to a journalist and cascades the change onto every article that bylines it. On
+     * validation failure the form is redisplayed with in-form errors; on success it redirects back to
+     * the list (Post/Redirect/Get).
+     */
+    @PostMapping("/journalist/{id}")
+    public String update(
+            @PathVariable String id,
+            @Valid @ModelAttribute("journalistForm") JournalistForm journalistForm,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        Journalist existing = journalistRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Journalist " + id + " was not found."));
+
+        if (bindingResult.hasErrors()) {
+            addFormChrome(model);
+            addRecordChrome(model, existing);
+            return "journalist/edit";
+        }
+
+        Journalist toSave = journalistForm.toNewJournalist()
+                .withId(id)
+                .withTimestamps(existing.createdAt(), existing.updatedAt());
+        Journalist saved = journalistService.update(toSave);
+        redirectAttributes.addFlashAttribute("flash", "Updated " + saved.fullName() + ".");
+        return "redirect:/journalist";
+    }
+
+    /** Cascade-strips a journalist from all article bylines, then deletes the master document. */
+    @PostMapping("/journalist/{id}/delete")
+    public String delete(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        journalistService.cascadeDelete(id);
+        redirectAttributes.addFlashAttribute("flash", "Deleted journalist and stripped their bylines.");
+        return "redirect:/journalist";
+    }
+
+    private JournalistForm toForm(Journalist journalist) {
+        JournalistForm form = new JournalistForm();
+        form.setFirstName(journalist.firstName());
+        form.setLastName(journalist.lastName());
+        form.setEmail(journalist.email());
+        form.setBio(journalist.bio());
+        return form;
+    }
+
+    /** Read-only record fields shown on the edit form (id + timestamps). */
+    private void addRecordChrome(Model model, Journalist journalist) {
+        model.addAttribute("journalistId", journalist.id());
+        model.addAttribute("createdAt", journalist.createdAt() != null ? journalist.createdAt().toString() : "—");
+        model.addAttribute("updatedAt", journalist.updatedAt() != null ? journalist.updatedAt().toString() : "—");
     }
 
     private void addFormChrome(Model model) {

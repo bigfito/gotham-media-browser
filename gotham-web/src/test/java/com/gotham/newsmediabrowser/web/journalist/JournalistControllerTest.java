@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.journalist.JournalistPage;
 import com.gotham.newsmediabrowser.common.journalist.JournalistRepository;
+import com.gotham.newsmediabrowser.common.journalist.JournalistService;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class JournalistControllerTest {
 
     @MockitoBean
     private JournalistRepository journalistRepository;
+
+    @MockitoBean
+    private JournalistService journalistService;
 
     @Test
     void rendersJournalistsWithChromeAndPagingMeta() throws Exception {
