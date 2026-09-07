@@ -20,12 +20,13 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | Search UI | `docs/ui-design-search-results.md` |
 | CRUD UI | `docs/ui-design-crud.md` |
 | Error UX | `docs/ui-design-errors.md` |
+| Synthetic data (P10) | `docs/synthetic-data-generation.md` |
 | Mappings | `elasticsearch/*.mapping.json` |
 | Mockups | `ui-mockups/` (open `index.html`) |
 
 ## Locked stack
 
-Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web`) · ES Java client · Docker Compose (`gotham-web` + in-repo `imagebind-service`) · ImageBind 1024-d
+Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · ES Java client · Docker Compose (`gotham-web` + in-repo `imagebind-service`; optional profile `datagen` for Qwen / FLUX / Kokoro / Wan) · ImageBind 1024-d
 
 Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
@@ -42,4 +43,4 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 - `/journalist/**` — CRUD on `gotham-journalists`  
 - `/article/**` — CRUD on denormalized `gotham-media-browser`  
 
-No `/admin`. License: MIT (see repository `LICENSE`).
+No `/admin`. Synthetic load (last phase): `gotham-datagen` → HTTP CRUD only. License: MIT (see repository `LICENSE`).

@@ -3,7 +3,7 @@
 **Status:** Reviewed & synced (2026-09-07)  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
-**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web`) · Elasticsearch Java API Client · Docker Compose  
+**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · Elasticsearch Java API Client · Docker Compose  
 
 Open parent `pom.xml` in IntelliJ IDEA Ultimate.
 
@@ -20,6 +20,7 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 | Search / results UI | [`ui-design-search-results.md`](./ui-design-search-results.md) |
 | CRUD UI | [`ui-design-crud.md`](./ui-design-crud.md) |
 | Error / fault-tolerance UX | [`ui-design-errors.md`](./ui-design-errors.md) |
+| Synthetic data (P10 last) | [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
 | Implementation plan | [`implementation-plan.md`](./implementation-plan.md) |
 | Implementation state | [`implementation-state.md`](./implementation-state.md) |
 | Mappings | [`../elasticsearch/`](../elasticsearch/) |
@@ -32,6 +33,10 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 ```mermaid
 flowchart LR
   U[Browser] --> WEB[gotham-web<br/>Spring Boot 4.1.1 + Thymeleaf<br/>:8080]
+  DG[gotham-datagen<br/>P10 CLI] -->|POST /journalist /article| WEB
+  DG --> OLL[Ollama · Qwen 2.5]
+  DG --> CFY[ComfyUI · FLUX / Wan]
+  DG --> KOK[Kokoro · TTS]
   WEB --> JI[(gotham-journalists<br/>Elastic Cloud)]
   WEB --> AI[(gotham-media-browser<br/>Elastic Cloud)]
   WEB --> IB[imagebind-service<br/>Meta ImageBind<br/>:8081]
@@ -43,12 +48,14 @@ flowchart LR
 | Component | Role |
 |-----------|------|
 | `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends, **global error pages** |
+| `gotham-datagen` | **P10 (last):** synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
 | `imagebind-service` | Sync HTTP embed text/image/audio/video → `float[1024]` |
+| Ollama / ComfyUI / Kokoro | Optional Compose profile `datagen` — text / image+video / audio generation |
 | `gotham-journalists` | Journalist master documents (ES auto `_id`) |
 | `gotham-media-browser` | One denormalized article doc + nested journalists + nested multimedia |
 | GCS | Public object storage for media binaries (`storage_uri` HTTPS) |
 
-**Out of scope:** RDBMS, auth/login, Elastic managed inference / `semantic_text`, journalist public search UI, signed URLs.
+**Out of scope:** RDBMS, auth/login, Elastic managed inference / `semantic_text`, journalist public search UI, signed URLs, writing ES/GCS from datagen bypassing the app.
 
 ---
 
@@ -169,9 +176,14 @@ Spec: [`ui-design-errors.md`](./ui-design-errors.md) · mockup: `ui-mockups/erro
 ## 6. Local Docker Compose (target)
 
 ```text
-services:
+services (always):
   gotham-web           # :8080  Spring Boot + Thymeleaf (module gotham-web)
   imagebind-service    # :8081  Meta ImageBind helper (in-repo)
+
+services (profile: datagen — P10):
+  ollama               # Qwen 2.5 14B-Instruct (Q4/Q5)
+  comfyui              # FLUX.1 [schnell] + Wan2.1 T2V
+  kokoro               # Kokoro-82M TTS (CPU image OK)
 
 external:
   Elastic Cloud Serverless
@@ -179,6 +191,8 @@ external:
 ```
 
 **Credentials (locked):** Elasticsearch endpoint + API key and GCS bucket/project ids are **hardcoded** in `gotham-web` `application.properties`. The GCS service account JSON key is a **secret file** under `secrets/` (gitignored; path in properties). Do not commit real keys.
+
+**Synthetic load:** `gotham-datagen` (Maven CLI) posts to `/journalist` and `/article` only — see [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
 ---
 
@@ -200,6 +214,7 @@ gotham-news-media-browser/
 ├── pom.xml                      # Maven parent (multi-module)
 ├── gotham-common/               # (to be created in P0)
 ├── gotham-web/                  # (to be created in P0)
+├── gotham-datagen/              # (to be created in P10 — last)
 ├── imagebind-service/           # (to be created in P0/P6)
 ├── secrets/                     # SA JSON secret (gitignored) + *.example
 ├── docs/
@@ -213,6 +228,7 @@ gotham-news-media-browser/
 │   ├── ui-design-search-results.md
 │   ├── ui-design-crud.md
 │   ├── ui-design-errors.md
+│   ├── synthetic-data-generation.md
 │   ├── implementation-plan.md
 │   └── implementation-state.md
 ├── elasticsearch/
@@ -249,7 +265,8 @@ gotham-news-media-browser/
 | `source.text` copy_to `article_search_text` | ✓ |
 | Results filters wired to IA query params | ✓ |
 | Article `mode=vector` → HTTP 400 error page | ✓ |
-| Multi-module Maven (`gotham-common` + `gotham-web`) | ✓ (planned P0) |
+| Multi-module Maven (`gotham-common` + `gotham-web`; `gotham-datagen` in P10) | ✓ |
 | ES/GCS props hardcoded; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
-| Implementation plan ↔ state (35 tasks) | ✓ |
+| Synthetic data last phase P10 (Qwen / FLUX / Kokoro / Wan via HTTP CRUD) | ✓ |
+| Implementation plan ↔ state (41 tasks, P0–P10) | ✓ |

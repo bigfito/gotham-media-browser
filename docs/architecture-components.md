@@ -18,7 +18,7 @@
 | Object storage | **GCS public bucket objects** (no signed URLs) |
 | Embeddings | Meta ImageBind (OSS), Docker helper, sync HTTP, **1024-d** |
 | Modalities | Image, audio, video (+ text queries via ImageBind text) |
-| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web`) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
+| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` in P10**) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
 | ES credentials | Endpoint + API key **hardcoded** in `application.properties` |
 | GCS credentials | Bucket/project hardcoded in properties; SA JSON **secret file** under `secrets/` |
 | Landing | `/` — two panels: articles · multimedia |
@@ -27,10 +27,11 @@
 | Article CRUD | `/article` — full CRUD on denormalized `gotham-media-browser` docs (status: DRAFT / PUBLISHED / ARCHIVED) |
 | Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
 | Fault tolerance | Branded error pages with reason on **all** endpoints |
+| Synthetic data | **Last phase P10** — `gotham-datagen` loads via HTTP CRUD; helpers Qwen / FLUX / Kokoro / Wan ([`synthetic-data-generation.md`](./synthetic-data-generation.md)) |
 | Journalist UI search | **No** dedicated public journalist search UI |
 | Journalist as search param | **Yes** — article full-text accepts `journalist` filter/param |
 | Embeddings build | ImageBind **in-repo** under `imagebind-service/` |
-| Runtime | Local Docker Compose |
+| Runtime | Local Docker Compose (+ optional profile `datagen`) |
 | Users / auth | Out of scope (`/journalist` and `/article` open) |
 | Implementation | [`implementation-plan.md`](./implementation-plan.md) · [`implementation-state.md`](./implementation-state.md) |
 
@@ -39,6 +40,8 @@
 ```mermaid
 flowchart LR
   U[Browser] --> WEB[Gotham Web<br/>Spring Boot 4.1.1 + Thymeleaf]
+  DG[gotham-datagen P10] -->|HTTP CRUD| WEB
+  DG --> HELPERS[Ollama / ComfyUI / Kokoro]
   WEB --> JI[(gotham-journalists)]
   WEB --> AI[(gotham-media-browser)]
   WEB --> IB[ImageBind Helper]
@@ -67,6 +70,7 @@ Flow:
 | parent `gotham-news-media-browser` | BOM, Java 25, module list (IntelliJ Ultimate import) |
 | `gotham-common` | Config properties, ES/GCS/ImageBind clients, repositories, projections, domain |
 | `gotham-web` | Spring Boot app, Thymeleaf controllers/views, static assets, global error handling |
+| `gotham-datagen` | **P10 (last):** CLI orchestrator — generate text/media → `POST /journalist` & `/article` |
 
 ### 2. `gotham-web` (runtime)
 - Dual-panel landing; entity-scoped `/results`; `/journalist` + `/article` CRUD  
@@ -80,13 +84,19 @@ Flow:
 ### 3. `imagebind-service`
 - Sync embed text / image / audio / video → `float[1024]` · **built in-repo**
 
-### 4. Elastic indexes
+### 4. `gotham-datagen` (P10)
+- Java Spring Boot CLI; **no** public UI  
+- Calls modality helpers over HTTP, then loads data **only** through live CRUD APIs  
+- Helpers (Compose profile `datagen`): Ollama + Qwen 2.5 14B · ComfyUI + FLUX.1 [schnell] / Wan2.1 · Kokoro-82M  
+- Spec: [`synthetic-data-generation.md`](./synthetic-data-generation.md)
+
+### 5. Elastic indexes
 | Index | Grain | Role |
 |-------|-------|------|
 | `gotham-journalists` | 1 journalist | Master data for `/journalist` + article bylines |
 | `gotham-media-browser` | 1 article | Public browse/search + `/article` CRUD; nested journalists + multimedia |
 
-### 5. GCS
+### 6. GCS
 - Public objects; ES stores `storage_uri` (e.g. `https://storage.googleapis.com/...` or `gs://...` resolved to public HTTPS in UI)  
 - No signed URLs  
 - SA JSON loaded from secret file path in `application.properties`
@@ -139,9 +149,14 @@ Journalist: **not** a results entity. On article full-text, `journalist` param f
 ## Docker Compose
 
 ```text
-services:
+services (always):
   gotham-web           # :8080
   imagebind-service    # :8081
+
+services (profile: datagen — P10):
+  ollama               # Qwen 2.5 14B-Instruct
+  comfyui              # FLUX.1 [schnell] + Wan2.1
+  kokoro               # Kokoro-82M TTS
 
 external:
   Elastic Cloud Serverless  (URL + API key)  → indexes gotham-journalists, gotham-media-browser
@@ -152,4 +167,5 @@ external:
 
 1. Paste real Elastic Cloud endpoint + API key into `gotham-web` `application.properties`  
 2. Paste GCS project/bucket into `application.properties`; place SA JSON at `secrets/gcs-sa.json` (never commit)  
-3. Confirm CPU-only ImageBind on the lab machine for in-repo `imagebind-service`
+3. Confirm CPU-only ImageBind on the lab machine for in-repo `imagebind-service`  
+4. For P10 synthetic load: confirm GPU VRAM (≥12 GB recommended for FLUX/Wan alongside Qwen) or use `--skip-image` / `--skip-video`

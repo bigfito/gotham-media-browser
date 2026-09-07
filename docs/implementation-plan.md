@@ -32,8 +32,9 @@
 | Build | Maven **3.9.x** **multi-module** (IntelliJ IDEA Ultimate–friendly) |
 | UI | Thymeleaf (server-rendered) |
 | Search | Elasticsearch Java API Client (Boot BOM ~9.4.x) |
-| Compose | `gotham-web` + `imagebind-service` |
+| Compose | `gotham-web` + `imagebind-service` (+ optional profile `datagen` helpers in **P10**) |
 | Embeddings | Meta ImageBind **built in-repo**, sync HTTP, **1024-d** |
+| Synthetic data | Maven module **`gotham-datagen`** (phase **P10**, last) — see [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
 | Storage | Elastic Cloud Serverless + **public** GCS |
 | Config file | `application.properties` (not YAML for secrets/endpoints) |
 | Base package | `com.gotham.newsmediabrowser` |
@@ -49,6 +50,8 @@ gotham-news-media-browser/
 │   └── pom.xml
 ├── gotham-web/                  # Spring Boot executable + Thymeleaf
 │   └── pom.xml                  # depends on gotham-common; spring-boot-maven-plugin
+├── gotham-datagen/              # synthetic data CLI (added in P10; last phase)
+│   └── pom.xml                  # depends on gotham-common; HTTP clients to web + helpers
 ├── imagebind-service/           # Python/Docker ImageBind (NOT a Maven module)
 ├── secrets/                     # gitignored real secrets; *.example committed
 ├── docker-compose.yml
@@ -61,8 +64,10 @@ gotham-news-media-browser/
 | parent | `gotham-news-media-browser` | BOM alignment, plugin versions, module list |
 | `gotham-common` | `gotham-common` | Config properties, ES repositories, GCS, ImageBind client, projections |
 | `gotham-web` | `gotham-web` | Controllers, Thymeleaf, `SpringBootApplication`, static assets |
+| `gotham-datagen` | `gotham-datagen` | **P10** CLI: generate text/media via helpers → `POST /journalist` & `/article` |
 
-`imagebind-service/` stays in the same repo for cohesion but is **Compose-built**, not a Maven module.
+`imagebind-service/` stays in the same repo for cohesion but is **Compose-built**, not a Maven module.  
+**P0** scaffolds `gotham-common` + `gotham-web` only; **P10** adds `gotham-datagen` to the parent module list.
 
 ### Credentials & secrets (locked)
 
@@ -98,10 +103,14 @@ P5  GCS + multimedia nested CRUD + HTML5 playback
 P6  imagebind-service (in-repo) + write-time embeddings
 P7  Public search: landing + /results full-text
 P8  Semantic · Hybrid · Vector search
-P9  Seed data, E2E demo script, hardening
+P9  Static smoke fixtures + demo runbook (no GPU required)
+P10 Synthetic data generation (`gotham-datagen` + modality helpers)  ← LAST
 ```
 
-Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9`
+Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → P10`
+
+**Total tasks:** 41 (see task sections + [`implementation-state.md`](./implementation-state.md)).  
+**Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).
 
 ---
 
@@ -113,7 +122,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - **Create:** Parent `pom.xml` (`packaging` `pom`, modules `gotham-common`, `gotham-web`); both child modules; Java 25; Spring Boot 4.1.1 parent/BOM; package `com.gotham.newsmediabrowser`.  
 - **Do:** `gotham-web` has `@SpringBootApplication`, empty `application.properties` with **placeholder** ES/GCS/ImageBind keys (see credentials table); `gotham-common` empty library jar.  
 - **Do:** Root `.gitignore` for `**/target/`, `secrets/*.json` (allow `*.example`), IDE files as appropriate.  
-- **Don’t:** Business logic.  
+- **Don’t:** Business logic; do **not** add `gotham-datagen` yet (P10).  
 - **Verification:** From package root: `mvn -q -DskipTests package` succeeds; IntelliJ can import parent POM as multi-module.  
 - **Depends on:** —
 
@@ -318,22 +327,83 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 
 ---
 
-## Phase 9 — Demo readiness
+## Phase 9 — Demo smoke + static fixtures
 
-### P9-T01 — Seed profile
+**Goal:** CI / low-resource demo without GPU generative models. Full synthetic load is **P10**.
+
+### P9-T01 — Static seed fixtures
+- **Create:** Tiny committed fixtures (e.g. under `gotham-web/src/test/resources/fixtures/` or `docs/demo/fixtures/`) — a few journalists + articles; optional tiny IMAGE/AUDIO/VIDEO samples within media limits.  
+- **Do:** Document how to load via `/journalist` and `/article` (curl or a small profile) — **not** via `gotham-datagen`.  
+- **Don’t:** Depend on Ollama / ComfyUI / Kokoro.  
+- **Verification:** Seed path documented; fixtures present and within size limits.  
 - **Depends on:** P6-T03, P5-T02
 
 ### P9-T02 — Demo runbook + smoke script
-- **Depends on:** P8-T03, P7-T04, P1-T03
+- **Create:** Runbook covering Compose up → bootstrap indexes → static seed → exercise search modes + CRUD smoke.  
+- **Do:** Script or checklist that fails clearly on health/dependency errors.  
+- **Verification:** Runbook steps executable against a configured lab; smoke exits non-zero on failure.  
+- **Depends on:** P8-T03, P7-T04, P1-T03, P9-T01
 
-### P9-T03 — Final sync pass
+### P9-T03 — Hardening sync pass
+- **Do:** Align README/AGENTS/mockups with shipped behavior; confirm error pages still cover all routes.  
+- **Don’t:** Start `gotham-datagen` (that is P10).  
+- **Verification:** Checklist in plan DoD (excluding P10) can be ticked for a smoke demo.  
 - **Depends on:** P9-T02
+
+---
+
+## Phase 10 — Synthetic data generation (**last phase**)
+
+**Goal:** Maven module `gotham-datagen` generates realistic journalists + articles (with IMAGE / AUDIO / VIDEO) and loads them **only through** live `POST /journalist` and `POST /article`.  
+**Spec:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).
+
+### Helper services (locked)
+
+| Modality | Best model | Size / quant | VRAM (approx.) | Docker image |
+|----------|------------|--------------|----------------|--------------|
+| Text | Qwen 2.5 (14B-Instruct) | 14B (Q4_K_M or Q5_K_M) | ~9–11 GB | `ollama/ollama:latest` |
+| Image | FLUX.1 [schnell] | 12B (NF4 / Q4 GGUF) | ~11–13 GB | `yanwk/comfyui-boot` |
+| Audio / voice | Kokoro-82M | 82M (FP16 / ONNX) | ~0.5 GB (or 0 on CPU) | `ghcr.io/remsky/kokoro-fastapi-cpu` |
+| Video | Wan2.1 (T2V-1.3B) | 1.3B (BF16 / FP8) | ~9–12 GB (CPU offload OK) | `yanwk/comfyui-boot` |
+
+Defaults until human overrides: **5** journalists · **10** articles · **1** media asset per article (rotating modalities). Skip flags for IMAGE/AUDIO/VIDEO when GPU helpers are absent; **text (Qwen) is required**.
+
+### P10-T01 — Parent POM + `gotham-datagen` module skeleton
+- **Create:** `gotham-datagen/` Spring Boot CLI (`web` disabled or none); package `com.gotham.newsmediabrowser.datagen`; add module to parent `pom.xml`.  
+- **Do:** Placeholder `application.properties` for `gotham.datagen.*` URLs/counts (see synthetic-data doc).  
+- **Don’t:** Call generative APIs yet.  
+- **Verification:** `mvn -pl gotham-datagen -am -DskipTests package` succeeds; IntelliJ shows three Maven modules + common.  
+- **Depends on:** P0-T01, P9-T03
+
+### P10-T02 — Compose profile `datagen` (Ollama · ComfyUI · Kokoro)
+- **Create/Update:** `docker-compose.yml` profile `datagen` with services: `ollama` (`ollama/ollama:latest`), `comfyui` (`yanwk/comfyui-boot`), `kokoro` (`ghcr.io/remsky/kokoro-fastapi-cpu`); document ports and first-run model pull / workflow install.  
+- **Do:** Keep `gotham-web` + `imagebind-service` as always-on services; profile is opt-in.  
+- **Verification:** `docker compose --profile datagen config` validates; README/runbook notes VRAM.  
+- **Depends on:** P0-T02, P10-T01
+
+### P10-T03 — Helper HTTP clients (Qwen · FLUX · Kokoro · Wan)
+- **Create:** Clients in `gotham-datagen` for Ollama chat, ComfyUI T2I (FLUX.1 schnell) + T2V (Wan2.1), Kokoro TTS; health-check each before use.  
+- **Do:** Enforce media size/duration caps (IMAGE 10 MiB · AUDIO 20 MiB / 5 min · VIDEO 50 MiB / 90 s).  
+- **Verification:** Unit/integration tests or documented dry-run against mocked helpers; clients fail clearly when down.  
+- **Depends on:** P10-T02
+
+### P10-T04 — Orchestrator → `POST /journalist` & `POST /article`
+- **Do:** Pipeline: Qwen → journalists → articles (+ captions) → optional media bytes → multipart/form matching CRUD contracts → collect ids; print summary with reasons/reference ids on failures.  
+- **Don’t:** Write directly to Elasticsearch or GCS.  
+- **Verification:** Against running `gotham-web` + helpers (or recorded stubs): creates docs visible via list UIs / ES; `--skip-image`/`--skip-audio`/`--skip-video` honored; abort if Ollama down.  
+- **Depends on:** P10-T03, P3-T03, P5-T02, P6-T03
+
+### P10-T05 — Datagen runbook + verification report
+- **Create:** Operator runbook (GPU notes, model pulls, Compose profile, CLI flags, expected volumes).  
+- **Do:** Sample CLI: `mvn -pl gotham-datagen spring-boot:run -Dspring-boot.run.arguments="--journalists=5 --articles=10"`.  
+- **Verification:** Runbook completes on a GPU lab **or** documents skip-flag path on CPU-only; state file P10 tasks closable.  
+- **Depends on:** P10-T04
 
 ---
 
 ## Definition of Done (prototype)
 
-- [ ] IntelliJ opens parent POM as multi-module (`gotham-common`, `gotham-web`)  
+- [ ] IntelliJ opens parent POM as multi-module (`gotham-common`, `gotham-web`, and after P10 `gotham-datagen`)  
 - [ ] Compose brings up `gotham-web` + in-repo `imagebind-service`  
 - [ ] ES endpoint + API key supplied via `application.properties`  
 - [ ] GCS SA JSON supplied as secret file; bucket props in `application.properties`  
@@ -342,6 +412,8 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 - [ ] Search modes per capability matrix  
 - [ ] Header health legends + MIT footer  
 - [ ] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps)  
+- [ ] P9 static smoke path works without GPU helpers  
+- [ ] **P10:** `gotham-datagen` loads synthetic journalists/articles **via HTTP CRUD** using Qwen / FLUX / Kokoro / Wan helpers (or documented skip flags)  
 - [ ] State file tasks completed  
 
 ---
@@ -358,5 +430,6 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 | Q6 | Commits: **one per task** |
 | Q7 | Package: **`com.gotham.newsmediabrowser`** |
 | Q8 | No extra Antigravity/Claude task format beyond Markdown plan + state |
-| Extra | **Multi-module Maven** for IntelliJ IDEA Ultimate (`gotham-common` + `gotham-web` + parent) |
+| Extra | **Multi-module Maven** for IntelliJ IDEA Ultimate (`gotham-common` + `gotham-web` + parent; **`gotham-datagen` in P10**) |
 | Extra | **Fault-tolerant UX:** global error pages with reason on all endpoints ([`ui-design-errors.md`](./ui-design-errors.md)) |
+| Extra | **Synthetic data (last phase P10):** Java module `gotham-datagen` + Docker helpers per [`synthetic-data-generation.md`](./synthetic-data-generation.md); load only via `/journalist` & `/article` |

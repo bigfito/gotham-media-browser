@@ -11,7 +11,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 1. [`docs/implementation-state.md`](docs/implementation-state.md) — **what to do next**  
 2. [`docs/implementation-plan.md`](docs/implementation-plan.md) — task details & verification  
 3. [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md) — system design  
-4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) for query modes)
+4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) for query modes / [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md) for P10)
 
 ## Work loop
 
@@ -28,8 +28,9 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 ## Project shape (IntelliJ)
 
 - Open **parent** `pom.xml` in IntelliJ IDEA Ultimate as a **Maven multi-module** project.  
-- Modules: `gotham-common`, `gotham-web`.  
-- `imagebind-service/` is in-repo Docker/Python — not a Maven module.
+- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** added in **P10** (last phase).  
+- `imagebind-service/` is in-repo Docker/Python — not a Maven module.  
+- Optional Compose profile `datagen`: Ollama (Qwen), ComfyUI (FLUX/Wan), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).
 
 ## Hard constraints
 
@@ -43,6 +44,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - ES endpoint + API key: hardcoded in `application.properties`  
 - GCS SA JSON: **secret file** under `secrets/` (never commit real key)  
 - **Fault tolerance:** every unexpected failure shows branded error page with **reason** (see `docs/ui-design-errors.md`); no Whitelabel stack dumps to users  
+- **Synthetic data:** only in **P10** via `gotham-datagen`; load through HTTP CRUD — never bypass to ES/GCS from the generator  
 
 ## Do not
 
@@ -50,6 +52,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Mark done without verification  
 - Commit real `secrets/*.json` keys  
 - Ship endpoints without going through global error handling  
+- Implement `gotham-datagen` before P10 / before CRUD+media+embeddings are done  
 - Rewrite the design docs unless a task says to  
 
 ## UI reference

@@ -3,7 +3,8 @@
 **Plan:** [`implementation-plan.md`](./implementation-plan.md)  
 **Architecture:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
-**Last updated:** 2026-09-07T03:25:00Z  
+**Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
+**Last updated:** 2026-09-07T03:45:00Z  
 **Active phase:** P0  
 **Prototype status:** `not_started`
 
@@ -30,11 +31,12 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | GCS bucket/project | Hardcoded in `application.properties` |
 | GCS SA JSON | Secret file under `secrets/` (gitignored); path in properties |
 | ImageBind | Built **in-repo** under `imagebind-service/` |
-| Maven | **Multi-module**: parent + `gotham-common` + `gotham-web` (IntelliJ Ultimate) |
+| Maven | **Multi-module**: parent + `gotham-common` + `gotham-web` (+ **`gotham-datagen` in P10**) |
 | Journalist delete | **Cascade-strip** + reindex articles |
 | Commits | One per task |
 | Package | `com.gotham.newsmediabrowser` |
 | Fault tolerance | Global error pages with reason on **all** endpoints (`docs/ui-design-errors.md`) |
+| Synthetic data | **Last phase P10** — `gotham-datagen` via HTTP CRUD; helpers Qwen / FLUX / Kokoro / Wan |
 | Extra agent formats | None (Markdown plan + state only) |
 
 ---
@@ -52,9 +54,10 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P6 | ImageBind + embeddings | 0/3 | pending |
 | P7 | Public FTS search | 0/4 | pending |
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
-| P9 | Demo readiness | 0/3 | pending |
+| P9 | Demo smoke + static fixtures | 0/3 | pending |
+| P10 | Synthetic data generation (**last**) | 0/5 | pending |
 
-**Totals:** 0 / 35 tasks done
+**Totals:** 0 / 41 tasks done
 
 ---
 
@@ -94,9 +97,14 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P8-T01 | P8 | Semantic kNN search | pending | P6-T03, P7-T04 | | | | |
 | P8-T02 | P8 | Hybrid RRF | pending | P8-T01, P7-T02 | | | | |
 | P8-T03 | P8 | Multimedia vector file search | pending | P8-T01, P7-T01 | | | | |
-| P9-T01 | P9 | Seed profile | pending | P6-T03, P5-T02 | | | | |
-| P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03 | | | | |
-| P9-T03 | P9 | Final sync pass | pending | P9-T02 | | | | |
+| P9-T01 | P9 | Static seed fixtures | pending | P6-T03, P5-T02 | | | | |
+| P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03, P9-T01 | | | | |
+| P9-T03 | P9 | Hardening sync pass | pending | P9-T02 | | | | |
+| P10-T01 | P10 | Parent POM + gotham-datagen skeleton | pending | P0-T01, P9-T03 | | | | |
+| P10-T02 | P10 | Compose profile datagen (helpers) | pending | P0-T02, P10-T01 | | | | |
+| P10-T03 | P10 | Helper HTTP clients (Qwen/FLUX/Kokoro/Wan) | pending | P10-T02 | | | | |
+| P10-T04 | P10 | Orchestrator → POST /journalist & /article | pending | P10-T03, P3-T03, P5-T02, P6-T03 | | | | |
+| P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |
 
 ---
 
