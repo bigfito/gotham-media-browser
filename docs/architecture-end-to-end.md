@@ -16,6 +16,8 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 | Routes & IA | [`frontend-information-architecture.md`](./frontend-information-architecture.md) |
 | Search / results UI | [`ui-design-search-results.md`](./ui-design-search-results.md) |
 | CRUD UI | [`ui-design-crud.md`](./ui-design-crud.md) |
+| Implementation plan | [`implementation-plan.md`](./implementation-plan.md) |
+| Implementation state | [`implementation-state.md`](./implementation-state.md) |
 | Mappings | [`../elasticsearch/`](../elasticsearch/) |
 | UI mockups | [`../ui-mockups/`](../ui-mockups/) |
 

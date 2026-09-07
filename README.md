@@ -4,7 +4,10 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 ## Start here
 
-**End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)
+**End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
+**Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md)  
+**Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |
 |------|------|
