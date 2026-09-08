@@ -44,6 +44,30 @@ class JournalistEditControllerTest {
     }
 
     @Test
+    void viewRendersFullRecordWithoutEditFields() throws Exception {
+        when(journalistRepository.findById("j_lois")).thenReturn(Optional.of(existing()));
+
+        mockMvc.perform(get("/journalist/j_lois/view"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("journalist/view"))
+                .andExpect(content().string(containsString("Lois Lane")))
+                .andExpect(content().string(containsString("lois@gotham.news")))
+                .andExpect(content().string(containsString("Ace reporter")))
+                .andExpect(content().string(containsString("j_lois")))
+                .andExpect(content().string(containsString("/journalist/j_lois")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("name=\"firstName\""))));
+    }
+
+    @Test
+    void viewUnknownIdRendersBranded404() throws Exception {
+        when(journalistRepository.findById("ghost")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/journalist/ghost/view"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error"));
+    }
+
+    @Test
     void editFormPrefillsExistingValues() throws Exception {
         when(journalistRepository.findById("j_lois")).thenReturn(Optional.of(existing()));
 

@@ -939,6 +939,72 @@ a.media-card__original:focus-visible {
 
 .form-grid__full { grid-column: 1 / -1; }
 
+.record-view {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.record-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.record-field {
+  margin: 0;
+}
+
+.record-field--full { grid-column: 1 / -1; }
+
+.record-field dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.record-field dd {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.record-prose {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.record-bylines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.record-bylines li {
+  padding: 0.75rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.record-bylines__meta {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 700px) {
+  .record-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 700px) {
   .form-grid { grid-template-columns: 1fr; }
 }

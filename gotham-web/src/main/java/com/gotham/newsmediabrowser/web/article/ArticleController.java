@@ -31,8 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * Serves the {@code /article} CRUD screens: list, create/edit of text, metadata and nested
- * journalist bylines, multimedia upload/removal to public GCS (P5), and delete. Article- and
+ * Serves the {@code /article} CRUD screens: list, read-only view, create/edit of text, metadata and
+ * nested journalist bylines, multimedia upload/removal to public GCS (P5), and delete. Article- and
  * asset-level embeddings are added on write in P6-T03.
  */
 @Controller
@@ -117,6 +117,15 @@ public class ArticleController {
         Article created = articleRepository.create(built.get().withMultimedia(uploaded));
         redirectAttributes.addFlashAttribute("flash", "Created “" + created.title() + "”.");
         return "redirect:/article";
+    }
+
+    @GetMapping("/article/{id}/view")
+    public String view(@PathVariable String id, Model model) {
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
+        addChrome(model);
+        model.addAttribute("article", article);
+        return "article/view";
     }
 
     @GetMapping("/article/{id}")

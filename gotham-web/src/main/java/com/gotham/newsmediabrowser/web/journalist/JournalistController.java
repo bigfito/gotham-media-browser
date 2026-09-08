@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * Serves the journalist master-data pages: the paginated list, create (P3-T03), and edit +
- * cascade-strip delete (P4-T03). Editing/deleting ripple into article bylines via
+ * Serves the journalist master-data pages: the paginated list, read-only view, create (P3-T03),
+ * and edit + cascade-strip delete (P4-T03). Editing/deleting ripple into article bylines via
  * {@link JournalistService}.
  */
 @Controller
@@ -106,6 +106,17 @@ public class JournalistController {
         Journalist created = journalistRepository.create(journalistForm.toNewJournalist());
         redirectAttributes.addFlashAttribute("flash", "Created " + created.fullName() + ".");
         return "redirect:/journalist";
+    }
+
+    /** Read-only page with the full journalist record. */
+    @GetMapping("/journalist/{id}/view")
+    public String view(@PathVariable String id, Model model) {
+        Journalist journalist = journalistRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Journalist " + id + " was not found."));
+        addFormChrome(model);
+        model.addAttribute("journalist", journalist);
+        addRecordChrome(model, journalist);
+        return "journalist/view";
     }
 
     /** Renders the edit form for an existing journalist. */

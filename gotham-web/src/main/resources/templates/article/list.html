@@ -74,6 +74,7 @@
                 <td th:text="${row.section} ?: '—'">Section</td>
                 <td th:text="${row.bylines} ?: '—'">Bylines</td>
                 <td class="data-table__actions">
+                    <a th:href="@{/article/{id}/view(id=${row.id})}" href="/article/view">View</a>
                     <a th:href="@{/article/{id}(id=${row.id})}" href="/article/edit">Edit</a>
                     <form th:action="@{/article/{id}/delete(id=${row.id})}" method="post" style="display:inline"
                           onsubmit="return confirm('Delete this article document?');">

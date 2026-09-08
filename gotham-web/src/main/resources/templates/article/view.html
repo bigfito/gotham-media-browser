@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!--
+  Read-only article record (GET /article/{id}/view). Edit stays at GET /article/{id}.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/chrome :: head('Article — Gotham News & Media Browser')}"></head>
+<body th:attr="data-page='article'">
+
+<header th:replace="~{fragments/chrome :: header}"></header>
+
+<div class="shell">
+    <header class="crud-hero">
+        <div>
+            <p class="crud-hero__eyebrow">GET /article/{id}/view · gotham-media-browser</p>
+            <h1 class="crud-hero__title" th:text="${article.title()}">Article</h1>
+            <p class="crud-hero__lede" th:if="${!#strings.isEmpty(article.subtitle())}"
+               th:text="${article.subtitle()}">Subtitle</p>
+        </div>
+        <a class="nav-link" th:href="@{/article}" href="/article">Back to list</a>
+    </header>
+
+    <article class="record-view">
+        <section class="form-section">
+            <h2>Story</h2>
+            <dl class="record-grid">
+                <div class="record-field record-field--full">
+                    <dt>Elasticsearch _id</dt>
+                    <dd><code class="mono" th:text="${article.id()}">id</code></dd>
+                </div>
+                <div class="record-field">
+                    <dt>Status</dt>
+                    <dd>
+                        <span class="chip"
+                              th:if="${article.status() != null}"
+                              th:classappend="'chip--' + ${#strings.toLowerCase(article.status())}"
+                              th:text="${#strings.capitalize(#strings.toLowerCase(article.status()))}">Published</span>
+                        <span th:if="${article.status() == null}">—</span>
+                    </dd>
+                </div>
+                <div class="record-field">
+                    <dt>Language</dt>
+                    <dd th:text="${#strings.isEmpty(article.language())} ? '—' : ${article.language()}">en</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Slug</dt>
+                    <dd><code class="mono" th:text="${#strings.isEmpty(article.slug())} ? '—' : ${article.slug()}">slug</code></dd>
+                </div>
+                <div class="record-field">
+                    <dt>Published at</dt>
+                    <dd th:text="${article.publishedAt() != null} ? ${article.publishedAt()} : '—'">—</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Created</dt>
+                    <dd th:text="${article.createdAt() != null} ? ${article.createdAt()} : '—'">—</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Updated</dt>
+                    <dd th:text="${article.updatedAt() != null} ? ${article.updatedAt()} : '—'">—</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>Summary</dt>
+                    <dd class="record-prose" th:text="${#strings.isEmpty(article.summary())} ? '—' : ${article.summary()}">Summary</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>Body</dt>
+                    <dd class="record-prose" th:text="${#strings.isEmpty(article.body())} ? '—' : ${article.body()}">Body</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="form-section">
+            <h2>Metadata</h2>
+            <dl class="record-grid">
+                <div class="record-field">
+                    <dt>Section</dt>
+                    <dd th:text="${article.metadata() == null or #strings.isEmpty(article.metadata().section())} ? '—' : ${article.metadata().section()}">Politics</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Tags</dt>
+                    <dd>
+                        <th:block th:if="${article.metadata() != null and !article.metadata().tags().isEmpty()}">
+                            <span class="chip" th:each="tag : ${article.metadata().tags()}" th:text="${tag}">tag</span>
+                        </th:block>
+                        <span th:if="${article.metadata() == null or article.metadata().tags().isEmpty()}">—</span>
+                    </dd>
+                </div>
+                <div class="record-field">
+                    <dt>Location</dt>
+                    <dd th:text="${article.metadata() == null or #strings.isEmpty(article.metadata().location())} ? '—' : ${article.metadata().location()}">—</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Source</dt>
+                    <dd th:text="${article.metadata() == null or #strings.isEmpty(article.metadata().source())} ? '—' : ${article.metadata().source()}">—</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>SEO title</dt>
+                    <dd th:text="${article.metadata() == null or #strings.isEmpty(article.metadata().seoTitle())} ? '—' : ${article.metadata().seoTitle()}">—</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>SEO description</dt>
+                    <dd class="record-prose" th:text="${article.metadata() == null or #strings.isEmpty(article.metadata().seoDescription())} ? '—' : ${article.metadata().seoDescription()}">—</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>SEO keywords</dt>
+                    <dd th:text="${article.metadata() == null or #strings.isEmpty(article.metadata().seoKeywords())} ? '—' : ${article.metadata().seoKeywords()}">—</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>Canonical URL</dt>
+                    <dd>
+                        <a th:if="${article.metadata() != null and !#strings.isEmpty(article.metadata().canonicalUrl())}"
+                           th:href="${article.metadata().canonicalUrl()}"
+                           th:text="${article.metadata().canonicalUrl()}"
+                           rel="noopener noreferrer">https://…</a>
+                        <span th:if="${article.metadata() == null or #strings.isEmpty(article.metadata().canonicalUrl())}">—</span>
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="form-section">
+            <h2>Bylines</h2>
+            <div class="empty-state" th:if="${article.journalists().isEmpty()}">
+                <p class="empty-state__hint">No journalists on this article.</p>
+            </div>
+            <ul class="record-bylines" th:unless="${article.journalists().isEmpty()}">
+                <li th:each="j : ${article.journalists()}">
+                    <strong th:text="${j.fullName()}">Name</strong>
+                    <span class="chip" th:if="${j.contributionRole() != null}" th:text="${j.contributionRole()}">AUTHOR</span>
+                    <span class="record-bylines__meta"
+                          th:text="${#strings.isEmpty(j.email())} ? '—' : ${j.email()}">email</span>
+                    <p class="record-prose" th:if="${!#strings.isEmpty(j.bio())}" th:text="${j.bio()}">Bio</p>
+                </li>
+            </ul>
+        </section>
+
+        <section class="form-section">
+            <h2>Multimedia</h2>
+            <div class="empty-state" th:if="${article.multimedia().isEmpty()}">
+                <p class="empty-state__hint">No multimedia on this article.</p>
+            </div>
+            <div class="media-grid" th:if="${!article.multimedia().isEmpty()}">
+                <figure class="media-card" th:each="m : ${article.multimedia()}" th:switch="${m.mediaType() != null ? m.mediaType().name() : ''}">
+                    <th:block th:case="'IMAGE'">
+                        <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()}, 'IMAGE')}"></a>
+                    </th:block>
+                    <audio th:case="'AUDIO'" controls="controls">
+                        <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
+                    </audio>
+                    <th:block th:case="'VIDEO'">
+                        <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()}, 'VIDEO')}"></a>
+                    </th:block>
+                    <figcaption>
+                        <span th:text="${m.title() != null ? m.title() : (m.originalFilename() != null ? m.originalFilename() : m.mediaType())}">file</span>
+                        <span th:if="${!#strings.isEmpty(m.caption())}" th:text="' — ' + ${m.caption()}">caption</span>
+                    </figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <a class="btn btn-coral" th:href="@{/article/{id}(id=${article.id()})}" href="/article/edit">Edit</a>
+            <a class="btn btn-ghost" th:href="@{/article}" href="/article">Back to list</a>
+        </div>
+    </article>
+</div>
+
+<footer th:replace="~{fragments/chrome :: footer}"></footer>
+
+</body>
+</html>

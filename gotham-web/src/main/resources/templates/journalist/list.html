@@ -66,6 +66,7 @@
                 <td th:text="${row.email} ?: '—'">email</td>
                 <td th:text="${row.updated}">Sep 6, 2026</td>
                 <td class="data-table__actions">
+                    <a th:href="@{/journalist/{id}/view(id=${row.id})}" href="/journalist/view">View</a>
                     <a th:href="@{/journalist/{id}(id=${row.id})}" href="/journalist/edit">Edit</a>
                     <form th:action="@{/journalist/{id}/delete(id=${row.id})}" method="post"
                           style="display:inline"

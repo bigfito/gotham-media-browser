@@ -73,7 +73,9 @@ class ArticleControllerTest {
                 .andExpect(content().string(containsString("Transit vote")))
                 .andExpect(content().string(containsString("chip--published")))
                 .andExpect(content().string(containsString("Lois Lane")))
-                .andExpect(content().string(containsString("/article/a1")));
+                .andExpect(content().string(containsString("/article/a1")))
+                .andExpect(content().string(containsString("/article/a1/view")))
+                .andExpect(content().string(containsString("View")));
     }
 
     @Test
@@ -218,6 +220,46 @@ class ArticleControllerTest {
                 .andExpect(content().string(containsString("data-width=\"854\"")))
                 .andExpect(content().string(containsString("data-height=\"480\"")))
                 .andExpect(content().string(containsString("<video")));
+    }
+
+    @Test
+    void viewRendersFullArticleWithoutEditControls() throws Exception {
+        oneJournalistAvailable();
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia photo =
+                new com.gotham.newsmediabrowser.common.article.ArticleMultimedia(
+                        "m1", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                        "https://storage.googleapis.com/b/media/image/x.png", "image/png", 0,
+                        "Council chamber after the vote", null, "Chamber", null, "alt chamber",
+                        "x.png", 10L, null, 512, 512, null, null, null, null, null, null, null);
+        Article existing = new Article("a1", "Transit vote", "A city-hall update",
+                "Council funded the line.", "The body of the transit story.", "transit",
+                ArticleStatus.PUBLISHED, "en", null, null, null,
+                new ArticleMetadata("Politics", List.of("transit", "budget"), "Gotham City Hall",
+                        "Gotham Gazette", null, null, null, null),
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)),
+                List.of(photo));
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(existing));
+
+        mockMvc.perform(get("/article/a1/view"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("article/view"))
+                .andExpect(content().string(containsString("Transit vote")))
+                .andExpect(content().string(containsString("The body of the transit story.")))
+                .andExpect(content().string(containsString("Lois Lane")))
+                .andExpect(content().string(containsString("Gotham City Hall")))
+                .andExpect(content().string(containsString("class=\"media-card__original\"")))
+                .andExpect(content().string(containsString("/article/a1")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("name=\"title\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Remove on save"))));
+    }
+
+    @Test
+    void viewUnknownArticleRendersBranded404() throws Exception {
+        when(articleRepository.findById("ghost")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/article/ghost/view"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error"));
     }
 
     @Test

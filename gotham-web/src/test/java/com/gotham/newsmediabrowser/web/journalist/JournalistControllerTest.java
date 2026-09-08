@@ -56,6 +56,8 @@ class JournalistControllerTest {
                 .andExpect(content().string(containsString("clark@gotham.news")))
                 .andExpect(content().string(containsString("j_lois")))
                 // delete action targets the id-based route
+                .andExpect(content().string(containsString("/journalist/j_lois/view")))
+                .andExpect(content().string(containsString("View")))
                 .andExpect(content().string(containsString("/journalist/j_lois/delete")))
                 // paging meta
                 .andExpect(content().string(containsString("showing")))

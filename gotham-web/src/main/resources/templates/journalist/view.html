@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+  Read-only journalist record (GET /journalist/{id}/view). Edit stays at GET /journalist/{id}.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/chrome :: head('Journalist — Gotham News & Media Browser')}"></head>
+<body th:attr="data-page='journalist'">
+
+<header th:replace="~{fragments/chrome :: header}"></header>
+
+<div class="shell shell--narrow">
+    <header class="crud-hero">
+        <div>
+            <p class="crud-hero__eyebrow">GET /journalist/{id}/view · gotham-journalists</p>
+            <h1 class="crud-hero__title" th:text="${journalist.fullName()}">Journalist</h1>
+            <p class="crud-hero__lede">Full master record. Editing is a separate action so a reader
+                cannot change bylines by accident.</p>
+        </div>
+        <a class="nav-link" th:href="@{/journalist}" href="/journalist">Back to list</a>
+    </header>
+
+    <article class="record-view">
+        <section class="form-section">
+            <h2>Record</h2>
+            <dl class="record-grid">
+                <div class="record-field record-field--full">
+                    <dt>Elasticsearch _id</dt>
+                    <dd><code class="mono" th:text="${journalistId}">id</code></dd>
+                </div>
+                <div class="record-field">
+                    <dt>First name</dt>
+                    <dd th:text="${journalist.firstName()} ?: '—'">First</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Last name</dt>
+                    <dd th:text="${journalist.lastName()} ?: '—'">Last</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>Email</dt>
+                    <dd th:text="${#strings.isEmpty(journalist.email())} ? '—' : ${journalist.email()}">email</dd>
+                </div>
+                <div class="record-field record-field--full">
+                    <dt>Bio</dt>
+                    <dd class="record-prose" th:text="${#strings.isEmpty(journalist.bio())} ? '—' : ${journalist.bio()}">Bio</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Created</dt>
+                    <dd th:text="${createdAt}">—</dd>
+                </div>
+                <div class="record-field">
+                    <dt>Updated</dt>
+                    <dd th:text="${updatedAt}">—</dd>
+                </div>
+            </dl>
+        </section>
+
+        <div class="form-actions">
+            <a class="btn btn-sky" th:href="@{/journalist/{id}(id=${journalistId})}" href="/journalist/edit">Edit</a>
+            <a class="btn btn-ghost" th:href="@{/journalist}" href="/journalist">Back to list</a>
+        </div>
+    </article>
+</div>
+
+<footer th:replace="~{fragments/chrome :: footer}"></footer>
+
+</body>
+</html>
