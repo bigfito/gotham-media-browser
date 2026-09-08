@@ -1,14 +1,23 @@
 # =============================================================================
-#  Gotham News & Media Browser — local Docker Compose (P0 skeleton)
+#  Gotham News & Media Browser — local Docker Compose
 #
-#  Always-on services: gotham-web (:8080) + imagebind-service (:8081).
-#  The `datagen` profile (Ollama / ComfyUI / Kokoro) is added later in P10-T02.
+#  Always-on services:
+#    * gotham-web (:8080)
+#    * imagebind-service (:8081)
+#
+#  Synthetic Data Generation (P10) — profile `datagen`:
+#    * ollama (:11434)      — Qwen 2.5 7B Instruct (Text)
+#    * comfyui (:8188)      — in-repo CPU ComfyUI (SDXL-Turbo T2I & Wan2.1 1.3B T2V)
+#    * kokoro (:8880)       — Kokoro-82M TTS (Audio / Voice)
+#
+#  Usage:
+#    docker compose up -d                        # Start always-on stack
+#    docker compose --profile datagen up -d      # Start full stack incl. generative helpers
 #
 #  Secrets & real values are provided at runtime, never baked into images:
 #    * ./secrets is mounted read-only (holds gcp-sa.json).
 #    * Real ES/GCS values come from an untracked ./.env (see .env.example),
-#      loaded optionally below and mapped by Spring relaxed binding
-#      (e.g. GOTHAM_ELASTICSEARCH_API_KEY -> gotham.elasticsearch.api-key).
+#      loaded optionally below and mapped by Spring relaxed binding.
 # =============================================================================
 services:
   gotham-web:
@@ -65,5 +74,71 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # Profile: datagen — Generative helper containers (P10)
+  # ---------------------------------------------------------------------------
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gotham-ollama
+    profiles:
+      - datagen
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    container_name: gotham-kokoro
+    profiles:
+      - datagen
+    ports:
+      - "8880:8880"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8880/docs')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  comfyui:
+    build:
+      context: ./comfyui-service
+      args:
+        # Set to "false" for a fast image that serves the deterministic stub.
+        INSTALL_COMFYUI: "true"
+    image: comfyui-service:dev
+    container_name: gotham-comfyui
+    profiles:
+      - datagen
+    ports:
+      - "8188:8188"
+    environment:
+      COMFYUI_BACKEND: comfyui
+      COMFYUI_ARGS: "--cpu --listen 0.0.0.0 --port 8188"
+    volumes:
+      - comfyui-models:/app/ComfyUI/models
+      - comfyui-output:/app/ComfyUI/output
+    mem_limit: 14g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8188/system_stats')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
 volumes:
   imagebind-cache:
+  ollama-models:
+  comfyui-models:
+  comfyui-output:
