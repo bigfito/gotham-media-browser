@@ -10,10 +10,11 @@ import com.gotham.newsmediabrowser.datagen.client.KokoroClient;
 import com.gotham.newsmediabrowser.datagen.client.OllamaClient;
 
 import java.io.PrintStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * End-to-end orchestrator that generates synthetic journalists and articles (with media)
@@ -198,74 +199,214 @@ public class DatagenOrchestrator {
         return new DatagenReport(journalistIds.size(), articlesCreated, imagesGen, audioGen, videoGen, errors);
     }
 
-    private JournalistProfile generateJournalistProfile(int index) {
-        String sysPrompt = "You are a database seeding generator for Gotham City news media. Generate a JSON object for a journalist.";
-        String userPrompt = "Generate a JSON object with fields: firstName (string), lastName (string), email (unique string @gothamgazette.com), bio (1-2 sentences). Return ONLY valid JSON.";
+    private static final List<JournalistProfile> NEWSROOM = List.of(
+            new JournalistProfile("Vicki", "Vale", "vicki.vale@gothamgazette.example",
+                    "Investigative reporter covering city hall, Wayne Enterprises, and Gotham politics."),
+            new JournalistProfile("Alexander", "Knox", "alex.knox@gothamgazette.example",
+                    "City desk veteran on the crime, courts, and corruption beat."),
+            new JournalistProfile("Summer", "Gleeson", "summer.gleeson@gothamgazette.example",
+                    "Arts and culture critic covering museums, film, and the Gotham music scene."),
+            new JournalistProfile("Jack", "Ryder", "jack.ryder@gothamgazette.example",
+                    "Business and economy columnist tracking Gotham's startup district."),
+            new JournalistProfile("Lois", "Lane", "lois.lane@gothamgazette.example",
+                    "Lead investigative correspondent on public safety and civic oversight."),
+            new JournalistProfile("Clark", "Kent", "clark.kent@gothamgazette.example",
+                    "Metro reporter covering neighborhoods, transit, and daily life in Gotham."),
+            new JournalistProfile("Sarah", "Essen", "sarah.essen@gothamgazette.example",
+                    "Science and infrastructure writer focused on energy, health, and urban systems."),
+            new JournalistProfile("Chase", "Meridian", "chase.meridian@gothamgazette.example",
+                    "Opinion editor writing on justice, reform, and the city's public conscience."),
+            new JournalistProfile("Monique", "Hill", "monique.hill@gothamgazette.example",
+                    "Culture desk reporter on festivals, food, and Gotham nightlife."),
+            new JournalistProfile("Harvey", "Bullock", "harvey.bullock@gothamgazette.example",
+                    "Courts reporter following trials, precinct politics, and police reform."),
+            new JournalistProfile("Barbara", "Gordon", "barbara.gordon@gothamgazette.example",
+                    "Technology correspondent covering civic data, surveillance, and research labs."),
+            new JournalistProfile("Lucius", "Fox", "lucius.fox@gothamgazette.example",
+                    "Business reporter specializing in manufacturing, energy, and Wayne Enterprises."),
+            new JournalistProfile("Leslie", "Thompkins", "leslie.thompkins@gothamgazette.example",
+                    "Public-health reporter covering clinics, hospitals, and East End outreach."),
+            new JournalistProfile("Renee", "Montoya", "renee.montoya@gothamgazette.example",
+                    "Crime reporter embedded with the major-case squad and city prosecutors."),
+            new JournalistProfile("Tamara", "Soong", "tamara.soong@gothamgazette.example",
+                    "Metropolis bureau chief covering cross-city policy and regional commerce.")
+    );
 
+    private static final List<StorySeed> STORY_SEEDS = List.of(
+            new StorySeed("Politics", "City Council Approves Transit Funding Expansion",
+                    "Gotham City Hall", "council vote on light-rail and late-night bus funding"),
+            new StorySeed("Crime", "GCPD Overtime Scandal Reaches Internal Affairs",
+                    "GCPD Headquarters", "precinct overtime records and an internal-affairs inquiry"),
+            new StorySeed("Business", "Wayne Enterprises Unveils Clean-Energy Microgrid",
+                    "Wayne Tower", "downtown renewable microgrid pilot and blackout risk"),
+            new StorySeed("Culture", "Gotham Museum Reopens Its Restored Grand Wing",
+                    "Gotham Museum", "restored murals and a new photography gallery"),
+            new StorySeed("Gotham Life", "East End Night Market Draws Record Crowds",
+                    "The Narrows", "street-food night market and neighborhood recovery"),
+            new StorySeed("Metropolis", "Gotham-Metropolis Rail Link Clears Environmental Review",
+                    "Gotham Central Station", "intercity rail link and commuting times"),
+            new StorySeed("Science", "University Lab Maps Gotham Harbor Microplastics",
+                    "Gotham University", "harbor water sampling and public-health findings"),
+            new StorySeed("Opinion", "The Case for Independent Oversight of Arkham",
+                    "Arkham Island", "civilian review of Arkham admissions and transfers"),
+            new StorySeed("Politics", "Mayor's Housing Bond Faces Narrow Council Test",
+                    "Gotham City Hall", "affordable-housing bond and East End displacement"),
+            new StorySeed("Crime", "Iceberg Lounge Raid Yields Stolen Art Cache",
+                    "Iceberg Lounge", "raid recovering museum pieces and club finances"),
+            new StorySeed("Business", "Startup District Posts Record Venture Quarter",
+                    "The Bowery", "fintech and clean-tech hiring in the startup district"),
+            new StorySeed("Culture", "Old Opera House Stages a Sold-Out Revival",
+                    "Gotham Opera House", "opening night of a restored opera production")
+    );
+
+    private JournalistProfile generateJournalistProfile(int index) {
+        JournalistProfile assigned = NEWSROOM.get((index - 1) % NEWSROOM.size());
+        String sysPrompt = "You write staff biographies for the Gotham Gazette. Return JSON only.";
+        String userPrompt = "Write a 2-sentence newsroom bio for " + assigned.firstName() + " "
+                + assigned.lastName() + ", email " + assigned.email()
+                + ". Stay consistent with this beat: " + assigned.bio()
+                + ". JSON keys: firstName, lastName, email, bio. Do not invent a different person.";
         try {
             String jsonStr = ollamaClient.generateJson(sysPrompt, userPrompt);
             JsonNode root = objectMapper.readTree(jsonStr);
-            String first = root.path("firstName").asText("Reporter" + index);
-            String last = root.path("lastName").asText("Gotham");
-            String email = root.path("email").asText("reporter" + index + "_" + UUID.randomUUID().toString().substring(0, 4) + "@gothamgazette.com");
-            String bio = root.path("bio").asText("Senior investigative reporter covering Gotham City affairs.");
-
-            return new JournalistProfile(first, last, email, bio);
+            String bio = root.path("bio").asText(assigned.bio());
+            if (bio == null || bio.isBlank()) {
+                bio = assigned.bio();
+            }
+            return new JournalistProfile(assigned.firstName(), assigned.lastName(), assigned.email(), bio);
         } catch (Exception e) {
-            // Fallback to deterministic Gotham names if LLM formatting fails
-            String[] firstNames = {"Vicki", "Alexander", "Lois", "Clark", "Jack", "Chase", "Harvey", "Rachel", "Gillian", "Michael", "Sarah", "Celia", "Sal", "Carmine", "Bruce"};
-            String[] lastNames = {"Vale", "Knox", "Lane", "Kent", "Ryder", "Meridian", "Dent", "Dawes", "Loeb", "Akins", "Essen", "Forest", "Maroni", "Falcone", "Wayne"};
-
-            String first = firstNames[(index - 1) % firstNames.length];
-            String last = lastNames[(index - 1) % lastNames.length];
-            String email = first.toLowerCase() + "." + last.toLowerCase() + index + "@gothamgazette.com";
-            String bio = "Investigative journalist at Gotham Gazette covering civic governance and metropolitan crime.";
-
-            return new JournalistProfile(first, last, email, bio);
+            return assigned;
         }
     }
 
     private ArticlePayload generateArticlePayload(int index, String status, List<String> journalistIds) {
-        String[] sections = {"Politics", "Crime", "Business", "Culture", "Gotham Life", "Metropolis", "Science", "Opinion"};
-        String section = sections[(index - 1) % sections.length];
+        StorySeed seed = STORY_SEEDS.get((index - 1) % STORY_SEEDS.size());
+        String publishedAt = LocalDateTime.of(2026, 8, 1, 8, 0)
+                .plusDays(index)
+                .plusHours(index % 6)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+        String slug = ArticlePayload.slugify(seed.title()) + "-" + index;
+        String canonicalUrl = "https://www.gothamgazette.example/articles/" + slug;
 
-        String sysPrompt = "You are an investigative journalist writing a news story for Gotham Gazette in the section " + section + ". Generate a JSON object.";
-        String userPrompt = "Generate a JSON object with: title (string), subtitle (string), summary (2 sentences), body (3 paragraphs), tags (comma-separated string), location (Gotham location), imagePrompt (T2I prompt for photography), audioScript (broadcast transcript), videoPrompt (T2V prompt for 5s video). Return ONLY valid JSON.";
+        String sysPrompt = "You are a Gotham Gazette reporter in the " + seed.section()
+                + " section. Write one specific news story. Return JSON only.";
+        String userPrompt = "Story assignment #" + index + ": " + seed.assignment()
+                + " at " + seed.location()
+                + ". Suggested headline: " + seed.title()
+                + ". JSON keys: title, subtitle, summary (2 sentences), body (one string, 3 paragraphs "
+                + "separated by \\n\\n — not a JSON array), tags (comma-separated string), location, "
+                + "seoTitle, seoDescription, seoKeywords, imagePrompt, audioScript, videoPrompt. "
+                + "Keep names, places, and facts inside Gotham. Do not invent a different topic.";
 
         try {
             String jsonStr = ollamaClient.generateJson(sysPrompt, userPrompt);
             JsonNode root = objectMapper.readTree(jsonStr);
-
-            String title = root.path("title").asText("Gotham City Council Passes Landmark Transit Reform");
-            String subtitle = root.path("subtitle").asText("Major funding allocated to Monorail and subway upgrades.");
-            String summary = root.path("summary").asText("The Gotham City Council voted overwhelmingly today to approve new funding for metropolitan public transit.");
-            String body = root.path("body").asText("In a pivotal session at Gotham City Hall, council members addressed long-standing transit delays across downtown districts. The multi-million dollar package aims to modernize signal systems and expand coverage to the Narrows and Bowery.\n\nOpposition leaders voiced caution over fiscal oversight, but civic groups praised the initiative as a major step forward for urban mobility.");
-            String tags = root.path("tags").asText("transit,city-hall,gotham-council,urban-planning");
-            String location = root.path("location").asText("Gotham City Hall");
-            String source = "Gotham Gazette";
-            String imagePrompt = root.path("imagePrompt").asText("Gotham City Hall council chambers press conference, news photo");
-            String audioScript = root.path("audioScript").asText(summary);
-            String videoPrompt = root.path("videoPrompt").asText("Gotham City subway arriving at station with commuters, 5 seconds video");
+            String title = jsonText(root.get("title"), seed.title());
+            String subtitle = jsonText(root.get("subtitle"), seed.assignment());
+            String summary = jsonText(root.get("summary"),
+                    "Gotham Gazette reports from " + seed.location() + " on " + seed.assignment() + ".");
+            String body = jsonText(root.get("body"), fallbackBody(seed, summary));
+            String tags = jsonText(root.get("tags"), seed.section().toLowerCase() + ",gotham," + slug);
+            String location = jsonText(root.get("location"), seed.location());
+            String seoTitle = jsonText(root.get("seoTitle"), title + " | Gotham Gazette");
+            String seoDescription = jsonText(root.get("seoDescription"), summary);
+            String seoKeywords = jsonText(root.get("seoKeywords"), tags);
+            String imagePrompt = nonBlank(root.path("imagePrompt").asText(),
+                    seed.location() + ", documentary news photograph, " + seed.assignment());
+            String audioScript = nonBlank(root.path("audioScript").asText(), summary);
+            String videoPrompt = nonBlank(root.path("videoPrompt").asText(),
+                    seed.location() + ", 5 second news establishing shot");
 
             return new ArticlePayload(
-                    title, subtitle, summary, body, status, "en", section, tags, location, source,
-                    title, summary, tags, journalistIds, imagePrompt, audioScript, videoPrompt
+                    title, subtitle, summary, body, status, "en", seed.section(), tags, location, "Gotham Gazette",
+                    seoTitle, seoDescription, seoKeywords, slug, publishedAt, canonicalUrl,
+                    journalistIds, imagePrompt, audioScript, videoPrompt
             );
         } catch (Exception e) {
-            // Structured fallback
-            String title = "Gotham " + section + " Report #" + index + ": Metropolitan Developments";
-            String summary = "Comprehensive coverage of current events and community impacts across Gotham City's " + section.toLowerCase() + " sector.";
-            String body = "Civic leaders and local organizations met this week to evaluate emerging trends across Gotham City.\n\nKey stakeholders emphasized the need for transparency, sustainable investment, and community engagement to ensure long-term stability.\n\nFurther updates will be published as official findings are released.";
-            String tags = section.toLowerCase() + ",gotham,news,civic-affairs";
-            String imagePrompt = "Gotham City street scene in " + section + " district, documentary photo";
-            String videoPrompt = "Gotham City skyline with moving clouds and street traffic, 5 seconds";
-
             return new ArticlePayload(
-                    title, "Developments in " + section, summary, body, status, "en", section, tags, "Gotham City", "Gotham Gazette",
-                    title, summary, tags, journalistIds, imagePrompt, summary, videoPrompt
+                    seed.title(), seed.assignment(),
+                    "Gotham Gazette reports from " + seed.location() + " on " + seed.assignment() + ".",
+                    fallbackBody(seed, null), status, "en", seed.section(),
+                    seed.section().toLowerCase() + ",gotham,news", seed.location(), "Gotham Gazette",
+                    seed.title() + " | Gotham Gazette",
+                    "Coverage of " + seed.assignment() + " from " + seed.location() + ".",
+                    seed.section().toLowerCase() + ",gotham",
+                    slug, publishedAt, canonicalUrl, journalistIds,
+                    seed.location() + ", documentary news photograph",
+                    "This is a Gotham Gazette voice report from " + seed.location() + " on " + seed.assignment() + ".",
+                    seed.location() + ", 5 second news establishing shot"
             );
         }
     }
 
+    private static String nonBlank(String value, String fallback) {
+        return value != null && !value.isBlank() ? value.strip() : fallback;
+    }
+
+    /**
+     * Coerce a JSON value to copy text. Qwen often returns {@code body} or {@code tags} as an
+     * array of strings; {@link JsonNode#asText()} is empty for arrays, which previously dropped
+     * the generated copy.
+     */
+    private static String jsonText(JsonNode node, String fallback) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return fallback;
+        }
+        if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+            return nonBlank(node.asText(), fallback);
+        }
+        if (node.isArray()) {
+            StringBuilder joined = new StringBuilder();
+            String separator = guessJoin(node);
+            for (JsonNode item : node) {
+                String part = jsonText(item, null);
+                if (part == null || part.isBlank()) {
+                    continue;
+                }
+                if (joined.length() > 0) {
+                    joined.append(separator);
+                }
+                joined.append(part.strip());
+            }
+            return joined.length() > 0 ? joined.toString() : fallback;
+        }
+        if (node.isObject()) {
+            for (String key : List.of("text", "paragraph", "content", "value")) {
+                if (node.has(key)) {
+                    String nested = jsonText(node.get(key), null);
+                    if (nested != null && !nested.isBlank()) {
+                        return nested;
+                    }
+                }
+            }
+        }
+        return fallback;
+    }
+
+    private static String guessJoin(JsonNode array) {
+        int textual = 0;
+        int maxLen = 0;
+        for (JsonNode item : array) {
+            if (item != null && item.isTextual()) {
+                textual++;
+                maxLen = Math.max(maxLen, item.asText().length());
+            }
+        }
+        return textual >= 2 && maxLen > 40 ? "\n\n" : ", ";
+    }
+
+    private static String fallbackBody(StorySeed seed, String summary) {
+        String lead = nonBlank(summary,
+                "Gotham Gazette reports from " + seed.location() + " on " + seed.assignment() + ".");
+        return lead + "\n\n"
+                + "Gazette staff reporting from " + seed.location()
+                + " reconstructed " + seed.assignment()
+                + " from official records, on-the-record interviews, and neighborhood accounts.\n\n"
+                + "City officials said the next public steps will be announced from "
+                + seed.location() + ". This newsroom will continue to follow the story.";
+    }
+
     private record JournalistProfile(String firstName, String lastName, String email, String bio) {}
+
+    private record StorySeed(String section, String title, String location, String assignment) {}
 }

@@ -249,27 +249,21 @@ public class DatagenWebClient {
         byte[] lineSep = "\r\n".getBytes(StandardCharsets.UTF_8);
 
         addTextField(out, boundary, "title", payload.title());
-        if (payload.subtitle() != null && !payload.subtitle().isBlank()) {
-            addTextField(out, boundary, "subtitle", payload.subtitle());
-        }
+        addTextField(out, boundary, "subtitle", payload.subtitle());
         addTextField(out, boundary, "summary", payload.summary());
         addTextField(out, boundary, "body", payload.body());
+        addTextField(out, boundary, "slug", payload.slug());
         addTextField(out, boundary, "status", payload.status());
         addTextField(out, boundary, "language", payload.language());
+        addTextField(out, boundary, "publishedAt", payload.publishedAt());
         addTextField(out, boundary, "section", payload.section());
-        addTextField(out, boundary, "tags", payload.tags() != null ? payload.tags() : "");
+        addTextField(out, boundary, "tags", payload.tags());
         addTextField(out, boundary, "location", payload.location());
         addTextField(out, boundary, "source", payload.source());
-
-        if (payload.seoTitle() != null && !payload.seoTitle().isBlank()) {
-            addTextField(out, boundary, "seoTitle", payload.seoTitle());
-        }
-        if (payload.seoDescription() != null && !payload.seoDescription().isBlank()) {
-            addTextField(out, boundary, "seoDescription", payload.seoDescription());
-        }
-        if (payload.seoKeywords() != null && !payload.seoKeywords().isBlank()) {
-            addTextField(out, boundary, "seoKeywords", payload.seoKeywords());
-        }
+        addTextField(out, boundary, "seoTitle", payload.seoTitle());
+        addTextField(out, boundary, "seoDescription", payload.seoDescription());
+        addTextField(out, boundary, "seoKeywords", payload.seoKeywords());
+        addTextField(out, boundary, "canonicalUrl", payload.canonicalUrl());
 
         // Bylines
         int order = 1;

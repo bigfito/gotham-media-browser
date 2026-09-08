@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -140,6 +141,51 @@ class DatagenOrchestratorTest {
         assertThat(report.errors()).isEmpty();
     }
 
+    @Test
+    void run_usesUniqueNewsroomRosterEvenWhenLlmRepeatsAName() {
+        DatagenConfig config = DatagenConfig.load(new String[]{
+                "--journalists=3",
+                "--articles=1",
+                "--skip-image",
+                "--skip-audio",
+                "--skip-video"
+        });
+        CapturingWebClient web = new CapturingWebClient();
+        DatagenOrchestrator orchestrator = new DatagenOrchestrator(
+                config, new FakeOllamaClient(true), new FakeComfyuiClient(false),
+                new FakeKokoroClient(false), web, out);
+
+        orchestrator.run();
+
+        assertThat(web.journalistNames).containsExactly("Vicki Vale", "Alexander Knox", "Summer Gleeson");
+        assertThat(web.journalistEmails).doesNotHaveDuplicates();
+        assertThat(web.lastPayload.slug()).isNotBlank();
+        assertThat(web.lastPayload.publishedAt()).isNotBlank();
+        assertThat(web.lastPayload.canonicalUrl()).startsWith("https://www.gothamgazette.example/");
+    }
+
+    @Test
+    void run_joinsArrayBodyAndTagsFromLlmJson() {
+        DatagenConfig config = DatagenConfig.load(new String[]{
+                "--journalists=1",
+                "--articles=1",
+                "--skip-image",
+                "--skip-audio",
+                "--skip-video"
+        });
+        CapturingWebClient web = new CapturingWebClient();
+        DatagenOrchestrator orchestrator = new DatagenOrchestrator(
+                config, new ArrayBodyOllamaClient(), new FakeComfyuiClient(false),
+                new FakeKokoroClient(false), web, out);
+
+        orchestrator.run();
+
+        assertThat(web.lastPayload.body()).contains("First graf about City Hall.");
+        assertThat(web.lastPayload.body()).contains("Second graf from the council floor.");
+        assertThat(web.lastPayload.tags()).contains("transit");
+        assertThat(web.lastPayload.tags()).contains("council");
+    }
+
     // --- Fake Client Implementations for in-memory fast testing ---
 
     private static class FakeOllamaClient extends OllamaClient {
@@ -157,10 +203,37 @@ class DatagenOrchestratorTest {
 
         @Override
         public String generateJson(String systemPrompt, String userPrompt) {
-            if (userPrompt.contains("journalist")) {
-                return "{\"firstName\":\"Clark\",\"lastName\":\"Kent\",\"email\":\"clark.kent@gothamgazette.com\",\"bio\":\"Reporter\"}";
+            if (userPrompt.contains("newsroom bio") || userPrompt.contains("journalist")) {
+                return "{\"firstName\":\"Oliver\",\"lastName\":\"Queen\",\"email\":\"oqueen@gothamgazette.com\",\"bio\":\"Ignored name; roster wins.\"}";
             }
             return "{\"title\":\"Gotham Transit Funding\",\"summary\":\"Council voted today.\",\"body\":\"Details on the funding package.\",\"tags\":\"transit,city\",\"location\":\"Gotham City Hall\",\"imagePrompt\":\"Photo of City Hall\",\"audioScript\":\"Voice report.\",\"videoPrompt\":\"Subway arrival 5s\"}";
+        }
+    }
+
+    private static class ArrayBodyOllamaClient extends FakeOllamaClient {
+        private ArrayBodyOllamaClient() {
+            super(true);
+        }
+
+        @Override
+        public String generateJson(String systemPrompt, String userPrompt) {
+            if (userPrompt.contains("newsroom bio") || userPrompt.contains("journalist")) {
+                return super.generateJson(systemPrompt, userPrompt);
+            }
+            return """
+                    {"title":"City Council Approves Transit Funding Expansion",
+                     "subtitle":"Late-night buses and light rail",
+                     "summary":"Council voted on transit.",
+                     "body":["First graf about City Hall.","Second graf from the council floor."],
+                     "tags":["transit","council"],
+                     "location":"Gotham City Hall",
+                     "seoTitle":"Transit vote",
+                     "seoDescription":"Council voted on transit.",
+                     "seoKeywords":["transit","gotham"],
+                     "imagePrompt":"City Hall",
+                     "audioScript":"Voice report.",
+                     "videoPrompt":"Council chamber"}
+                    """;
         }
     }
 
@@ -234,6 +307,29 @@ class DatagenOrchestratorTest {
         @Override
         public String createArticle(ArticlePayload payload, List<GeneratedMedia> mediaFiles) {
             return "OK";
+        }
+    }
+
+    private static class CapturingWebClient extends FakeDatagenWebClient {
+        private final List<String> journalistNames = new ArrayList<>();
+        private final List<String> journalistEmails = new ArrayList<>();
+        private ArticlePayload lastPayload;
+
+        private CapturingWebClient() {
+            super(true);
+        }
+
+        @Override
+        public String createJournalist(String firstName, String lastName, String email, String bio) {
+            journalistNames.add(firstName + " " + lastName);
+            journalistEmails.add(email);
+            return super.createJournalist(firstName, lastName, email, bio);
+        }
+
+        @Override
+        public String createArticle(ArticlePayload payload, List<GeneratedMedia> mediaFiles) {
+            lastPayload = payload;
+            return super.createArticle(payload, mediaFiles);
         }
     }
 }

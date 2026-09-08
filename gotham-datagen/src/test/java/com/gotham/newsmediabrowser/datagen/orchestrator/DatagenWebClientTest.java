@@ -147,6 +147,9 @@ class DatagenWebClientTest {
                 "City Council Transit",
                 "Summary SEO",
                 "transit,reform",
+                "city-council-passes-transit-reform",
+                "2026-09-01T12:00",
+                "https://www.gothamgazette.example/articles/city-council-passes-transit-reform",
                 List.of("id-1", "id-2"),
                 "Photo prompt",
                 "Audio script",
@@ -173,6 +176,9 @@ class DatagenWebClientTest {
         assertThat(receivedBody.get()).contains("id-1");
         assertThat(receivedBody.get()).contains("name=\"mediaFiles\"; filename=\"photo.png\"");
         assertThat(receivedBody.get()).contains("MOCK_PNG_DATA");
+        assertThat(receivedBody.get()).contains("name=\"slug\"");
+        assertThat(receivedBody.get()).contains("name=\"publishedAt\"");
+        assertThat(receivedBody.get()).contains("name=\"canonicalUrl\"");
     }
 
     @Test
@@ -188,7 +194,7 @@ class DatagenWebClientTest {
         DatagenWebClient client = new DatagenWebClient(baseUrl);
         ArticlePayload payload = new ArticlePayload(
                 "Bad Article", "", "Sum", "Body", "PUBLISHED", "en", "Politics", "", "Gotham", "Source",
-                "", "", "", List.of("id-1"), "", "", ""
+                "", "", "", "", "", "", List.of("id-1"), "", "", ""
         );
 
         assertThatThrownBy(() -> client.createArticle(payload, List.of()))
