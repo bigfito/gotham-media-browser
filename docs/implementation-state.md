@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T11:45:00Z  
-**Active phase:** P10 (3/6 done) — next `P10-T04`  
+**Last updated:** 2026-09-08T12:10:00Z  
+**Active phase:** P10 (4/6 done) — next `P10-T05`  
 **Prototype status:** `in_progress`  
-**Next task:** `P10-T04` (Orchestrator → POST /journalist & POST /article — dep P10-T03, P3-T03, P4-T04, P5-T02, P6-T03 done)
+**Next task:** `P10-T05` (Datagen runbook + verification report — dep P10-T04 done)
 
 ---
 
@@ -89,9 +89,9 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P7 | Public FTS search | 4/4 | done |
 | P8 | Semantic · Hybrid · Vector | 3/3 | done |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 4/4 | done |
-| P10 | Synthetic data generation (**last**) | 3/6 | in_progress |
+| P10 | Synthetic data generation (**last**) | 4/6 | in_progress |
 
-**Totals:** 39 / **42** tasks done
+**Totals:** 40 / **42** tasks done
 
 ---
 
@@ -140,7 +140,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P10-T01 | P10 | Parent POM + Java console gotham-datagen skeleton | done | P0-T01, P9-T04 | JavaMentor (Claude Code) | 2026-09-08T09:55:00Z | 2026-09-08T10:15:00Z | New `gotham-datagen` module (added to parent `modules`): a **plain Java console** app (`public static void main`, package `com.gotham.newsmediabrowser.datagen`) with **no Spring Boot deps** and **no spring-boot-maven-plugin** — runtime uses only the JDK; test scope is junit-jupiter + assertj (versions from the Boot BOM). `DatagenApplication.run(args,out,err)` (testable, returns exit code): `--help`/`-h` → usage + resolved defaults (exit 0); bad/unknown flag → stderr + usage (exit 2); default run prints the config and does **nothing** (no generative/HTTP calls yet — those are P10-T03/T04). `DatagenConfig` record: layered resolution defaults → classpath `datagen.properties` → `-Dgotham.datagen.*` → `--key=value` CLI (kebab keys; bare `--skip-*` = true), validates ints, `totalMediaAssets()` + `describe()`. Locked defaults wired: web :8080, ollama/comfyui/kokoro urls, model `qwen2.5:7b-instruct`, 15/25/5+5+5/5s. maven-jar-plugin sets Main-Class → runnable `gotham-datagen.jar`. Fixed an XML-comment `--` parse error in the module pom. Tests: DatagenConfigTest(7) + DatagenApplicationTest(3). `mvn -pl gotham-datagen -am test` green; full reactor `mvn test` green (209; was 199). VERIFIED: `mvn -pl gotham-datagen -am -DskipTests package` builds `gotham-datagen.jar`; `java -jar … --help` exits 0; `java -jar … --journalists=3 --skip-video` → journalists 3, video SKIPPED, 250 assets, "nothing was sent", exit 0. Generative helpers/orchestrator remain P10-T02…T04. |
 | P10-T02 | P10 | Compose profile datagen (Ollama · ComfyUI · Kokoro containers) | done | P0-T02, P10-T01 | Antigravity | 2026-09-08T11:00:00Z | 2026-09-08T11:20:00Z | Added `datagen` Compose profile in `docker-compose.yml` (`ollama`, `comfyui`, `kokoro`) + named volumes (`ollama-models`, `comfyui-models`, `comfyui-output`). Created in-repo `comfyui-service/` (CPU multi-arch Dockerfile, entrypoint, requirements, workflow graphs for SDXL-Turbo T2I + Wan2.1 1.3B 5s T2V, and fast deterministic stub server supporting `/system_stats`, `/prompt`, `/history`, `/view`). Verified: `docker compose config` + `docker compose --profile datagen config` valid; built and ran `comfyui-service:stub` container verifying all endpoints (200 on system_stats, prompt queue, history, view); full reactor `mvn test` green (209). |
 | P10-T03 | P10 | Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan) | done | P10-T02 | Antigravity | 2026-09-08T11:21:00Z | 2026-09-08T11:45:00Z | Implemented generative HTTP clients in `gotham-datagen` (`com.gotham.newsmediabrowser.datagen.client`): `OllamaClient` (Qwen 7B text + JSON chat format, healthcheck), `KokoroClient` (TTS audio synthesis WAV, healthcheck), `ComfyuiClient` (SDXL-Turbo 1-step T2I PNG + Wan2.1 1.3B 5s T2V MP4, async prompt queue + history polling + view download, healthcheck), `GeneratedMedia` carrier, and `DatagenClientException`. Added Jackson + `maven-assembly-plugin` for runnable fat jar. Unit tests: `OllamaClientTest`(6), `KokoroClientTest`(5), `ComfyuiClientTest`(8) against in-process mock HTTP servers (success, down, non-200, timeout paths). `mvn -pl gotham-datagen test` green (29); full reactor `mvn test` green (228); `mvn -pl gotham-datagen package && java -jar target/gotham-datagen.jar --help` verified. |
-| P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | pending | P10-T03, P3-T03, P4-T04, P5-T02, P6-T03 | | | | |
+| P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | done | P10-T03, P3-T03, P4-T04, P5-T02, P6-T03 | Antigravity | 2026-09-08T11:46:00Z | 2026-09-08T12:10:00Z | Implemented end-to-end `DatagenOrchestrator` + `DatagenWebClient` (`POST /journalist`, `GET /journalist` for ES id capture, `POST /article` multipart with binary media, tags, metadata, and byline orders/roles). Generates full 15/25/5+5+5 dataset with status mix (PUBLISHED/DRAFT/ARCHIVED) through HTTP only (never ES/GCS direct). Wired `DatagenApplication` main CLI with `--dry-run` support. Unit tests: `DatagenWebClientTest`(6), `DatagenOrchestratorTest`(6), `DatagenApplicationTest`(4) passing. `mvn -pl gotham-datagen test` green (42); full reactor `mvn test` green (241); `mvn -pl gotham-datagen package && java -jar target/gotham-datagen.jar --dry-run` verified. |
 | P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |
 | P10-T06 | P10 | Integration tests: datagen helpers + orchestrator | pending | P10-T05, P10-T02, P9-T03 | | | | |
 

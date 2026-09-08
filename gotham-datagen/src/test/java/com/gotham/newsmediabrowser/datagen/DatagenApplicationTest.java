@@ -38,11 +38,12 @@ class DatagenApplicationTest {
     }
 
     @Test
-    void defaultRunExitsZeroPrintsConfigAndSendsNothing() {
-        int code = run();
+    void dryRunExitsZeroPrintsConfigAndSendsNothing() {
+        int code = run("--dry-run");
 
         assertThat(code).isZero();
         assertThat(out()).contains("gotham-datagen configuration");
+        assertThat(out()).contains("Dry-run mode");
         assertThat(out()).contains("nothing was sent");
     }
 
@@ -53,5 +54,14 @@ class DatagenApplicationTest {
         assertThat(code).isEqualTo(2);
         assertThat(err()).contains("Unknown option");
         assertThat(err()).contains("Usage:");
+    }
+
+    @Test
+    void runWhenContainersDown_exitsOneWithMessage() {
+        // Run with dummy port where web / Ollama is not listening
+        int code = run("--web-base-url=http://localhost:59999", "--ollama-url=http://localhost:59998");
+
+        assertThat(code).isEqualTo(1);
+        assertThat(err()).contains("Datagen failed");
     }
 }
