@@ -5,7 +5,7 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T05:20:00Z  
+**Last updated:** 2026-09-08T05:35:00Z  
 **Active phase:** P10 (6/6 done) — plan complete  
 **Prototype status:** `done`  
 **Next task:** none (42/42). Optional lab: full overnight `gotham-datagen` run on the M4 with Compose profile `datagen`.
@@ -14,7 +14,8 @@
 
 ## Handoff notes (P10 complete)
 
-The implementation plan is closed. Remaining work is **operator / lab**, not a numbered task:
+The implementation plan is closed. Operator docs (README, architecture status lines, demo runbook,
+datagen runbook) were synced to **42 / 42** on 2026-09-08. Remaining work is **lab**, not a numbered task:
 
 - Full generative run (15 / 25 / 5+5+5 = 375 assets) on the M4 — see [`datagen-runbook.md`](./datagen-runbook.md). CPU Wan video is overnight; `--skip-video` is the daytime path.
 - Live `mvn -Pit-datagen-helpers verify` against Compose profile `datagen` + `gotham-web` (this task verified the skip path: 5 ITs skipped, 0 failures).

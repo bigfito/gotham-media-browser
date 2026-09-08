@@ -2,7 +2,8 @@
 
 End-to-end steps to stand up a **low-resource demo** of the Gotham News & Media Browser and prove it
 works: Compose up → index bootstrap → static seed → exercise the search modes + a CRUD smoke. No GPU
-generative models; full synthetic load is **P10**.
+generative models. Full synthetic load (15 / 25 / 5+5+5) is **P10** and lives in
+[`../datagen-runbook.md`](../datagen-runbook.md).
 
 Everything here talks to the app over HTTP only. Two helper scripts live next to this file:
 
@@ -108,9 +109,9 @@ It prints an `ok` / `FAIL` line per check and exits non-zero if any fail. What i
 Accepting **200 or 503** on the embedding-backed modes means the smoke passes on a full stack, a
 stub-mode run, and a text-only stack alike, while still catching a real error (400/500/no response).
 
-### Integration test profiles (P9-T03)
+### Integration test profiles
 
-Beyond the black-box smoke, two Failsafe profiles drive the code against real dependencies. They run
+Beyond the black-box smoke, three Failsafe profiles drive the code against real dependencies. They run
 through the `verify` phase (so the reactor builds `gotham-common` before `gotham-web`'s ITs fork) and
 each IT self-skips when its deps are absent, so they never go red on a partial box.
 
@@ -124,6 +125,10 @@ ES_ENDPOINT="…" ES_API_KEY="…" ./mvnw -Pit-es verify
 docker run -d --name gotham-ib -p 8081:8081 -e IMAGEBIND_BACKEND=stub imagebind-service:stub
 IMAGEBIND_BASE_URL=http://localhost:8081 ES_ENDPOINT="…" ES_API_KEY="…" ./mvnw -Pit-imagebind verify
 docker rm -f gotham-ib
+
+# Datagen helpers (Ollama / ComfyUI / Kokoro health + tiny generation + 1×1 HTTP orchestrator).
+# Start: docker compose --profile datagen up -d   (and gotham-web). ITs skip when a helper is down.
+./mvnw -Pit-datagen-helpers verify
 ```
 
 `mvn test` (unit + web-slice) never runs `*IT`. See [`../testing-strategy.md`](../testing-strategy.md).

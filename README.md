@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **37 / 42** tasks done (P0–P9 + P10-T01 `gotham-datagen` console skeleton; next **P10-T02** Compose `datagen` profile)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **42 / 42** tasks done (P0–P10 complete). Remaining work is lab/operator (overnight synthetic load), not a numbered task.  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |
@@ -21,7 +21,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | CRUD UI | `docs/ui-design-crud.md` |
 | Error UX | `docs/ui-design-errors.md` |
 | Demo (P9) | `docs/demo/` — `runbook.md` · `seed.sh` · `smoke.sh` · `fixtures/` |
-| Synthetic data (P10) | `docs/synthetic-data-generation.md` |
+| Synthetic data (P10) | `docs/synthetic-data-generation.md` · [`docs/datagen-runbook.md`](docs/datagen-runbook.md) |
 | Testing | `docs/testing-strategy.md` |
 | Engineering notes (gotchas) | `docs/engineering-notes.md` |
 | Mappings | `elasticsearch/*.mapping.json` |
@@ -29,7 +29,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 ## Locked stack
 
-Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — plain-`main`, non-Boot; skeleton in P10-T01) · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`; profile **`datagen`** = Ollama / ComfyUI / Kokoro containers) · ImageBind 1024-d · M4 32 GB lab · **unit + integration tests** (ES / ImageBind / helpers) · **42** implementation tasks (P0–P10)
+Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — plain-`main`, non-Boot) · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`; profile **`datagen`** = Ollama / ComfyUI / Kokoro) · ImageBind 1024-d · M4 32 GB lab · **unit + integration tests** (ES / ImageBind / datagen helpers) · **42 / 42** implementation tasks (P0–P10) done
 
 Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
@@ -49,10 +49,11 @@ Compose, per-mode walkthrough, troubleshooting) see [`docs/demo/runbook.md`](doc
 
 ### 1. Install the tools
 
-- **JDK 25** — the only hard requirement. Check it: `java -version` should print `25`.
+- **JDK 25** — the only hard requirement. Maven must use it:  
+  `export JAVA_HOME="$(/usr/libexec/java_home -v 25)"` (macOS). Check: `java -version` prints `25`.
 - **Git Bash + curl** (Windows only) — to run the `.sh` helper scripts. macOS/Linux already have them.
-- **Docker Desktop** — *optional*, only if you want to run the ImageBind service or the whole stack
-  via Docker. You can skip it (see step 3).
+- **Docker Desktop** — *optional* for a first look (step 3 uses the boot jar + ImageBind stub). Required
+  for the real embedder, Compose stack, or P10 synthetic generation.
 
 ### 2. Add your Elasticsearch credentials (the only thing you must configure)
 
@@ -79,7 +80,8 @@ media. (Want real embeddings and media later? The [runbook](docs/demo/runbook.md
 ### 3. Build, test, and start the app
 
 ```bash
-./mvnw test                              # runs the 209 unit tests — should say BUILD SUCCESS
+export JAVA_HOME="$(/usr/libexec/java_home -v 25)"   # macOS; Windows: point JAVA_HOME at JDK 25
+./mvnw test                              # unit + web-slice (244 tests) — should say BUILD SUCCESS
 ./mvnw -DskipTests package               # builds the runnable app
 java -jar gotham-web/target/gotham-web-0.0.1-SNAPSHOT.jar   # start it (run from the repo root)
 ```
@@ -116,10 +118,14 @@ BASE_URL=http://localhost:8080 ./docs/demo/smoke.sh   # green = every route work
 # Whole stack in Docker (app :8080 + imagebind-service :8081), no local Java needed to run:
 IMAGEBIND_BACKEND=stub docker compose up --build
 
-# Integration tests against live dependencies (skipped automatically when creds are absent):
+# Integration tests against live dependencies (ITs skip when creds / helpers are absent):
 ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-es verify
 IMAGEBIND_BASE_URL=http://localhost:8081 ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-imagebind verify
+./mvnw -Pit-datagen-helpers verify       # Ollama / ComfyUI / Kokoro + small HTTP orchestrator
 ```
+
+Full synthetic load (15 journalists · 25 articles · 375 media assets) is a separate console app —
+see [`docs/datagen-runbook.md`](docs/datagen-runbook.md).
 
 ## Routes
 
@@ -129,4 +135,4 @@ IMAGEBIND_BASE_URL=http://localhost:8081 ES_ENDPOINT=… ES_API_KEY=… ./mvnw -
 - `/article/**` — CRUD on denormalized `gotham-media-browser` (media → public GCS; ImageBind embeddings on write)  
 - `/api/health/elasticsearch` · `/api/health/imagebind` — chrome availability legends  
 
-No `/admin`. Synthetic load (last phase): Java **console** `gotham-datagen` (**not** Spring Boot) → HTTP CRUD only (defaults 15 journalists · 25 articles · 5+5+5 media). License: MIT (see repository `LICENSE`).
+No `/admin`. Synthetic load: Java **console** `gotham-datagen` (**not** Spring Boot) → HTTP CRUD only (defaults 15 journalists · 25 articles · 5+5+5 media). License: MIT (see repository `LICENSE`).

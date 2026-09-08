@@ -106,6 +106,9 @@ mvn test
 [INFO] BUILD SUCCESS (Total: 241 tests, 0 failures, 0 errors)
 ```
 
+> After P10-T06 the reactor unit count is **244** (`gotham-datagen` 45). Failsafe profile
+> `it-datagen-helpers` is wired; ITs skip when helpers are down.
+
 ---
 
 ## 6. Conclusion

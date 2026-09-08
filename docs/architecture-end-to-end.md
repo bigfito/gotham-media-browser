@@ -1,9 +1,9 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Implementation snapshot 2026-09-08 — **P0–P9 + P10-T01 done** (37/42). Next: P10-T02 (Compose `datagen` profile) → the rest of P10 synthetic data generation. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
+**Status:** Implementation snapshot 2026-09-08 — **P0–P10 done** (42/42). Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
-**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — non-Boot; skeleton in P10-T01) · Elasticsearch Java API Client · Docker Compose  
+**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — non-Boot) · Elasticsearch Java API Client · Docker Compose  
 
 Open parent `pom.xml` in IntelliJ IDEA Ultimate.
 
@@ -20,7 +20,7 @@ This is the **canonical architecture overview**. Detail specs live in linked doc
 | Search / results UI | [`ui-design-search-results.md`](./ui-design-search-results.md) |
 | CRUD UI | [`ui-design-crud.md`](./ui-design-crud.md) |
 | Error / fault-tolerance UX | [`ui-design-errors.md`](./ui-design-errors.md) |
-| Synthetic data (P10 last) | [`synthetic-data-generation.md`](./synthetic-data-generation.md) |
+| Synthetic data (P10) | [`synthetic-data-generation.md`](./synthetic-data-generation.md) · [`datagen-runbook.md`](./datagen-runbook.md) |
 | Testing strategy | [`testing-strategy.md`](./testing-strategy.md) |
 | Implementation plan | [`implementation-plan.md`](./implementation-plan.md) |
 | Implementation state | [`implementation-state.md`](./implementation-state.md) |
@@ -49,7 +49,7 @@ flowchart LR
 | Component | Role |
 |-----------|------|
 | `gotham-web` | Search UI, `/journalist` + `/article` CRUD, ES client, GCS upload, ImageBind client, health legends, **global error pages** |
-| `gotham-datagen` | **P10 (last):** Java **console** app (`main`, not Spring Boot) — synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers |
+| `gotham-datagen` | Java **console** app (`main`, not Spring Boot) — synthetic journalists/articles via HTTP CRUD; orchestrates modality helpers ([`datagen-runbook.md`](./datagen-runbook.md)) |
 | `imagebind-service` | Sync HTTP embed text/image/audio/video → `float[1024]` |
 | Ollama / ComfyUI / Kokoro | **Mandatory Docker** Compose profile `datagen` — Qwen 7B / SDXL-Turbo / Wan 1.3B / Kokoro (CPU on Mac) |
 | `gotham-journalists` | Journalist master documents (ES auto `_id`) |
@@ -217,11 +217,11 @@ gotham-news-media-browser/
 ├── README.md
 ├── AGENTS.md
 ├── pom.xml                      # Maven parent (multi-module)
-├── docker-compose.yml           # gotham-web + imagebind-service (+ datagen profile in P10)
-├── gotham-common/               # ✔ shared lib: config, ES/GCS/ImageBind, domain, CRUD repos, FTS services
-├── gotham-web/                  # ✔ Spring Boot: landing, /results FTS, /journalist + /article CRUD, health, errors
-├── gotham-datagen/              # (P10 — Java console, not Spring Boot)
-├── comfyui-service/             # (P10 — CPU ComfyUI container)
+├── docker-compose.yml           # gotham-web + imagebind-service + profile datagen
+├── gotham-common/               # ✔ shared lib: config, ES/GCS/ImageBind, domain, CRUD repos, search
+├── gotham-web/                  # ✔ Spring Boot: landing, /results, /journalist + /article CRUD, health, errors
+├── gotham-datagen/              # ✔ Java console (not Spring Boot) — HTTP CRUD synthetic load
+├── comfyui-service/             # ✔ CPU ComfyUI container (SDXL-Turbo + Wan)
 ├── imagebind-service/           # ✔ FastAPI Meta ImageBind wrapper (text/image/audio/video → 1024), Docker
 ├── secrets/                     # SA JSON secret (gitignored) + *.example
 ├── docs/
@@ -236,6 +236,9 @@ gotham-news-media-browser/
 │   ├── ui-design-crud.md
 │   ├── ui-design-errors.md
 │   ├── synthetic-data-generation.md
+│   ├── datagen-runbook.md
+│   ├── datagen-verification-report.md
+│   ├── demo/                    # P9 static fixtures, seed.sh, smoke.sh, runbook
 │   ├── testing-strategy.md
 │   ├── implementation-plan.md
 │   └── implementation-state.md
@@ -273,7 +276,7 @@ gotham-news-media-browser/
 | `source.text` copy_to `article_search_text` | ✓ |
 | Results filters wired to IA query params | ✓ |
 | Article `mode=vector` → HTTP 400 error page | ✓ |
-| Multi-module Maven (`gotham-common` + `gotham-web`; Java console `gotham-datagen` in P10) | ✓ |
+| Multi-module Maven (`gotham-common` + `gotham-web` + Java console `gotham-datagen`) | ✓ |
 | ES/GCS props: placeholders committed + real values in untracked override; SA JSON secret file | ✓ |
 | Fault-tolerant error pages (all endpoints) | ✓ |
 | Synthetic data last phase P10 (Docker helpers mandatory; Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B; 15/25/5+5+5; console app not Spring Boot) | ✓ |

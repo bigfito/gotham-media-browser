@@ -4,7 +4,8 @@ A tiny, committed dataset for a **CI / low-resource demo** — no GPU generative
 `gotham-datagen`, no Ollama / ComfyUI / Kokoro. It is loaded **only through the HTTP CRUD**
 (`POST /journalist`, `POST /article`), never written to Elasticsearch or GCS directly.
 
-Full synthetic load (15 journalists · 25 articles · 5+5+5 media) is a separate concern — **P10**.
+Full synthetic load (15 journalists · 25 articles · 5+5+5 media) is **P10** — see
+[`../datagen-runbook.md`](../datagen-runbook.md).
 
 ## Contents
 

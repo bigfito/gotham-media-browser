@@ -18,6 +18,8 @@ gotham.elasticsearch.api-key=YOUR_REAL_BASE64_API_KEY
 # true = run those modes WITHOUT the heavy 4.5 GB model (deterministic vectors). Great for a first
 # run. Set false only when you have the imagebind-service container running (see docs/demo/runbook.md).
 gotham.imagebind.stub=true
+# When the boot jar runs on the host (not in Compose) against a local imagebind-service:
+# gotham.imagebind.base-url=http://localhost:8081
 
 # --- Google Cloud Storage (public bucket) --- OPTIONAL: only needed to upload media.
 # Leave these as-is for a text-only demo (media uploads will simply fail; everything else works).

@@ -1,7 +1,8 @@
 # Synthetic Data Generation
 
-**Module:** `gotham-datagen` (Maven **Java console** app — **not** Spring Boot; last phase **P10**)  
+**Module:** `gotham-datagen` (Maven **Java console** app — **not** Spring Boot; phase **P10**, shipped)  
 **Purpose:** Generate realistic journalists + denormalized articles (with IMAGE / AUDIO / VIDEO) and load them **through** the live CRUD APIs (`POST /journalist`, `POST /article`).  
+**Operator runbook:** [`datagen-runbook.md`](./datagen-runbook.md)  
 **Related:** [`implementation-plan.md`](./implementation-plan.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`ui-design-crud.md`](./ui-design-crud.md)
 
 ---
