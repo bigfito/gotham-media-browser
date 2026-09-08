@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **32 / 42** tasks done (P0–P8 complete: full-text, semantic, hybrid, and multimedia vector search all ship; next **P9-T01** Static seed fixtures)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **33 / 42** tasks done (P0–P8 + P9-T01 static demo fixtures complete; next **P9-T02** Demo runbook + smoke script)  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |
@@ -20,6 +20,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | Search UI | `docs/ui-design-search-results.md` |
 | CRUD UI | `docs/ui-design-crud.md` |
 | Error UX | `docs/ui-design-errors.md` |
+| Demo fixtures (P9) | `docs/demo/` (`README.md` · `seed.sh` · `fixtures/`) |
 | Synthetic data (P10) | `docs/synthetic-data-generation.md` |
 | Testing | `docs/testing-strategy.md` |
 | Mappings | `elasticsearch/*.mapping.json` |
