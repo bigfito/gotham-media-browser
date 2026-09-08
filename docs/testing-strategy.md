@@ -61,7 +61,7 @@ mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
 
 ## 4. Integration test suites
 
-**Already in tree (env-gated, not Failsafe profiles):** `*IT.java` in `gotham-common` use JUnit `assumeTrue` so they skip when secrets/deps are missing. Default Surefire does **not** include `*IT` (`mvn test` stays unit + `*Test`). Run a live class with e.g. `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT`. Failsafe profiles `it-es` / `it-imagebind` / `it-datagen-helpers` remain **P9 / P10**.
+**Already in tree (env-gated, not Failsafe profiles):** `*IT.java` in `gotham-common` (and one in `gotham-web`) use JUnit `assumeTrue` so they skip when secrets/deps are missing. Default Surefire does **not** include `*IT` (`mvn test` stays unit + `*Test`). Run a live class with e.g. `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (add `-am` for the `gotham-web` class). Failsafe profiles `it-es` / `it-imagebind` / `it-datagen-helpers` remain **P9 / P10**.
 
 | Class | Gate | Covers |
 |-------|------|--------|
@@ -69,6 +69,11 @@ mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
 | `ArticleRepositoryIT` | same | Live article CRUD / nest |
 | `ArticleFullTextServiceIT` | same | Cookbook §4 FTS |
 | `MultimediaFullTextServiceIT` | same | Cookbook §7 nested FTS + inner_hits |
+| `ArticleSemanticSearchServiceIT` | same | Cookbook §5 article kNN |
+| `MultimediaSemanticSearchServiceIT` | same | Cookbook §8 nested kNN + inner_hits |
+| `ArticleHybridSearchServiceIT` | same | Cookbook §6 article RRF |
+| `MultimediaHybridSearchServiceIT` | same | Cookbook §9 nested RRF (distinct inner_hits names) |
+| `MultimediaVectorSearchServiceIT` (`gotham-web`) | same | Cookbook §10 file→vector nested kNN |
 | `HttpImageBindClientIT` | `IMAGEBIND_BASE_URL` | Live 1024-d embed |
 | `GcsStorageServiceIT` | GCS secret / env | Live public object put |
 

@@ -1,6 +1,6 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Implementation snapshot 2026-09-08 — **P0–P7 done** (29/42). Next: P8 semantic / hybrid / vector. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
+**Status:** Implementation snapshot 2026-09-08 — **P0–P8 done** (32/42). Next: P9 demo smoke + static fixtures + ES/ImageBind ITs. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
 **App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Elasticsearch Java API Client · Docker Compose  
@@ -128,7 +128,7 @@ flowchart TD
 
 Status `DRAFT` | `PUBLISHED` | `ARCHIVED` is filterable on public search.
 
-**Shipped through P7:** landing + article/multimedia **full-text** (`ArticleFullTextService` / `MultimediaFullTextService` + `/results` Thymeleaf). Semantic, hybrid, and file-vector ranking are **P8** (UI radios exist; `/results` shows a later-phase notice except article `mode=vector` → HTTP 400).
+**Shipped through P8:** landing + article/multimedia **full-text** (`ArticleFullTextService` / `MultimediaFullTextService`), **semantic kNN** (`ArticleSemanticSearchService` / `MultimediaSemanticSearchService`), **hybrid RRF** (`ArticleHybridSearchService` / `MultimediaHybridSearchService`), and multimedia **file→vector** (`MultimediaVectorSearchService`) — all on `GET/POST /results` Thymeleaf. Article `mode=vector` → HTTP 400 branded page.
 
 Local upload limits (ImageBind CPU): IMAGE 10 MiB · AUDIO 20 MiB / 5 min · VIDEO 50 MiB / 90 s.
 

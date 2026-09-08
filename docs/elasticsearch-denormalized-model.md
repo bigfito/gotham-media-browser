@@ -5,7 +5,7 @@
 **Logical ER:** [`er-design.md`](./er-design.md) (design aid only)  
 **Canonical overview:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)  
 **Search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
-**Runtime:** Indexes are created idempotently on app start (`IndexBootstrapper`, P2). Public FTS is live (P7); kNN / RRF / file-vector are P8.
+**Runtime:** Indexes are created idempotently on app start (`IndexBootstrapper`, P2). Public FTS, semantic **kNN**, hybrid **RRF**, and multimedia **file→vector** search are all live (P7–P8).
 
 ## Indexes
 

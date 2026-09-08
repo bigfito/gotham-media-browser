@@ -1,7 +1,7 @@
 # Gotham News & Media Browser — Frontend Information Architecture
 
 **UI:** Thymeleaf (server-rendered)  
-**Implementation (2026-09-08):** P3–P7 CRUD + FTS live; semantic / hybrid / vector ranking is P8.  
+**Implementation (2026-09-08):** P3–P8 live — CRUD, full-text, semantic (kNN), hybrid (RRF), and multimedia file→vector search all ship.  
 **Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md) · [`ui-design-errors.md`](./ui-design-errors.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Mockups:** [`../ui-mockups/`](../ui-mockups/)
 
@@ -10,8 +10,8 @@
 | Route | Purpose |
 |-------|---------|
 | `GET /` | Landing — **two panels**: article search + multimedia search |
-| `GET /results` | Results — filters, sorting, pagination (full-text wired; other modes P8) |
-| `POST /results` | Same as GET; used when multimedia `mode=vector` posts a file (ranking is P8) |
+| `GET /results` | Results — filters, sorting, pagination; full-text · semantic · hybrid modes |
+| `POST /results` | Multipart — multimedia `mode=vector` posts a file (classify → ImageBind → nested kNN) |
 | `GET /journalist` | List journalists (`gotham-journalists`) |
 | `GET /journalist/new` | Create journalist form |
 | `GET /journalist/{id}` | Edit journalist (`{id}` = ES `_id`) |
@@ -40,7 +40,7 @@ Article full-text search still accepts a **`journalist`** filter parameter.
 **Chrome:** shared header + footer (Thymeleaf fragments); ImageBind + Elasticsearch availability legends (`/api/health/*`); footer © 2020 Packt · © 2026 · MIT.  
 **Fault tolerance:** unexpected failures on **any** endpoint render a branded error page with a clear **reason** (see [`ui-design-errors.md`](./ui-design-errors.md)); expected validation stays on forms. Empty `q` on `/results` stays on the results page with a query message. Article `mode=vector` → HTTP 400 branded page.
 
-**Implementation (2026-09-08):** full-text search on `/results` is live. Semantic, hybrid, and multimedia vector ranking are **P8** (radios remain; `/results` shows a later-phase notice).
+**Implementation (2026-09-08):** all four search modes are live on `/results` — full-text, semantic (kNN), hybrid (RRF), and multimedia vector (uploaded file). Article `mode=vector` returns an HTTP 400 branded page.
 
 ## Error & recovery
 

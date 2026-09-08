@@ -5,7 +5,7 @@
 **Chrome:** Shared header + footer on all pages  
 **Mockups:** `ui-mockups/`  
 **Related:** [`frontend-information-architecture.md`](./frontend-information-architecture.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md) · [`ui-design-errors.md`](./ui-design-errors.md)  
-**Implementation:** Landing + `/results` full-text are live (P7). Semantic / hybrid / vector ranking is P8.
+**Implementation:** Landing + `/results` are live with all four modes — full-text (P7), semantic, hybrid, and multimedia vector (P8).
 
 ## Background
 

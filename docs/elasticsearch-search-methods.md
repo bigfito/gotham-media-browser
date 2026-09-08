@@ -8,7 +8,7 @@
 
 This document is the **Elasticsearch-side contract** for every UI search mode. Agents implement these shapes (or equivalent Java API builders), not ad-hoc queries.
 
-**Shipped (P7):** §4 article FTS and §7 multimedia FTS + `inner_hits`, exposed on `GET/POST /results`. **Not shipped (P8):** §5/§8 semantic kNN, §6/§9 hybrid RRF, §10 file→vector. Article `mode=vector` is already rejected with HTTP 400.
+**Shipped (P7–P8, all on `GET/POST /results`):** §4 article FTS and §7 multimedia FTS + `inner_hits`; §5/§8 semantic kNN; §6/§9 hybrid RRF; §10 multimedia file→vector. Article `mode=vector` is rejected with HTTP 400.
 
 ---
 
@@ -252,7 +252,7 @@ Use the **retriever RRF** API (ES 8.8+ / 9.x / Serverless). Both legs share the 
 }
 ```
 
-**Pagination note:** classic `from` with RRF retrievers can be limited on some deployments. Prototype strategy: request `rank_window_size` ≥ `page * size`, then slice the window in the app for the current page, **or** use `from`/`size` when the cluster supports it on `retriever` searches. Document the chosen approach in code comments when implementing P8-T02.
+**Pagination note (implemented P8-T02):** the hybrid services use top-level `from`/`size` with `rank_window_size = max(50, from + size)` so the fused window is at least as deep as the requested page. Verified working on Serverless; no app-side window slicing was needed.
 
 ---
 
@@ -362,15 +362,17 @@ If the user also checked parent projections (`multimedia_text`, `multimedia_sear
 }
 ```
 
-If the cluster requires an explicit nested knn context for nested vectors, use the Java API’s nested-knn builder equivalent; keep `inner_hits` so the UI can render the matched asset.
+**Implemented (P8-T01):** on Serverless a **top-level `knn`** over the nested `multimedia.asset_vector` returns the parent but leaves `inner_hits` **empty**, so the matched asset cannot be rendered. `MultimediaSemanticSearchService` therefore runs kNN as a `knn` **query** wrapped in a `nested` query that carries `inner_hits.matched_media` — the explicit nested-knn context — which populates the matched asset.
 
-Optional: nest a `media_type` filter inside the knn filter using a `nested` query on `multimedia` when filtering by type for semantic mode.
+The `media_type` filter is nested inside that `nested` query (a `terms` on `multimedia.media_type`) so it applies in the same nested context.
 
 ---
 
 ## 9. Multimedia — Hybrid (`mode=hybrid`)
 
-RRF of nested BM25 (section 7 query) and nested kNN (section 8). Same filters on both retrievers; both should request `inner_hits` where supported. If a retriever leg cannot attach `inner_hits`, fetch the parent hit and re-query nested matches for displayed ids (fallback acceptable for prototype).
+RRF of nested BM25 (section 7 query) and nested kNN (section 8). Same filters on both retrievers.
+
+**Implemented (P8-T02):** RRF merges every leg's `inner_hits` into one map, so two nested legs that share the name `matched_media` are rejected (`illegal_argument_exception: [inner_hits] already contains an entry`). The kNN leg therefore uses a **distinct** name (`matched_media_knn`); `MultimediaHitMapper` reads both blocks and de-duplicates assets by id. Also, the Java client's `KnnRetriever`/`StandardRetriever` expose no `filter`, so both legs are `standard` retrievers whose queries are `bool{ must: …, filter: sharedFilters }`.
 
 ```json
 {
@@ -495,6 +497,6 @@ See [`ui-design-errors.md`](./ui-design-errors.md).
 | §4 Article FTS | P7-T02 | **done** — `ArticleFullTextService` |
 | §7 Multimedia FTS | P7-T03 | **done** — `MultimediaFullTextService` + `inner_hits` |
 | Results UI | P7-T04 | **done** — `GET/POST /results` |
-| §5 / §8 Semantic | P8-T01 | pending |
-| §6 / §9 Hybrid | P8-T02 | pending |
-| §10 Vector | P8-T03 | pending (article `mode=vector` already HTTP 400) |
+| §5 / §8 Semantic | P8-T01 | **done** — `ArticleSemanticSearchService` / `MultimediaSemanticSearchService` (nested vector uses a `knn` query inside `nested` so `inner_hits` populate) |
+| §6 / §9 Hybrid | P8-T02 | **done** — `ArticleHybridSearchService` / `MultimediaHybridSearchService` (RRF of two `standard` retrievers; distinct `inner_hits` names per leg) |
+| §10 Vector | P8-T03 | **done** — `MultimediaVectorSearchService` (file → ImageBind → nested kNN); article `mode=vector` → HTTP 400 |
