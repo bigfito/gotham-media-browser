@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** **P0–P8 + P9-T01/T02/T03 complete (35 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es`/`it-imagebind` profiles green on the lab. Next: **P9-T04** Hardening sync pass. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-08):** **P0–P9 complete (36 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es`/`it-imagebind` green on the lab; global DoD ticked through P9. Next: **P10-T01** Java console `gotham-datagen` skeleton (compact context first — P9 was a phase boundary). Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 

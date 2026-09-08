@@ -123,7 +123,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 **Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).  
 **Canonical testing design:** [`testing-strategy.md`](./testing-strategy.md).
 
-**Progress:** P0–P8 + P9-T01/T02/T03 **done** (35/42). Next task **P9-T04**. Live board: [`implementation-state.md`](./implementation-state.md).
+**Progress:** P0–P9 **done** (36/42). Next task **P10-T01**. Live board: [`implementation-state.md`](./implementation-state.md).
 
 ### Task inventory (authoritative IDs)
 
@@ -480,20 +480,22 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 - **Verification:** `mvn -Pit-datagen-helpers failsafe:integration-test failsafe:verify` passes on lab with `datagen` profile up; assumptions skip cleanly when containers absent. State file P10 closable.  
 - **Depends on:** P10-T05, P10-T02, P9-T03
 
-- [ ] IntelliJ opens parent POM as multi-module (`gotham-common`, `gotham-web`, and after P10 `gotham-datagen`)  
-- [ ] Compose brings up `gotham-web` + in-repo `imagebind-service`  
-- [ ] ES endpoint + API key supplied via `application.properties`  
-- [ ] GCS SA JSON supplied as secret file; bucket props in `application.properties`  
-- [ ] Both indexes bootstrapped  
-- [ ] `/journalist` + `/article` CRUD; journalist delete **cascade-strips**  
-- [ ] Search modes per capability matrix  
-- [ ] Header health legends + MIT footer  
-- [ ] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps)  
-- [ ] **Unit tests** for backend + frontend (MockMvc) with `mvn test` green  
-- [ ] **Integration tests** for Elasticsearch + ImageBind (**P9-T03**) and datagen helpers (**P10-T06**)  
-- [ ] P9 static smoke path works without generative helpers  
+_Ticked for the P0–P9 smoke demo (P9-T04 hardening sync). P10 items stay open._
+
+- [x] IntelliJ opens parent POM as multi-module (`gotham-common`, `gotham-web`; `gotham-datagen` after P10) — reactor builds green on JDK 25  
+- [x] Compose brings up `gotham-web` + in-repo `imagebind-service` (`docker compose config` valid; app + stub embedder run in P9-T03)  
+- [x] ES endpoint + API key supplied (placeholders committed; real values in untracked `application-local.properties` / env)  
+- [x] GCS SA JSON supplied as secret file; bucket props in properties  
+- [x] Both indexes bootstrapped (`IndexBootstrapper`; `IndexBootstrapIT` green)  
+- [x] `/journalist` + `/article` CRUD; journalist delete **cascade-strips** (`JournalistServiceIT` green)  
+- [x] Search modes per capability matrix (full-text · semantic · hybrid · multimedia vector; article `mode=vector` → 400)  
+- [x] Header health legends + MIT footer  
+- [x] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps) — verified live (smoke: 400 + 503 branded)  
+- [x] **Unit tests** for backend + frontend (MockMvc) with `mvn test` green (199)  
+- [x] **Integration tests** for Elasticsearch + ImageBind (**P9-T03** — `it-es` 15 ITs, `it-imagebind` 3 ITs green on the lab); datagen helpers (**P10-T06**) pending  
+- [x] P9 static smoke path works without generative helpers (`docs/demo/` fixtures + `seed.sh` + `smoke.sh`; smoke passed text-only)  
 - [ ] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; **Java console** `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
-- [ ] State file tasks completed  
+- [ ] State file tasks completed (through P9; **P10** remains)  
 
 ---
 

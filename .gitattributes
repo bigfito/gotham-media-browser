@@ -1,0 +1,4 @@
+# Keep shell scripts and the Maven wrapper LF so they run on the macOS lab
+# regardless of the contributor's OS (Windows autocrlf would otherwise store CRLF).
+*.sh   text eol=lf
+mvnw   text eol=lf
