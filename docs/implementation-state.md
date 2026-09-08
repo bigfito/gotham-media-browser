@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T02:00:00Z  
-**Active phase:** P8 (0/3 pending) — compact context before claiming P8-T01  
+**Last updated:** 2026-09-08T05:10:00Z  
+**Active phase:** P8 (1/3 done) — next `P8-T02`  
 **Prototype status:** `in_progress`  
-**Next task:** `P8-T01` (Semantic kNN — dep P6-T03, P7-T04 done)
+**Next task:** `P8-T02` (Hybrid RRF — dep P8-T01 done, P7-T02 done)
 
 ---
 
@@ -62,11 +62,11 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P5 | GCS + multimedia | 3/3 | done |
 | P6 | ImageBind + embeddings | 3/3 | done |
 | P7 | Public FTS search | 4/4 | done |
-| P8 | Semantic · Hybrid · Vector | 0/3 | pending |
+| P8 | Semantic · Hybrid · Vector | 1/3 | in_progress |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 29 / **42** tasks done
+**Totals:** 30 / **42** tasks done
 
 ---
 
@@ -105,7 +105,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P7-T02 | P7 | Article FTS service | done | P4-T04, P2-T02 | Cursor Grok 4.6 | 2026-09-08T01:20:00Z | 2026-09-08T01:25:00Z | Cookbook §4: `ArticleFullTextService` + field remap / pagination / sort helpers. `multi_match` best_fields+AND, filters (status/section/language/published_at), journalist id=`term` vs name=`match`. `mvn test` green (common 87 + web 48). LIVE `ArticleFullTextServiceIT`: transit-funding hit vs sports miss; size 25/50/100; demo docs cleaned. |
 | P7-T03 | P7 | Multimedia FTS + inner_hits | done | P5-T02 | Cursor Grok 4.6 | 2026-09-08T01:30:00Z | 2026-09-08T01:35:00Z | Cookbook §7: `MultimediaFullTextService` nested BM25 + `inner_hits.matched_media` (size 5), media_type filter, parent projections as extra must, cards flattened with `storage_uri`. `mvn test` green (common 96 + web 48). LIVE `MultimediaFullTextServiceIT`: IMAGE caption hit vs AUDIO miss; demo doc cleaned. |
 | P7-T04 | P7 | Results Thymeleaf pages | done | P7-T01, P7-T02, P7-T03 | Cursor Grok 4.6 | 2026-09-08T01:40:00Z | 2026-09-08T01:45:00Z | `GET/POST /results` articles + multimedia from mockups. Wires P7-T02/T03; status+journalist on article FTS; filters/sort/pagination preserve params. Article `mode=vector` → branded 400. Semantic/hybrid/vector notice until P8. `mvn test` green (common 97 + web 55). MockMvc round-trips. Live browser not run (app not started). |
-| P8-T01 | P8 | Semantic kNN | pending | P6-T03, P7-T04 | | | | |
+| P8-T01 | P8 | Semantic kNN | done | P6-T03, P7-T04 | JavaMentor (Claude Code) | 2026-09-08T04:30:00Z | 2026-09-08T05:10:00Z | ArticleSemanticSearchService (cookbook §5: top-level `knn` on `article_embedding`, k=from+size, num_candidates=max(100,4k), parent+byline filters, vectors excluded from _source) + MultimediaSemanticSearchService (§8). ImageBind embeds query text with a hard 1024-d guard (bad/absent vector -> DependencyException 503). Extracted MultimediaHitMapper (inner_hits→cards + `_source` field lists) shared by full-text + semantic (no duplication). ResultsController: `mode=semantic` now dispatches (article + multimedia); hybrid/vector still show the later-phase notice; article `mode=vector` still 400. KEY FIX found via live IT: a **top-level `knn` on the nested `multimedia.asset_vector` returns the parent but leaves `inner_hits` empty** (innerCount=0) so no asset card renders — reworked multimedia semantic to a `knn` **query** inside a `nested` query with `inner_hits.matched_media` (cookbook §8's "explicit nested knn context"); media_type filters inside the nested context, parent filters top-level. Unit: ArticleSemanticSearchServiceTest(11) + MultimediaSemanticSearchServiceTest(9) + ResultsControllerTest reworked semantic tests. `mvn test` green (175; was 154). LIVE vs real Serverless (env ES_ENDPOINT/ES_API_KEY, StubImageBindClient): ArticleSemanticSearchServiceIT + MultimediaSemanticSearchServiceIT PASSED — nested kNN now returns the matched asset card (innerCount=1). `mvn -DskipTests package` builds the boot jar. Live ImageBind-backed semantic ranking deferred to P9-T03. |
 | P8-T02 | P8 | Hybrid RRF | pending | P8-T01, P7-T02 | | | | |
 | P8-T03 | P8 | Multimedia vector (file) search | pending | P8-T01, P7-T01, P1-T04 | | | | |
 | P9-T01 | P9 | Static seed fixtures | pending | P6-T03, P5-T02 | | | | |

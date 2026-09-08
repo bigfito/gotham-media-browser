@@ -10,17 +10,13 @@ import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch.core.search.InnerHitsResult;
-import co.elastic.clients.json.JsonData;
 import com.gotham.newsmediabrowser.common.error.DependencyException;
 import com.gotham.newsmediabrowser.common.index.IndexDefinition;
 import com.gotham.newsmediabrowser.common.search.FullTextFieldRemap;
 import com.gotham.newsmediabrowser.common.search.SearchPagination;
 import com.gotham.newsmediabrowser.common.search.SearchSort;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -37,21 +33,6 @@ public class MultimediaFullTextService {
     private static final Logger log = LoggerFactory.getLogger(MultimediaFullTextService.class);
     private static final String INDEX = IndexDefinition.MEDIA_BROWSER.indexName();
     private static final String SERVICE = "Elasticsearch";
-    static final String INNER_HITS_NAME = "matched_media";
-    static final int INNER_HITS_SIZE = 5;
-    private static final List<String> PARENT_SOURCE_FIELDS =
-            List.of("title", "status", "section", "slug", "published_at");
-    private static final List<String> INNER_SOURCE_FIELDS = List.of(
-            "multimedia.multimedia_element_id",
-            "multimedia.media_type",
-            "multimedia.storage_uri",
-            "multimedia.title",
-            "multimedia.caption",
-            "multimedia.description",
-            "multimedia.alt_text",
-            "multimedia.credit",
-            "multimedia.mime_type",
-            "multimedia.position");
 
     private final ElasticsearchClient client;
     private final ArticleRepository articleRepository;
@@ -72,7 +53,7 @@ public class MultimediaFullTextService {
             SearchResponse<Map> response = client.search(request, Map.class);
             List<MultimediaSearchHit> items = new ArrayList<>();
             for (Hit<Map> hit : response.hits().hits()) {
-                items.addAll(cardsFromHit(hit));
+                items.addAll(MultimediaHitMapper.cards(hit, articleRepository));
             }
             long total = response.hits().total() != null ? response.hits().total().value() : 0;
             return new MultimediaSearchPage(List.copyOf(items), total);
@@ -93,7 +74,7 @@ public class MultimediaFullTextService {
                 .from(from)
                 .size(size)
                 .trackTotalHits(track -> track.enabled(true))
-                .source(src -> src.filter(f -> f.includes(PARENT_SOURCE_FIELDS)))
+                .source(src -> src.filter(f -> f.includes(MultimediaHitMapper.PARENT_SOURCE_FIELDS)))
                 .query(buildQuery(query));
         applySort(builder, sort);
         SearchRequest request = builder.build();
@@ -159,33 +140,9 @@ public class MultimediaFullTextService {
                 .path("multimedia")
                 .query(nestedBody)
                 .innerHits(ih -> ih
-                        .name(INNER_HITS_NAME)
-                        .size(INNER_HITS_SIZE)
-                        .source(src -> src.filter(f -> f.includes(INNER_SOURCE_FIELDS))))));
-    }
-
-    List<MultimediaSearchHit> cardsFromHit(Hit<Map> hit) {
-        Map<String, Object> parent = asMap(hit.source());
-        String articleId = hit.id();
-        String title = asString(parent.get("title"));
-        ArticleStatus status = parent.get("status") != null
-                ? ArticleStatus.fromValue(asString(parent.get("status")))
-                : null;
-        String section = asString(parent.get("section"));
-        String slug = asString(parent.get("slug"));
-        Instant publishedAt = parseInstant(parent.get("published_at"));
-
-        InnerHitsResult inner = hit.innerHits() != null ? hit.innerHits().get(INNER_HITS_NAME) : null;
-        if (inner == null || inner.hits() == null || inner.hits().hits().isEmpty()) {
-            return List.of();
-        }
-        List<MultimediaSearchHit> cards = new ArrayList<>();
-        for (Hit<JsonData> innerHit : inner.hits().hits()) {
-            Map<String, Object> nested = nestedSource(innerHit.source());
-            ArticleMultimedia media = articleRepository.fromNestedMultimedia(nested);
-            cards.add(new MultimediaSearchHit(articleId, title, status, section, slug, publishedAt, media));
-        }
-        return cards;
+                        .name(MultimediaHitMapper.INNER_HITS_NAME)
+                        .size(MultimediaHitMapper.INNER_HITS_SIZE)
+                        .source(src -> src.filter(f -> f.includes(MultimediaHitMapper.INNER_SOURCE_FIELDS))))));
     }
 
     private static void requireQuery(MultimediaFullTextQuery query) {
@@ -233,37 +190,5 @@ public class MultimediaFullTextService {
             case RELEVANCE -> {
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    static Map<String, Object> nestedSource(JsonData source) {
-        if (source == null) {
-            return Map.of();
-        }
-        Object converted = source.to(Object.class);
-        Map<String, Object> map = asMap(converted);
-        Object nested = map.get("multimedia");
-        if (nested instanceof Map<?, ?> wrapped) {
-            return asMap(wrapped);
-        }
-        return map;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> asMap(Object value) {
-        if (value instanceof Map<?, ?> map) {
-            Map<String, Object> copy = new LinkedHashMap<>();
-            map.forEach((key, val) -> copy.put(String.valueOf(key), val));
-            return copy;
-        }
-        return new LinkedHashMap<>();
-    }
-
-    private static String asString(Object value) {
-        return value != null ? value.toString() : null;
-    }
-
-    private static Instant parseInstant(Object value) {
-        return value != null ? Instant.parse(value.toString()) : null;
     }
 }

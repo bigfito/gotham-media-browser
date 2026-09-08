@@ -5,11 +5,13 @@ import com.gotham.newsmediabrowser.common.article.ArticleFullTextQuery;
 import com.gotham.newsmediabrowser.common.article.ArticleFullTextService;
 import com.gotham.newsmediabrowser.common.article.ArticleJournalist;
 import com.gotham.newsmediabrowser.common.article.ArticlePage;
+import com.gotham.newsmediabrowser.common.article.ArticleSemanticSearchService;
 import com.gotham.newsmediabrowser.common.article.ArticleStatus;
 import com.gotham.newsmediabrowser.common.article.MultimediaFullTextQuery;
 import com.gotham.newsmediabrowser.common.article.MultimediaFullTextService;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchHit;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchPage;
+import com.gotham.newsmediabrowser.common.article.MultimediaSemanticSearchService;
 import com.gotham.newsmediabrowser.common.error.BadRequestException;
 import com.gotham.newsmediabrowser.common.media.MediaType;
 import com.gotham.newsmediabrowser.common.search.SearchPagination;
@@ -52,15 +54,21 @@ public class ResultsController {
     private static final List<String> SECTION_OPTIONS = List.of("Politics", "Business", "Culture");
     private static final List<String> LANGUAGE_OPTIONS = List.of("en", "es");
     private static final String MODE_NOTICE =
-            "Semantic, hybrid, and vector ranking ship in a later phase. Full-text search is available now.";
+            "Hybrid and vector ranking ship in a later phase. Full-text and semantic search are available now.";
 
     private final ArticleFullTextService articleFullTextService;
     private final MultimediaFullTextService multimediaFullTextService;
+    private final ArticleSemanticSearchService articleSemanticSearchService;
+    private final MultimediaSemanticSearchService multimediaSemanticSearchService;
 
     public ResultsController(ArticleFullTextService articleFullTextService,
-                             MultimediaFullTextService multimediaFullTextService) {
+                             MultimediaFullTextService multimediaFullTextService,
+                             ArticleSemanticSearchService articleSemanticSearchService,
+                             MultimediaSemanticSearchService multimediaSemanticSearchService) {
         this.articleFullTextService = articleFullTextService;
         this.multimediaFullTextService = multimediaFullTextService;
+        this.articleSemanticSearchService = articleSemanticSearchService;
+        this.multimediaSemanticSearchService = multimediaSemanticSearchService;
     }
 
     @GetMapping("/results")
@@ -170,8 +178,11 @@ public class ResultsController {
         model.addAttribute("languageOptions", LANGUAGE_OPTIONS);
 
         boolean fulltext = "fulltext".equals(mode);
+        boolean semantic = "semantic".equals(mode);
+        boolean searchable = fulltext || semantic;
         boolean hasQuery = q != null && !q.isBlank();
-        if (!fulltext) {
+        if (!searchable) {
+            // hybrid + vector still land in a later phase (P8-T02 / P8-T03).
             model.addAttribute("modeNotice", MODE_NOTICE);
         } else if (!hasQuery) {
             model.addAttribute("queryNotice", "Enter a search query.");
@@ -181,19 +192,25 @@ public class ResultsController {
         List<ArticleResultRow> articleRows = List.of();
         List<MultimediaSearchHit> mediaHits = List.of();
 
-        if (fulltext && hasQuery) {
+        if (searchable && hasQuery) {
             Instant publishedStart = parseStart(publishedFrom);
             Instant publishedEnd = parseEnd(publishedTo);
             if ("article".equals(entity)) {
-                ArticlePage result = articleFullTextService.search(new ArticleFullTextQuery(
+                ArticleFullTextQuery articleQuery = new ArticleFullTextQuery(
                         q, selectedFields, statuses, blankToNull(section), blankToNull(language),
-                        publishedStart, publishedEnd, blankToNull(journalist), sort, page, size));
+                        publishedStart, publishedEnd, blankToNull(journalist), sort, page, size);
+                ArticlePage result = semantic
+                        ? articleSemanticSearchService.search(articleQuery)
+                        : articleFullTextService.search(articleQuery);
                 total = result.total();
                 articleRows = result.items().stream().map(this::toRow).toList();
             } else {
-                MultimediaSearchPage result = multimediaFullTextService.search(new MultimediaFullTextQuery(
+                MultimediaFullTextQuery mediaQuery = new MultimediaFullTextQuery(
                         q, selectedFields, statuses, blankToNull(section), blankToNull(language),
-                        publishedStart, publishedEnd, mediaTypes, sort, page, size));
+                        publishedStart, publishedEnd, mediaTypes, sort, page, size);
+                MultimediaSearchPage result = semantic
+                        ? multimediaSemanticSearchService.search(mediaQuery)
+                        : multimediaFullTextService.search(mediaQuery);
                 total = result.total();
                 mediaHits = result.items();
             }

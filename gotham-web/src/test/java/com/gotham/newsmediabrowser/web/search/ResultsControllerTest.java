@@ -19,12 +19,14 @@ import com.gotham.newsmediabrowser.common.article.ArticleJournalist;
 import com.gotham.newsmediabrowser.common.article.ArticleMetadata;
 import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
 import com.gotham.newsmediabrowser.common.article.ArticlePage;
+import com.gotham.newsmediabrowser.common.article.ArticleSemanticSearchService;
 import com.gotham.newsmediabrowser.common.article.ArticleStatus;
 import com.gotham.newsmediabrowser.common.article.ContributionRole;
 import com.gotham.newsmediabrowser.common.article.MultimediaFullTextQuery;
 import com.gotham.newsmediabrowser.common.article.MultimediaFullTextService;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchHit;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchPage;
+import com.gotham.newsmediabrowser.common.article.MultimediaSemanticSearchService;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.media.MediaType;
 import com.gotham.newsmediabrowser.common.search.SearchSort;
@@ -49,6 +51,12 @@ class ResultsControllerTest {
 
     @MockitoBean
     private MultimediaFullTextService multimediaFullTextService;
+
+    @MockitoBean
+    private ArticleSemanticSearchService articleSemanticSearchService;
+
+    @MockitoBean
+    private MultimediaSemanticSearchService multimediaSemanticSearchService;
 
     private Article sampleArticle() {
         Journalist lois = new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace", null, null);
@@ -222,15 +230,58 @@ class ResultsControllerTest {
     }
 
     @Test
-    void semanticModeDoesNotSearchYet() throws Exception {
+    void articleSemanticModeDispatchesToSemanticService() throws Exception {
+        when(articleSemanticSearchService.search(any(ArticleFullTextQuery.class)))
+                .thenReturn(new ArticlePage(List.of(sampleArticle()), 1));
+
         mockMvc.perform(get("/results")
                         .param("entity", "article")
                         .param("mode", "semantic")
+                        .param("q", "transit funding"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/articles"))
+                .andExpect(content().string(containsString("Gotham Transit Expansion")))
+                .andExpect(content().string(not(containsString("later phase"))));
+
+        verify(articleSemanticSearchService).search(any(ArticleFullTextQuery.class));
+        verify(articleFullTextService, never()).search(any());
+    }
+
+    @Test
+    void multimediaSemanticModeDispatchesToSemanticService() throws Exception {
+        ArticleMultimedia image = new ArticleMultimedia(
+                "m1", MediaType.IMAGE, "https://storage.googleapis.com/b/media/image/x.png",
+                "image/png", 0, "Council chamber after the vote", null, "Chamber", null, "alt chamber",
+                "x.png", 1L, null, 800, 500, null, null, null, null, null, null, null);
+        MultimediaSearchHit hit = new MultimediaSearchHit(
+                "art-1", "Gotham Transit Expansion", ArticleStatus.PUBLISHED, "Politics", "transit",
+                Instant.parse("2026-09-06T00:00:00Z"), image);
+        when(multimediaSemanticSearchService.search(any(MultimediaFullTextQuery.class)))
+                .thenReturn(new MultimediaSearchPage(List.of(hit), 1));
+
+        mockMvc.perform(get("/results")
+                        .param("entity", "multimedia")
+                        .param("mode", "semantic")
+                        .param("q", "council chamber"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/multimedia"))
+                .andExpect(content().string(containsString("https://storage.googleapis.com/b/media/image/x.png")))
+                .andExpect(content().string(not(containsString("later phase"))));
+
+        verify(multimediaSemanticSearchService).search(any(MultimediaFullTextQuery.class));
+        verify(multimediaFullTextService, never()).search(any());
+    }
+
+    @Test
+    void hybridModeStillShowsLaterPhaseNoticeAndDoesNotSearch() throws Exception {
+        mockMvc.perform(get("/results")
+                        .param("entity", "article")
+                        .param("mode", "hybrid")
                         .param("q", "transit"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("later phase")))
-                .andExpect(content().string(not(containsString("Coming online in P7"))));
+                .andExpect(content().string(containsString("later phase")));
 
         verify(articleFullTextService, never()).search(any());
+        verify(articleSemanticSearchService, never()).search(any());
     }
 }
