@@ -129,16 +129,15 @@
                 <article class="media-card" th:each="hit : ${mediaHits}">
                     <div class="media-card__player" th:switch="${hit.media().mediaType() != null ? hit.media().mediaType().name() : ''}">
                         <th:block th:case="'IMAGE'">
-                            <a th:replace="~{fragments/media-original :: preview(${hit.media().storageUri()}, ${hit.media().width()}, ${hit.media().height()}, ${hit.media().altText() != null ? hit.media().altText() : hit.media().title()})}"></a>
+                            <a th:replace="~{fragments/media-original :: preview(${hit.media().storageUri()}, ${hit.media().width()}, ${hit.media().height()}, ${hit.media().altText() != null ? hit.media().altText() : hit.media().title()}, 'IMAGE')}"></a>
                         </th:block>
                         <audio th:case="'AUDIO'" controls="controls" preload="metadata"
                                th:src="${hit.media().storageUri()}">
                             Your browser does not support HTML5 audio.
                         </audio>
-                        <video th:case="'VIDEO'" controls="controls" preload="metadata"
-                               th:src="${hit.media().storageUri()}">
-                            Your browser does not support HTML5 video.
-                        </video>
+                        <th:block th:case="'VIDEO'">
+                            <a th:replace="~{fragments/media-original :: preview(${hit.media().storageUri()}, ${hit.media().width()}, ${hit.media().height()}, ${hit.media().altText() != null ? hit.media().altText() : hit.media().title()}, 'VIDEO')}"></a>
+                        </th:block>
                     </div>
                     <div class="media-card__body">
                         <p class="media-card__caption"

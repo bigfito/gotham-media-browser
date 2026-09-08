@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <!--
-  Clickable IMAGE preview. The thumbnail stays CSS-constrained in the card; the href is the
-  public GCS original. chrome.js opens a child window sized to width/height when known.
+  Clickable IMAGE / VIDEO preview. The card stays CSS-constrained; the href is the public
+  GCS original. chrome.js opens a child window sized to width/height when known.
+  Card VIDEO has no controls so the click is not stolen by the HTML5 player.
 -->
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<a th:fragment="preview(uri, width, height, altText)"
+<a th:fragment="preview(uri, width, height, altText, kind)"
    class="media-card__original"
    th:href="${uri}"
-   target="gothamOriginalImage"
+   th:target="${kind == 'VIDEO'} ? 'gothamOriginalVideo' : 'gothamOriginalImage'"
    rel="noopener noreferrer"
-   title="Open original-size image in a new window"
-   aria-label="Open original-size image in a new window"
-   th:attr="data-width=${width},data-height=${height}">
-    <img th:src="${uri}" th:alt="${altText}" loading="lazy"/>
+   th:title="${kind == 'VIDEO'} ? 'Open original-size video in a new window' : 'Open original-size image in a new window'"
+   th:aria-label="${kind == 'VIDEO'} ? 'Open original-size video in a new window' : 'Open original-size image in a new window'"
+   th:attr="data-width=${width},data-height=${height},data-kind=${kind}">
+    <img th:if="${kind == 'IMAGE'}" th:src="${uri}" th:alt="${altText}" loading="lazy"/>
+    <video th:if="${kind == 'VIDEO'}" preload="metadata" muted="muted" playsinline="playsinline">
+        <source th:src="${uri}"/>
+    </video>
 </a>
 </body>
 </html>

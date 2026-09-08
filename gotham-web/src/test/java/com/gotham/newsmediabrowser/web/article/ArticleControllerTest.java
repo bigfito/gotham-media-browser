@@ -193,6 +193,34 @@ class ArticleControllerTest {
     }
 
     @Test
+    void editVideoPreviewOpensOriginalInChildWindow() throws Exception {
+        oneJournalistAvailable();
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia clip =
+                new com.gotham.newsmediabrowser.common.article.ArticleMultimedia(
+                        "m2", com.gotham.newsmediabrowser.common.media.MediaType.VIDEO,
+                        "https://storage.googleapis.com/b/media/video/clip.mp4", "video/mp4", 0,
+                        null, null, null, null, "Council vote", "clip.mp4", 20L, null,
+                        854, 480, 5000L, null, null, null, null, null, null);
+        Article existing = new Article("a1", "Transit vote", null, "s", "b", "transit",
+                ArticleStatus.PUBLISHED, "en", null, null, null,
+                new ArticleMetadata("Politics", List.of(), null, null, null, null, null, null),
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)),
+                List.of(clip));
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(existing));
+
+        mockMvc.perform(get("/article/a1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("article/form"))
+                .andExpect(content().string(containsString("class=\"media-card__original\"")))
+                .andExpect(content().string(containsString("href=\"https://storage.googleapis.com/b/media/video/clip.mp4\"")))
+                .andExpect(content().string(containsString("target=\"gothamOriginalVideo\"")))
+                .andExpect(content().string(containsString("data-kind=\"VIDEO\"")))
+                .andExpect(content().string(containsString("data-width=\"854\"")))
+                .andExpect(content().string(containsString("data-height=\"480\"")))
+                .andExpect(content().string(containsString("<video")));
+    }
+
+    @Test
     void editUnknownArticleRendersBranded404() throws Exception {
         when(articleRepository.findById("ghost")).thenReturn(Optional.empty());
 

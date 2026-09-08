@@ -75,25 +75,27 @@
   }
 
   /**
-   * Opens the original IMAGE bytes in a child browser window sized to the stored
-   * pixel dimensions (scrollbars if the file is larger than the screen).
+   * Opens the original IMAGE or VIDEO bytes in a child browser window sized to
+   * the stored pixel dimensions (scrollbars if the file is larger than the screen).
    */
-  function openOriginalImage(url, width, height) {
+  function openOriginalMedia(url, width, height, kind) {
     if (!url) {
       return;
     }
+    var isVideo = kind === "VIDEO";
     var availW = window.screen.availWidth || 1200;
     var availH = window.screen.availHeight || 800;
-    var imgW = parseInt(width, 10);
-    var imgH = parseInt(height, 10);
-    var winW = imgW > 0 ? imgW : 800;
-    var winH = imgH > 0 ? imgH : 600;
+    var mediaW = parseInt(width, 10);
+    var mediaH = parseInt(height, 10);
+    var winW = mediaW > 0 ? mediaW : (isVideo ? 854 : 800);
+    var winH = mediaH > 0 ? mediaH : (isVideo ? 480 : 600);
     winW = Math.min(Math.max(winW, 200), availW);
     winH = Math.min(Math.max(winH, 200), availH);
+    var windowName = isVideo ? "gothamOriginalVideo" : "gothamOriginalImage";
     var features = "popup=yes,width=" + winW + ",height=" + winH + ",resizable=yes,scrollbars=yes";
-    var child = window.open("", "gothamOriginalImage", features);
+    var child = window.open("", windowName, features);
     if (!child) {
-      window.open(url, "gothamOriginalImage");
+      window.open(url, windowName);
       return;
     }
     child.opener = null;
@@ -101,33 +103,44 @@
         .replace(/&/g, "&amp;")
         .replace(/"/g, "&quot;")
         .replace(/</g, "&lt;");
+    var player = isVideo
+        ? "<video src=\"" + safeUrl + "\" controls=\"controls\" autoplay=\"autoplay\" playsinline=\"playsinline\" style=\"display:block;width:auto;height:auto;max-width:none;\"></video>"
+        : "<img src=\"" + safeUrl + "\" alt=\"\">";
+    var title = isVideo ? "Original video" : "Original image";
     child.document.open();
     child.document.write(
-        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Original image</title>" +
-        "<style>html,body{margin:0;background:#111;}img{display:block;width:auto;height:auto;max-width:none;}</style>" +
-        "</head><body><img src=\"" + safeUrl + "\" alt=\"\"></body></html>");
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" + title + "</title>" +
+        "<style>html,body{margin:0;background:#111;}img,video{display:block;width:auto;height:auto;max-width:none;}</style>" +
+        "</head><body>" + player + "</body></html>");
     child.document.close();
     child.focus();
   }
 
-  function bindOriginalImageLinks(root) {
+  function bindOriginalMediaLinks(root) {
     root.addEventListener("click", function (event) {
       var link = event.target.closest("a.media-card__original");
       if (!link) {
         return;
       }
       event.preventDefault();
-      openOriginalImage(link.href, link.getAttribute("data-width"), link.getAttribute("data-height"));
+      openOriginalMedia(
+          link.href,
+          link.getAttribute("data-width"),
+          link.getAttribute("data-height"),
+          link.getAttribute("data-kind"));
     });
   }
 
   window.GothamMedia = {
-    openOriginalImage: openOriginalImage
+    openOriginalMedia: openOriginalMedia,
+    openOriginalImage: function (url, width, height) {
+      openOriginalMedia(url, width, height, "IMAGE");
+    }
   };
 
   function init() {
     document.querySelectorAll("[data-search-panel]").forEach(setupModePanels);
-    bindOriginalImageLinks(document);
+    bindOriginalMediaLinks(document);
     refresh();
   }
 

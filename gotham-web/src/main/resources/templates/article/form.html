@@ -143,14 +143,14 @@
             <div class="media-grid" th:if="${!existingMultimedia.isEmpty()}">
                 <figure class="media-card" th:each="m : ${existingMultimedia}" th:switch="${m.mediaType().name()}">
                     <th:block th:case="'IMAGE'">
-                        <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()})}"></a>
+                        <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()}, 'IMAGE')}"></a>
                     </th:block>
                     <audio th:case="'AUDIO'" controls="controls">
                         <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
                     </audio>
-                    <video th:case="'VIDEO'" controls="controls" width="240">
-                        <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
-                    </video>
+                    <th:block th:case="'VIDEO'">
+                        <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()}, 'VIDEO')}"></a>
+                    </th:block>
                     <figcaption th:text="${m.originalFilename()} ?: ${m.mediaType()}">file</figcaption>
                     <label class="media-card__remove">
                         <input type="checkbox" th:field="*{removeMediaIds}" th:value="${m.multimediaElementId()}"/>

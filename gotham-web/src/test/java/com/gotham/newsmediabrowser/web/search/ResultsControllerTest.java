@@ -219,6 +219,35 @@ class ResultsControllerTest {
     }
 
     @Test
+    void multimediaFulltextRendersVideoOriginalLink() throws Exception {
+        ArticleMultimedia video = new ArticleMultimedia(
+                "m2", MediaType.VIDEO, "https://storage.googleapis.com/b/media/video/clip.mp4",
+                "video/mp4", 0, "Council chamber after the vote", null, "Chamber clip", null, "alt chamber",
+                "clip.mp4", 20L, null, 854, 480, 5000L, null, null, null, null, null, null);
+        MultimediaSearchHit hit = new MultimediaSearchHit(
+                "art-1", "Gotham Transit Expansion", ArticleStatus.PUBLISHED, "Politics", "transit",
+                Instant.parse("2026-09-06T00:00:00Z"), video);
+        when(multimediaFullTextService.search(any(MultimediaFullTextQuery.class)))
+                .thenReturn(new MultimediaSearchPage(List.of(hit), 1));
+
+        mockMvc.perform(get("/results")
+                        .param("entity", "multimedia")
+                        .param("mode", "fulltext")
+                        .param("q", "council chamber")
+                        .param("mediaType", "VIDEO")
+                        .param("fields", "multimedia.caption"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/multimedia"))
+                .andExpect(content().string(containsString("https://storage.googleapis.com/b/media/video/clip.mp4")))
+                .andExpect(content().string(containsString("<video")))
+                .andExpect(content().string(containsString("class=\"media-card__original\"")))
+                .andExpect(content().string(containsString("target=\"gothamOriginalVideo\"")))
+                .andExpect(content().string(containsString("data-kind=\"VIDEO\"")))
+                .andExpect(content().string(containsString("data-width=\"854\"")))
+                .andExpect(content().string(containsString("data-height=\"480\"")));
+    }
+
+    @Test
     void multimediaPaginationPreservesFilters() throws Exception {
         when(multimediaFullTextService.search(any(MultimediaFullTextQuery.class)))
                 .thenReturn(new MultimediaSearchPage(List.of(), 60));
