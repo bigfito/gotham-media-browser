@@ -123,6 +123,8 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 **Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).  
 **Canonical testing design:** [`testing-strategy.md`](./testing-strategy.md).
 
+**Progress:** P0–P7 **done** (29/42). Next task **P8-T01**. Live board: [`implementation-state.md`](./implementation-state.md).
+
 ### Task inventory (authoritative IDs)
 
 | Phase | Tasks (count) |

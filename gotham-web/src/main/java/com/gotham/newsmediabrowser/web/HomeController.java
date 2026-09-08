@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * Landing page: dual search panels (articles / multimedia) posting query params
- * to {@code /results}. Search execution is P7-T02+; health legends are probed
- * client-side from {@code chrome.js}.
+ * to {@code /results}. Full-text search is executed there; health legends are probed
+ * client-side from {@code chrome.js} against {@code /api/health/*}.
  */
 @Controller
 public class HomeController {

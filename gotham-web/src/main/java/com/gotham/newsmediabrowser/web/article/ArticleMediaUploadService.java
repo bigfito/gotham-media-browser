@@ -19,7 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Turns uploaded article files into nested {@link ArticleMultimedia} elements: each file is stored in
  * GCS and given an app-assigned id and a position. Image dimensions are filled in best-effort;
- * duration/codec metadata is left for later enrichment (P6 / datagen).
+ * duration/codec metadata can be enriched later (datagen). ImageBind embeddings are filled by
+ * the article write path.
  *
  * <p>Size and duration limits are enforced by {@link GcsStorageService} before the object is stored.
  */

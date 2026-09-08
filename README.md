@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **29 / 42** tasks done (P0–P7 complete; next **P8-T01** Semantic kNN)  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |
@@ -39,9 +39,10 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
 ## Routes
 
-- `GET /` — dual search panels  
-- `GET /results` — filters, sort, pagination (`size` 25/50/100)  
-- `/journalist/**` — CRUD on `gotham-journalists`  
-- `/article/**` — CRUD on denormalized `gotham-media-browser`  
+- `GET /` — dual search panels (articles + multimedia)  
+- `GET /results` · `POST /results` — full-text results with filters, sort, pagination (`size` 25/50/100). Semantic / hybrid / vector ranking is **P8**. Article `mode=vector` is rejected (**HTTP 400**).  
+- `/journalist/**` — CRUD on `gotham-journalists` (delete **cascade-strips** nested bylines)  
+- `/article/**` — CRUD on denormalized `gotham-media-browser` (media → public GCS; ImageBind embeddings on write)  
+- `/api/health/elasticsearch` · `/api/health/imagebind` — chrome availability legends  
 
 No `/admin`. Synthetic load (last phase): Java **console** `gotham-datagen` (**not** Spring Boot) → HTTP CRUD only (defaults 15 journalists · 25 articles · 5+5+5 media). License: MIT (see repository `LICENSE`).

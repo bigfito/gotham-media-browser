@@ -61,6 +61,17 @@ mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
 
 ## 4. Integration test suites
 
+**Already in tree (env-gated, not Failsafe profiles):** `*IT.java` in `gotham-common` use JUnit `assumeTrue` so they skip when secrets/deps are missing. Default Surefire does **not** include `*IT` (`mvn test` stays unit + `*Test`). Run a live class with e.g. `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT`. Failsafe profiles `it-es` / `it-imagebind` / `it-datagen-helpers` remain **P9 / P10**.
+
+| Class | Gate | Covers |
+|-------|------|--------|
+| `JournalistRepositoryIT` | `ES_ENDPOINT` + `ES_API_KEY` | Live journalist CRUD |
+| `ArticleRepositoryIT` | same | Live article CRUD / nest |
+| `ArticleFullTextServiceIT` | same | Cookbook §4 FTS |
+| `MultimediaFullTextServiceIT` | same | Cookbook §7 nested FTS + inner_hits |
+| `HttpImageBindClientIT` | `IMAGEBIND_BASE_URL` | Live 1024-d embed |
+| `GcsStorageServiceIT` | GCS secret / env | Live public object put |
+
 ### 4.1 Elasticsearch (`it-es`) — task **P9-T03** (and earlier repo ITs as built)
 
 | Case | Intent |

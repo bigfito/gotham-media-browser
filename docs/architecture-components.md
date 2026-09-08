@@ -1,7 +1,7 @@
 # Gotham News & Media Browser — Component Architecture
 
-**Status:** Locked for prototype (local Docker Compose)  
-**Date:** 2026-09-07  
+**Status:** Locked for prototype (local Docker Compose). **Implementation:** P0–P7 done (29/42); next P8 — [`implementation-state.md`](./implementation-state.md).  
+**Date:** 2026-09-08  
 **Persistence:** Elastic Cloud Serverless + Google Cloud Storage only (no RDBMS)  
 **Canonical overview:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)
 
@@ -74,12 +74,12 @@ Flow:
 | `gotham-datagen` | **P10 (last):** Java **console** `main` (not Spring Boot) — generate text/media → `POST /journalist` & `/article` |
 
 ### 2. `gotham-web` (runtime)
-- Dual-panel landing; entity-scoped `/results`; `/journalist` + `/article` CRUD  
-- Articles panel methods: Full-text · Semantic · Hybrid  
-- Multimedia panel methods: Full-text · Semantic · Hybrid · Vector  
+- Dual-panel landing; entity-scoped `/results` (**full-text shipped**); `/journalist` + `/article` CRUD  
+- Articles panel methods: Full-text · Semantic · Hybrid (semantic/hybrid execute in **P8**)  
+- Multimedia panel methods: Full-text · Semantic · Hybrid · Vector (non-FTS execute in **P8**)  
 - Results query params: `entity`, `q`, `mode`, `fields`, `status`, `section`, `language`, **`journalist`** (article FTS), `mediaType`, `published_from` / `published_to`, `sort`, `page`, `size` ∈ {25, 50, 100}  
-- Services: ES (both indexes), GCS (public URLs), ImageBind  
-- Health: ImageBind `http://imagebind-service:8081/health` · ES via `/api/health/elasticsearch`  
+- Services: ES (both indexes), GCS (public URLs), ImageBind (write-path embeddings)  
+- Health: ImageBind `http://imagebind-service:8081/health` · ES via `/api/health/elasticsearch` · app `/api/health/imagebind`  
 - **Fault tolerance:** global `@ControllerAdvice` / error templates for **all** endpoints — branded error page with **reason** + reference id; Whitelabel off; client timeouts on ES/ImageBind/GCS (see [`ui-design-errors.md`](./ui-design-errors.md))
 
 ### 3. `imagebind-service`
@@ -136,6 +136,8 @@ Reject uploads over limit on `/article` forms with clear validation messages.
 | Vector | — | kNN `asset_vector` (media→ImageBind) |
 
 **Full Query DSL for every mode:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)
+
+**Live today (P7):** article BM25 + journalist/status/filters; nested multimedia BM25 + `inner_hits` asset cards. **P8:** kNN / RRF / file→vector.
 
 Journalist: **not** a results entity. On article full-text, `journalist` param filters by nested `journalist_id` or `full_name`.
 

@@ -4,7 +4,8 @@
 **Theme:** Light pastel (compatible soft wash background)  
 **Chrome:** Shared header + footer on all pages  
 **Mockups:** `ui-mockups/`  
-**Related:** [`frontend-information-architecture.md`](./frontend-information-architecture.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md) · [`ui-design-errors.md`](./ui-design-errors.md)
+**Related:** [`frontend-information-architecture.md`](./frontend-information-architecture.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md) · [`ui-design-errors.md`](./ui-design-errors.md)  
+**Implementation:** Landing + `/results` full-text are live (P7). Semantic / hybrid / vector ranking is P8.
 
 ## Background
 
@@ -87,17 +88,17 @@ track_total_hits = true   # accurate total for page count
 - Deep paging beyond `from + size` soft limits is out of scope for the mockup; stick to classic `from`/`size` (not `search_after`) for this prototype.
 
 ## Shared chrome
-`chrome.js` injects header/footer; Thymeleaf will use layout fragments later.
+Header and footer are **Thymeleaf fragments** (`templates/fragments/chrome.html`). Mockups still inject chrome via `chrome.js` for static preview.
 
 ### Header service legends
 Two availability legends (Available / Unavailable / Checking…):
 
 | Legend | Source (prototype) |
 |--------|--------------------|
-| **ImageBind** | `data-imagebind-status` on `<body>`, else probe `http://127.0.0.1:8081/health` |
-| **Elasticsearch** | `data-elasticsearch-status` on `<body>`, else probe `/api/health/elasticsearch` |
+| **ImageBind** | `chrome.js` probes `/api/health/imagebind` |
+| **Elasticsearch** | `chrome.js` probes `/api/health/elasticsearch` |
 
-Spring Boot will later inject Actuator/health results into the same markers.
+Landing templates may also set `data-imagebind-status` / `data-elasticsearch-status` for static mockups.
 
 ### Footer
 Shows **all copyrights** from the project license lineage, **MIT License** link, and year **2026**:

@@ -1,6 +1,7 @@
 # Gotham News & Media Browser — Frontend Information Architecture
 
 **UI:** Thymeleaf (server-rendered)  
+**Implementation (2026-09-08):** P3–P7 CRUD + FTS live; semantic / hybrid / vector ranking is P8.  
 **Related:** [`architecture-components.md`](./architecture-components.md) · [`ui-design-search-results.md`](./ui-design-search-results.md) · [`ui-design-crud.md`](./ui-design-crud.md) · [`ui-design-errors.md`](./ui-design-errors.md) · [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Mockups:** [`../ui-mockups/`](../ui-mockups/)
 
@@ -9,7 +10,8 @@
 | Route | Purpose |
 |-------|---------|
 | `GET /` | Landing — **two panels**: article search + multimedia search |
-| `GET /results` | Results — filters, sorting, pagination |
+| `GET /results` | Results — filters, sorting, pagination (full-text wired; other modes P8) |
+| `POST /results` | Same as GET; used when multimedia `mode=vector` posts a file (ranking is P8) |
 | `GET /journalist` | List journalists (`gotham-journalists`) |
 | `GET /journalist/new` | Create journalist form |
 | `GET /journalist/{id}` | Edit journalist (`{id}` = ES `_id`) |
@@ -35,8 +37,10 @@ No `/admin` hub. CRUD lives on **`/journalist`** and **`/article`** only.
 **No journalist search UI** on the public landing. Journalist master data is managed only via `/journalist`.  
 Article full-text search still accepts a **`journalist`** filter parameter.  
 **Full-text attribute checkboxes:** denormalized ES text attributes.  
-**Chrome:** shared header + footer; ImageBind + Elasticsearch availability legends; footer © 2020 Packt · © 2026 · MIT.  
-**Fault tolerance:** unexpected failures on **any** endpoint render a branded error page with a clear **reason** (see [`ui-design-errors.md`](./ui-design-errors.md)); expected validation stays on forms.
+**Chrome:** shared header + footer (Thymeleaf fragments); ImageBind + Elasticsearch availability legends (`/api/health/*`); footer © 2020 Packt · © 2026 · MIT.  
+**Fault tolerance:** unexpected failures on **any** endpoint render a branded error page with a clear **reason** (see [`ui-design-errors.md`](./ui-design-errors.md)); expected validation stays on forms. Empty `q` on `/results` stays on the results page with a query message. Article `mode=vector` → HTTP 400 branded page.
+
+**Implementation (2026-09-08):** full-text search on `/results` is live. Semantic, hybrid, and multimedia vector ranking are **P8** (radios remain; `/results` shows a later-phase notice).
 
 ## Error & recovery
 

@@ -4,7 +4,8 @@
 **Applies to:** **All** HTTP endpoints (search, results, `/journalist/**`, `/article/**`, health consumers, file uploads)  
 **Theme:** Light pastel (shared chrome)  
 **Mockup:** `ui-mockups/error.html`  
-**Related:** [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`implementation-plan.md`](./implementation-plan.md) (task **P1-T04**) · [`frontend-information-architecture.md`](./frontend-information-architecture.md)
+**Related:** [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`implementation-plan.md`](./implementation-plan.md) (task **P1-T04**, done) · [`frontend-information-architecture.md`](./frontend-information-architecture.md)  
+**Implementation:** Global branded error pages are live. Empty `/results` query stays on the results page; article `mode=vector` is HTTP 400.
 
 ## Goal
 

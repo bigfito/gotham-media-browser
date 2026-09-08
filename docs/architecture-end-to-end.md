@@ -1,6 +1,6 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Final end-to-end review synced (2026-09-07)  
+**Status:** Implementation snapshot 2026-09-08 — **P0–P7 done** (29/42). Next: P8 semantic / hybrid / vector. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
 **App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Elasticsearch Java API Client · Docker Compose  
@@ -99,10 +99,10 @@ flowchart TD
 
 | Area | Routes |
 |------|--------|
-| Search | `GET /` · `GET /results` |
+| Search | `GET /` · `GET /results` · `POST /results` (vector mode posts multipart; FTS uses GET) |
 | Journalists | `GET/POST /journalist` · `GET /journalist/new` · `GET/POST /journalist/{id}` · `POST /journalist/{id}/delete` |
 | Articles | `GET/POST /article` · `GET /article/new` · `GET/POST /article/{id}` · `POST /article/{id}/delete` |
-| Health (for chrome legends) | ImageBind `:8081/health` · app `/api/health/elasticsearch` |
+| Health (for chrome legends) | ImageBind `:8081/health` · app `/api/health/elasticsearch` · `/api/health/imagebind` |
 
 **No `/admin` hub.**
 
@@ -127,6 +127,8 @@ flowchart TD
 | Journalist | CRUD only | ✗ | ✗ | ✗ |
 
 Status `DRAFT` | `PUBLISHED` | `ARCHIVED` is filterable on public search.
+
+**Shipped through P7:** landing + article/multimedia **full-text** (`ArticleFullTextService` / `MultimediaFullTextService` + `/results` Thymeleaf). Semantic, hybrid, and file-vector ranking are **P8** (UI radios exist; `/results` shows a later-phase notice except article `mode=vector` → HTTP 400).
 
 Local upload limits (ImageBind CPU): IMAGE 10 MiB · AUDIO 20 MiB / 5 min · VIDEO 50 MiB / 90 s.
 
@@ -216,8 +218,8 @@ gotham-news-media-browser/
 ├── AGENTS.md
 ├── pom.xml                      # Maven parent (multi-module)
 ├── docker-compose.yml           # gotham-web + imagebind-service (+ datagen profile in P10)
-├── gotham-common/               # ✔ shared lib: config, ES/GCS/ImageBind clients, domain, index bootstrap
-├── gotham-web/                  # ✔ Spring Boot web: /journalist + /article CRUD, health, error pages
+├── gotham-common/               # ✔ shared lib: config, ES/GCS/ImageBind, domain, CRUD repos, FTS services
+├── gotham-web/                  # ✔ Spring Boot: landing, /results FTS, /journalist + /article CRUD, health, errors
 ├── gotham-datagen/              # (P10 — Java console, not Spring Boot)
 ├── comfyui-service/             # (P10 — CPU ComfyUI container)
 ├── imagebind-service/           # ✔ FastAPI Meta ImageBind wrapper (text/image/audio/video → 1024), Docker

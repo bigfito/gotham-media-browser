@@ -8,6 +8,8 @@
 
 This document is the **Elasticsearch-side contract** for every UI search mode. Agents implement these shapes (or equivalent Java API builders), not ad-hoc queries.
 
+**Shipped (P7):** §4 article FTS and §7 multimedia FTS + `inner_hits`, exposed on `GET/POST /results`. **Not shipped (P8):** §5/§8 semantic kNN, §6/§9 hybrid RRF, §10 file→vector. Article `mode=vector` is already rejected with HTTP 400.
+
 ---
 
 ## 1. Capability matrix
@@ -488,10 +490,11 @@ See [`ui-design-errors.md`](./ui-design-errors.md).
 
 ## 15. Implementation plan mapping
 
-| Doc section | Plan task |
-|-------------|-----------|
-| §4 Article FTS | P7-T02 |
-| §7 Multimedia FTS | P7-T03 |
-| §5 / §8 Semantic | P8-T01 |
-| §6 / §9 Hybrid | P8-T02 |
-| §10 Vector | P8-T03 |
+| Doc section | Plan task | Status (2026-09-08) |
+|-------------|-----------|---------------------|
+| §4 Article FTS | P7-T02 | **done** — `ArticleFullTextService` |
+| §7 Multimedia FTS | P7-T03 | **done** — `MultimediaFullTextService` + `inner_hits` |
+| Results UI | P7-T04 | **done** — `GET/POST /results` |
+| §5 / §8 Semantic | P8-T01 | pending |
+| §6 / §9 Hybrid | P8-T02 | pending |
+| §10 Vector | P8-T03 | pending (article `mode=vector` already HTTP 400) |

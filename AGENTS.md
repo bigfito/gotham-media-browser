@@ -6,6 +6,8 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
+**Progress (2026-09-08):** P0–P7 complete (**29 / 42**). Next: **P8-T01** Semantic kNN. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+
 ## Read in this order
 
 1. [`docs/implementation-state.md`](docs/implementation-state.md) — **what to do next**  
@@ -35,7 +37,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  
 - Datagen defaults: 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article.  
 - Plan/state: **42** tasks (P0–P10).  
-- Testing: unit + MockMvc always; Failsafe ITs for ES / ImageBind / helpers — [`docs/testing-strategy.md`](docs/testing-strategy.md).
+- Testing: unit + MockMvc always; env-gated `*IT` in `gotham-common`; Failsafe profiles in P9/P10 — [`docs/testing-strategy.md`](docs/testing-strategy.md).
 
 ## Build & verify (JDK 25)
 
@@ -43,12 +45,13 @@ Set `JAVA_HOME` to the Java 25 LTS home first (Maven must run on JDK 25, not a n
 
 ```bash
 export JAVA_HOME="$(/usr/libexec/java_home -v 25)"   # macOS
+# Windows: set JAVA_HOME to the JDK 25 install (Maven must not pick a newer default)
 mvn test                     # unit + web-slice (required before marking a coding task done)
 mvn -DskipTests package      # build the gotham-web boot jar
 docker compose config        # validate the Compose stack (gotham-web + imagebind-service)
 ```
 
-Integration suites run via Failsafe profiles later (`it-es`, `it-imagebind`, `it-datagen-helpers`) — see [`docs/testing-strategy.md`](docs/testing-strategy.md).
+Live `*IT` classes skip unless env vars are set. Failsafe profiles (`it-es`, `it-imagebind`, `it-datagen-helpers`) arrive in P9/P10 — see [`docs/testing-strategy.md`](docs/testing-strategy.md).
 
 ## Source of truth
 
