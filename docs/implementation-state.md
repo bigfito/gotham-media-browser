@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T01:25:00Z  
-**Active phase:** P7 (P7-T01–T02 done; next P7-T03)  
+**Last updated:** 2026-09-08T01:35:00Z  
+**Active phase:** P7 (P7-T01–T03 done; next P7-T04)  
 **Prototype status:** `in_progress`  
-**Next task:** `P7-T03` (Multimedia FTS + inner_hits — dep P5-T02 done)
+**Next task:** `P7-T04` (Results Thymeleaf pages — dep P7-T01, P7-T02, P7-T03 done)
 
 ---
 
@@ -61,12 +61,12 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P4 | `/article` CRUD + journalist cascade-strip delete | 5/5 | done |
 | P5 | GCS + multimedia | 3/3 | done |
 | P6 | ImageBind + embeddings | 3/3 | done |
-| P7 | Public FTS search | 2/4 | in_progress |
+| P7 | Public FTS search | 3/4 | in_progress |
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 27 / **42** tasks done
+**Totals:** 28 / **42** tasks done
 
 ---
 
@@ -103,7 +103,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P6-T03 | P6 | Embed on article write | done | P6-T02, P5-T02 | JavaMentor | 2026-09-08T03:45:00Z | 2026-09-08T04:10:00Z | ArticleRepository now injects ImageBindClient: toDocument computes article_embedding from the article text (title/subtitle/summary/body/section/tags) on every write, degrading with a WARN (no vector) if ImageBind is down so ES stays the only hard CRUD dependency. asset_vector (1024, List<Float>) added to ArticleMultimedia; computed at upload in ArticleMediaUploadService (has the bytes) via embedMedia and carried through toNested/fromNested. findAll excludes the heavy vector fields from _source (light list). BUGFIX found via live E2E: ES 9 serverless excludes dense_vector from _source by default, so findById read asset_vector as null and an edit re-save wiped it — fixed by findById sourceIncludes("*") (see [[es-dense-vector-source-exclusion]]); article_embedding is recomputed each write so it needs no round-trip. Tests: ArticleRepositoryTest +1 (article_embedding len 1024) + asset_vector round-trip asserts (stub); ArticleMediaUploadServiceTest +1 (upload embeds -> 1024); repo/IT/service ctors updated for ImageBindClient; mvn test green (common 66 + web 45 = 111). LIVE E2E (app -> real imagebind-service HTTP -> ES): created article w/ image -> indexed article_embedding len 1024 + multimedia.asset_vector len 1024 (verified straight from ES); edit w/o re-upload preserves both (1024/1024); list _source carries no vectors. Test data cleaned. |
 | P7-T01 | P7 | Landing GET / | done | P0-T04, P1-T04 | Cursor Grok 4.6 | 2026-09-08T00:55:00Z | 2026-09-08T01:15:00Z | Dual-panel landing from ui-mockups/index.html → GET /results with IA params (entity/mode/q/fields/journalist). Media vector mode POST+multipart via chrome.js. Article panel has no vector. `mvn test` green (common 66 + web 48). Live: form → `/results?entity=article&mode=fulltext&q=…&fields=title&…&journalist=…` (404 until P7-T04, branded). |
 | P7-T02 | P7 | Article FTS service | done | P4-T04, P2-T02 | Cursor Grok 4.6 | 2026-09-08T01:20:00Z | 2026-09-08T01:25:00Z | Cookbook §4: `ArticleFullTextService` + field remap / pagination / sort helpers. `multi_match` best_fields+AND, filters (status/section/language/published_at), journalist id=`term` vs name=`match`. `mvn test` green (common 87 + web 48). LIVE `ArticleFullTextServiceIT`: transit-funding hit vs sports miss; size 25/50/100; demo docs cleaned. |
-| P7-T03 | P7 | Multimedia FTS + inner_hits | pending | P5-T02 | | | | |
+| P7-T03 | P7 | Multimedia FTS + inner_hits | done | P5-T02 | Cursor Grok 4.6 | 2026-09-08T01:30:00Z | 2026-09-08T01:35:00Z | Cookbook §7: `MultimediaFullTextService` nested BM25 + `inner_hits.matched_media` (size 5), media_type filter, parent projections as extra must, cards flattened with `storage_uri`. `mvn test` green (common 96 + web 48). LIVE `MultimediaFullTextServiceIT`: IMAGE caption hit vs AUDIO miss; demo doc cleaned. |
 | P7-T04 | P7 | Results Thymeleaf pages | pending | P7-T01, P7-T02, P7-T03 | | | | |
 | P8-T01 | P8 | Semantic kNN | pending | P6-T03, P7-T04 | | | | |
 | P8-T02 | P8 | Hybrid RRF | pending | P8-T01, P7-T02 | | | | |

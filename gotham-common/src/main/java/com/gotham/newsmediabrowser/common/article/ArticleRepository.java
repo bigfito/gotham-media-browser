@@ -356,7 +356,8 @@ public class ArticleRepository {
                 multimedia);
     }
 
-    private ArticleMultimedia fromNestedMultimedia(Map<String, Object> nested) {
+    /** Rebuilds a nested multimedia element; package-private for search inner_hits mapping. */
+    ArticleMultimedia fromNestedMultimedia(Map<String, Object> nested) {
         return new ArticleMultimedia(
                 asString(nested.get("multimedia_element_id")),
                 nested.get("media_type") != null
