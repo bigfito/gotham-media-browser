@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** **P0–P8 + P9-T01 complete (33 / 42)** — all four search modes ship; static demo fixtures under `docs/demo/`. Next: **P9-T02** Demo runbook + smoke script. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-08):** **P0–P8 + P9-T01/T02 complete (34 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`. Next: **P9-T03** ES + ImageBind + web integration tests. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 
