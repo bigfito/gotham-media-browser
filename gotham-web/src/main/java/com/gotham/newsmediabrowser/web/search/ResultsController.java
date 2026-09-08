@@ -33,6 +33,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Public {@code /results} pages: article and multimedia FTS (P7-T02/T03) with filters, sort, and
@@ -55,28 +56,28 @@ public class ResultsController {
             "multimedia.title", "multimedia.caption", "multimedia.description", "multimedia.alt_text");
     private static final List<String> SECTION_OPTIONS = List.of("Politics", "Business", "Culture");
     private static final List<String> LANGUAGE_OPTIONS = List.of("en", "es");
-    private static final String MODE_NOTICE =
-            "Vector ranking ships in a later phase. Full-text, semantic, and hybrid search are available now.";
-
     private final ArticleFullTextService articleFullTextService;
     private final MultimediaFullTextService multimediaFullTextService;
     private final ArticleSemanticSearchService articleSemanticSearchService;
     private final MultimediaSemanticSearchService multimediaSemanticSearchService;
     private final ArticleHybridSearchService articleHybridSearchService;
     private final MultimediaHybridSearchService multimediaHybridSearchService;
+    private final MultimediaVectorSearchService multimediaVectorSearchService;
 
     public ResultsController(ArticleFullTextService articleFullTextService,
                              MultimediaFullTextService multimediaFullTextService,
                              ArticleSemanticSearchService articleSemanticSearchService,
                              MultimediaSemanticSearchService multimediaSemanticSearchService,
                              ArticleHybridSearchService articleHybridSearchService,
-                             MultimediaHybridSearchService multimediaHybridSearchService) {
+                             MultimediaHybridSearchService multimediaHybridSearchService,
+                             MultimediaVectorSearchService multimediaVectorSearchService) {
         this.articleFullTextService = articleFullTextService;
         this.multimediaFullTextService = multimediaFullTextService;
         this.articleSemanticSearchService = articleSemanticSearchService;
         this.multimediaSemanticSearchService = multimediaSemanticSearchService;
         this.articleHybridSearchService = articleHybridSearchService;
         this.multimediaHybridSearchService = multimediaHybridSearchService;
+        this.multimediaVectorSearchService = multimediaVectorSearchService;
     }
 
     @GetMapping("/results")
@@ -97,10 +98,10 @@ public class ResultsController {
             @RequestParam(name = "size", defaultValue = "25") int size,
             Model model) {
         return render(entity, mode, q, fields, status, journalist, section, language, mediaType,
-                publishedFrom, publishedTo, sort, page, size, model);
+                publishedFrom, publishedTo, sort, page, size, null, model);
     }
 
-    /** Vector mode on the landing page posts multipart; FTS still uses GET. */
+    /** Vector mode posts multipart (the uploaded {@code media} file); text modes still use GET. */
     @PostMapping("/results")
     public String resultsPost(
             @RequestParam(name = "entity", defaultValue = "multimedia") String entity,
@@ -117,9 +118,10 @@ public class ResultsController {
             @RequestParam(name = "sort", required = false) String sort,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "25") int size,
+            @RequestParam(name = "media", required = false) MultipartFile media,
             Model model) {
         return render(entity, mode, q, fields, status, journalist, section, language, mediaType,
-                publishedFrom, publishedTo, sort, page, size, model);
+                publishedFrom, publishedTo, sort, page, size, media, model);
     }
 
     private String render(
@@ -137,6 +139,7 @@ public class ResultsController {
             String sortRaw,
             int requestedPage,
             int requestedSize,
+            MultipartFile media,
             Model model) {
 
         String entity = normalizeEntity(entityRaw);
@@ -188,11 +191,16 @@ public class ResultsController {
         boolean fulltext = "fulltext".equals(mode);
         boolean semantic = "semantic".equals(mode);
         boolean hybrid = "hybrid".equals(mode);
-        boolean searchable = fulltext || semantic || hybrid;
+        boolean vector = "vector".equals(mode);
+        boolean textMode = fulltext || semantic || hybrid;
         boolean hasQuery = q != null && !q.isBlank();
-        if (!searchable) {
-            // vector (file upload) still lands in a later phase (P8-T03).
-            model.addAttribute("modeNotice", MODE_NOTICE);
+        boolean hasFile = media != null && !media.isEmpty();
+        if (vector) {
+            // Vector mode ranks by an uploaded file, not the q text (multimedia only — article
+            // vector is rejected above).
+            if (!hasFile) {
+                model.addAttribute("queryNotice", "Choose an image, audio, or video file for vector search.");
+            }
         } else if (!hasQuery) {
             model.addAttribute("queryNotice", "Enter a search query.");
         }
@@ -201,9 +209,9 @@ public class ResultsController {
         List<ArticleResultRow> articleRows = List.of();
         List<MultimediaSearchHit> mediaHits = List.of();
 
-        if (searchable && hasQuery) {
-            Instant publishedStart = parseStart(publishedFrom);
-            Instant publishedEnd = parseEnd(publishedTo);
+        Instant publishedStart = parseStart(publishedFrom);
+        Instant publishedEnd = parseEnd(publishedTo);
+        if (textMode && hasQuery) {
             if ("article".equals(entity)) {
                 ArticleFullTextQuery articleQuery = new ArticleFullTextQuery(
                         q, selectedFields, statuses, blankToNull(section), blankToNull(language),
@@ -233,6 +241,12 @@ public class ResultsController {
                 total = result.total();
                 mediaHits = result.items();
             }
+        } else if (vector && hasFile) {
+            MultimediaSearchPage result = multimediaVectorSearchService.search(
+                    media, statuses, blankToNull(section), blankToNull(language),
+                    publishedStart, publishedEnd, mediaTypes, page, size);
+            total = result.total();
+            mediaHits = result.items();
         }
 
         int totalPages = (int) Math.max(1, Math.ceil((double) Math.max(total, 1) / size));

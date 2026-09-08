@@ -9,4 +9,9 @@ public class BadRequestException extends GothamException {
     public BadRequestException(String userSafeMessage) {
         super(400, userSafeMessage);
     }
+
+    /** Keeps the underlying cause for server-side logs while showing only the user-safe message. */
+    public BadRequestException(String userSafeMessage, Throwable cause) {
+        super(400, userSafeMessage, cause);
+    }
 }

@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **31 / 42** tasks done (P0–P7 + P8-T01 Semantic kNN + P8-T02 Hybrid RRF complete; next **P8-T03** Multimedia vector search)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **32 / 42** tasks done (P0–P8 complete: full-text, semantic, hybrid, and multimedia vector search all ship; next **P9-T01** Static seed fixtures)  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |
@@ -40,7 +40,7 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 ## Routes
 
 - `GET /` — dual search panels (articles + multimedia)  
-- `GET /results` · `POST /results` — full-text results with filters, sort, pagination (`size` 25/50/100). Semantic / hybrid / vector ranking is **P8**. Article `mode=vector` is rejected (**HTTP 400**).  
+- `GET /results` · `POST /results` — full-text, **semantic (kNN)**, and **hybrid (RRF)** results with filters, sort, pagination (`size` 25/50/100); multimedia **vector** search takes an uploaded file via multipart `POST`. Article `mode=vector` is rejected (**HTTP 400**).  
 - `/journalist/**` — CRUD on `gotham-journalists` (delete **cascade-strips** nested bylines)  
 - `/article/**` — CRUD on denormalized `gotham-media-browser` (media → public GCS; ImageBind embeddings on write)  
 - `/api/health/elasticsearch` · `/api/health/imagebind` — chrome availability legends  

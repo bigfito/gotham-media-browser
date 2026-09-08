@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T06:00:00Z  
-**Active phase:** P8 (2/3 done) — next `P8-T03`  
+**Last updated:** 2026-09-08T07:00:00Z  
+**Active phase:** P8 **complete (3/3)** — **phase boundary: compact context before claiming P9-T01**  
 **Prototype status:** `in_progress`  
-**Next task:** `P8-T03` (Multimedia vector (file) search — dep P8-T01 done, P7-T01 done, P1-T04 done)
+**Next task:** `P9-T01` (Static seed fixtures — dep P6-T03, P5-T02 done)
 
 ---
 
@@ -62,11 +62,11 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P5 | GCS + multimedia | 3/3 | done |
 | P6 | ImageBind + embeddings | 3/3 | done |
 | P7 | Public FTS search | 4/4 | done |
-| P8 | Semantic · Hybrid · Vector | 2/3 | in_progress |
+| P8 | Semantic · Hybrid · Vector | 3/3 | done |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 31 / **42** tasks done
+**Totals:** 32 / **42** tasks done
 
 ---
 
@@ -107,7 +107,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P7-T04 | P7 | Results Thymeleaf pages | done | P7-T01, P7-T02, P7-T03 | Cursor Grok 4.6 | 2026-09-08T01:40:00Z | 2026-09-08T01:45:00Z | `GET/POST /results` articles + multimedia from mockups. Wires P7-T02/T03; status+journalist on article FTS; filters/sort/pagination preserve params. Article `mode=vector` → branded 400. Semantic/hybrid/vector notice until P8. `mvn test` green (common 97 + web 55). MockMvc round-trips. Live browser not run (app not started). |
 | P8-T01 | P8 | Semantic kNN | done | P6-T03, P7-T04 | JavaMentor (Claude Code) | 2026-09-08T04:30:00Z | 2026-09-08T05:10:00Z | ArticleSemanticSearchService (cookbook §5: top-level `knn` on `article_embedding`, k=from+size, num_candidates=max(100,4k), parent+byline filters, vectors excluded from _source) + MultimediaSemanticSearchService (§8). ImageBind embeds query text with a hard 1024-d guard (bad/absent vector -> DependencyException 503). Extracted MultimediaHitMapper (inner_hits→cards + `_source` field lists) shared by full-text + semantic (no duplication). ResultsController: `mode=semantic` now dispatches (article + multimedia); hybrid/vector still show the later-phase notice; article `mode=vector` still 400. KEY FIX found via live IT: a **top-level `knn` on the nested `multimedia.asset_vector` returns the parent but leaves `inner_hits` empty** (innerCount=0) so no asset card renders — reworked multimedia semantic to a `knn` **query** inside a `nested` query with `inner_hits.matched_media` (cookbook §8's "explicit nested knn context"); media_type filters inside the nested context, parent filters top-level. Unit: ArticleSemanticSearchServiceTest(11) + MultimediaSemanticSearchServiceTest(9) + ResultsControllerTest reworked semantic tests. `mvn test` green (175; was 154). LIVE vs real Serverless (env ES_ENDPOINT/ES_API_KEY, StubImageBindClient): ArticleSemanticSearchServiceIT + MultimediaSemanticSearchServiceIT PASSED — nested kNN now returns the matched asset card (innerCount=1). `mvn -DskipTests package` builds the boot jar. Live ImageBind-backed semantic ranking deferred to P9-T03. |
 | P8-T02 | P8 | Hybrid RRF | done | P8-T01, P7-T02 | JavaMentor (Claude Code) | 2026-09-08T05:20:00Z | 2026-09-08T06:00:00Z | ArticleHybridSearchService (§6) + MultimediaHybridSearchService (§9): RRF (`retriever.rrf`, rank_window_size=max(50,from+size), rank_constant=60) fusing a BM25 leg and a kNN leg, composing the P7/P8-T01 services (reuses `ArticleFullTextService.buildQuery` / `MultimediaFullTextService.buildQuery` for BM25 and the semantic services for filters/embedding/nested-knn). CLIENT NOTE: elasticsearch-java 9.4.5 `KnnRetriever`/`StandardRetriever` have **no `filter`**, so both legs are `standard` retrievers whose queries are `bool{must:…, filter:sharedFilters}` — this keeps shared filters on both legs (§6/§9). Pagination: from/size + rank_window_size≥from+size (documented in code; verified live). KEY FIX found via live IT: RRF merges every leg's `inner_hits` into one map, so two nested legs sharing the name `matched_media` → `illegal_argument_exception [inner_hits] already contains an entry`. Multimedia hybrid now names the kNN leg `matched_media_knn`; MultimediaHitMapper merges both blocks and de-dupes by asset id ([[es-nested-vector-knn-inner-hits]]). ResultsController: `mode=hybrid` dispatches (article + multimedia); only `vector` (file upload) remains deferred to P8-T03. Unit: ArticleHybridSearchServiceTest(8) + MultimediaHybridSearchServiceTest(7) + ResultsControllerTest reworked. `mvn test` green (191; was 175). LIVE vs real Serverless: ArticleHybridSearchServiceIT + MultimediaHybridSearchServiceIT PASSED (article fused + filtered; multimedia hybrid surfaces the matched asset card). Boot jar packages. Live ImageBind-backed ranking deferred to P9-T03. |
-| P8-T03 | P8 | Multimedia vector (file) search | pending | P8-T01, P7-T01, P1-T04 | | | | |
+| P8-T03 | P8 | Multimedia vector (file) search | done | P8-T01, P7-T01, P1-T04 | JavaMentor (Claude Code) | 2026-09-08T06:10:00Z | 2026-09-08T07:00:00Z | MultimediaVectorSearchService (web, §10): uploaded file → classify MediaType (unsupported/empty → BadRequestException 400) → size check vs MediaLimitsProperties (over → MediaLimitException 413) → ImageBind.embedMedia → reuses MultimediaSemanticSearchService.searchByVector (same nested kNN as §8). No BM25 leg. Cross-modal preserved (results NOT restricted to the uploaded file's own type; UI mediaType filter still applies). ResultsController: POST /results now takes the `media` MultipartFile; `mode=vector` (multimedia) dispatches (no file → "Choose a file" notice); article `mode=vector` still 400. chrome.js already switches the panel form to POST multipart for vector. Removed the now-obsolete "later phase" MODE_NOTICE (all four modes ship). Added BadRequestException(String,Throwable) ctor (keeps cause server-side). Unit: MultimediaVectorSearchServiceTest(4: empty/unsupported→400, oversize→413, embed+delegate) + ResultsControllerTest reworked vector tests (no-file prompt, POST multipart dispatch via MockMultipartFile). `mvn test` green (196; was 191). LIVE vs real Serverless: MultimediaVectorSearchServiceIT PASSED (uploaded PNG → embedded → nested kNN → matched asset card, isolated by section). Boot jar packages. Live ImageBind-backed cross-modal ranking deferred to P9-T03. **P8 complete (3/3) — compact context before P9.** |
 | P9-T01 | P9 | Static seed fixtures | pending | P6-T03, P5-T02 | | | | |
 | P9-T02 | P9 | Demo runbook + smoke script | pending | P8-T03, P7-T04, P1-T03, P9-T01 | | | | |
 | P9-T03 | P9 | Integration tests: Elasticsearch + ImageBind + web | pending | P9-T02, P6-T03, P5-T02, P8-T03, P4-T03, P4-T05 | | | | |

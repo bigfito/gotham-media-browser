@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -29,6 +31,7 @@ import com.gotham.newsmediabrowser.common.article.MultimediaHybridSearchService;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchHit;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchPage;
 import com.gotham.newsmediabrowser.common.article.MultimediaSemanticSearchService;
+import org.springframework.mock.web.MockMultipartFile;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import com.gotham.newsmediabrowser.common.media.MediaType;
 import com.gotham.newsmediabrowser.common.search.SearchSort;
@@ -65,6 +68,9 @@ class ResultsControllerTest {
 
     @MockitoBean
     private MultimediaHybridSearchService multimediaHybridSearchService;
+
+    @MockitoBean
+    private MultimediaVectorSearchService multimediaVectorSearchService;
 
     private Article sampleArticle() {
         Journalist lois = new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace", null, null);
@@ -318,15 +324,44 @@ class ResultsControllerTest {
     }
 
     @Test
-    void multimediaVectorModeStillShowsLaterPhaseNotice() throws Exception {
+    void multimediaVectorModeWithoutFilePromptsForOne() throws Exception {
         mockMvc.perform(get("/results")
                         .param("entity", "multimedia")
-                        .param("mode", "vector")
-                        .param("q", "council chamber"))
+                        .param("mode", "vector"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("later phase")));
+                .andExpect(view().name("results/multimedia"))
+                .andExpect(content().string(containsString("Choose an image, audio, or video file")));
 
-        verify(multimediaFullTextService, never()).search(any());
+        verify(multimediaVectorSearchService, never()).search(any(), any(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt());
+    }
+
+    @Test
+    void multimediaVectorModePostWithFileDispatchesToVectorService() throws Exception {
+        ArticleMultimedia image = new ArticleMultimedia(
+                "m1", MediaType.IMAGE, "https://storage.googleapis.com/b/media/image/x.png",
+                "image/png", 0, "Council chamber after the vote", null, "Chamber", null, "alt chamber",
+                "x.png", 1L, null, 800, 500, null, null, null, null, null, null, null);
+        MultimediaSearchHit hit = new MultimediaSearchHit(
+                "art-1", "Gotham Transit Expansion", ArticleStatus.PUBLISHED, "Politics", "transit",
+                Instant.parse("2026-09-06T00:00:00Z"), image);
+        when(multimediaVectorSearchService.search(any(), any(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt()))
+                .thenReturn(new MultimediaSearchPage(List.of(hit), 1));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "media", "chamber.png", "image/png", new byte[] {1, 2, 3, 4});
+
+        mockMvc.perform(multipart("/results")
+                        .file(file)
+                        .param("entity", "multimedia")
+                        .param("mode", "vector"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/multimedia"))
+                .andExpect(content().string(containsString("https://storage.googleapis.com/b/media/image/x.png")));
+
+        verify(multimediaVectorSearchService).search(any(), any(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt());
         verify(multimediaSemanticSearchService, never()).search(any());
         verify(multimediaHybridSearchService, never()).search(any());
     }
