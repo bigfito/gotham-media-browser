@@ -13,7 +13,8 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 1. [`docs/implementation-state.md`](docs/implementation-state.md) — **what to do next**  
 2. [`docs/implementation-plan.md`](docs/implementation-plan.md) — task details & verification  
 3. [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md) — system design  
-4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) / [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md) / [`docs/testing-strategy.md`](docs/testing-strategy.md))
+4. Spec linked from the task (CRUD / search IA / mappings / [`docs/elasticsearch-search-methods.md`](docs/elasticsearch-search-methods.md) / [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md) / [`docs/testing-strategy.md`](docs/testing-strategy.md))  
+5. [`docs/engineering-notes.md`](docs/engineering-notes.md) — non-obvious gotchas (ES nested-vector kNN, RRF `inner_hits`, `dense_vector` `_source`, HTTP/1.1, Failsafe `verify`, Boot 4 test packages) — **check before re-solving a hard problem**
 
 ## Work loop
 

@@ -1,6 +1,6 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Implementation snapshot 2026-09-08 — **P0–P8 done** (32/42). Next: P9 demo smoke + static fixtures + ES/ImageBind ITs. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
+**Status:** Implementation snapshot 2026-09-08 — **P0–P9 done** (36/42). Next: P10 synthetic data generation (`gotham-datagen` console + generative containers). Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
 **App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Elasticsearch Java API Client · Docker Compose  

@@ -23,6 +23,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 | Demo (P9) | `docs/demo/` — `runbook.md` · `seed.sh` · `smoke.sh` · `fixtures/` |
 | Synthetic data (P10) | `docs/synthetic-data-generation.md` |
 | Testing | `docs/testing-strategy.md` |
+| Engineering notes (gotchas) | `docs/engineering-notes.md` |
 | Mappings | `elasticsearch/*.mapping.json` |
 | Mockups | `ui-mockups/` (open `index.html`) |
 
@@ -37,6 +38,41 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 - Elasticsearch endpoint + API key: **placeholders** in committed `application.properties`; real values in untracked `application-local.properties` (or env)  
 - GCS bucket/project: placeholders in `application.properties`; real values in the untracked override  
 - GCS service account JSON: **secret file** under `secrets/gcp-sa.json` (gitignored)
+
+## Run it
+
+Full operator guide (Docker Compose, seed, smoke, per-mode walkthrough, troubleshooting):
+[`docs/demo/runbook.md`](docs/demo/runbook.md). Quickstart:
+
+**0. Prerequisites** — JDK 25 (`JAVA_HOME` → the Java 25 home), Docker Desktop, `bash`+`curl`; an
+Elastic Cloud Serverless endpoint + API key, and (for media) a public GCS bucket + SA key. Put the
+real values in an untracked `application-local.properties` at the repo root and the SA key at
+`secrets/gcp-sa.json` (see [`secrets/README.md`](secrets/README.md)). For a weightless run, set
+`gotham.imagebind.stub=true`.
+
+```bash
+export JAVA_HOME="$(/usr/libexec/java_home -v 25)"   # macOS; on Windows point JAVA_HOME at JDK 25
+./mvnw test                                          # unit + web-slice (199 tests)
+./mvnw -DskipTests package                           # build the gotham-web boot jar
+
+# Run — Option A: Docker Compose (app :8080 + imagebind-service :8081)
+IMAGEBIND_BACKEND=stub docker compose up --build
+# Run — Option B: local boot jar (run from the repo root so it loads application-local.properties)
+java -jar gotham-web/target/gotham-web-0.0.1-SNAPSHOT.jar
+
+# Load the demo dataset, then smoke-test every route
+BASE_URL=http://localhost:8080 ./docs/demo/seed.sh
+BASE_URL=http://localhost:8080 ./docs/demo/smoke.sh   # exits non-zero on any regression
+```
+
+Indexes bootstrap automatically on startup (idempotent). Then open <http://localhost:8080/>.
+
+**Integration tests** (live deps; skip gracefully when absent, so `mvn test` stays offline):
+
+```bash
+ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-es verify                                   # 15 ES ITs
+IMAGEBIND_BASE_URL=http://localhost:8081 ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-imagebind verify
+```
 
 ## Routes
 
