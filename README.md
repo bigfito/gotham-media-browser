@@ -41,36 +41,83 @@ Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
 ## Run it
 
-Full operator guide (Docker Compose, seed, smoke, per-mode walkthrough, troubleshooting):
-[`docs/demo/runbook.md`](docs/demo/runbook.md). Quickstart:
+New here? Follow these five steps to get the app running locally. For the full guide (Docker
+Compose, per-mode walkthrough, troubleshooting) see [`docs/demo/runbook.md`](docs/demo/runbook.md).
 
-**0. Prerequisites** — JDK 25 (`JAVA_HOME` → the Java 25 home), Docker Desktop, `bash`+`curl`; an
-Elastic Cloud Serverless endpoint + API key, and (for media) a public GCS bucket + SA key. Put the
-real values in an untracked `application-local.properties` at the repo root and the SA key at
-`secrets/gcp-sa.json` (see [`secrets/README.md`](secrets/README.md)). For a weightless run, set
-`gotham.imagebind.stub=true`.
+> In every command below, `./mvnw` is the Maven wrapper — no separate Maven install needed.
+> On **Windows** use `mvnw.cmd` instead of `./mvnw` (or run the `./mvnw` form inside **Git Bash**).
+
+### 1. Install the tools
+
+- **JDK 25** — the only hard requirement. Check it: `java -version` should print `25`.
+- **Git Bash + curl** (Windows only) — to run the `.sh` helper scripts. macOS/Linux already have them.
+- **Docker Desktop** — *optional*, only if you want to run the ImageBind service or the whole stack
+  via Docker. You can skip it (see step 3).
+
+### 2. Add your Elasticsearch credentials (the only thing you must configure)
+
+The app talks to an **Elastic Cloud Serverless** project. Copy the example config to an untracked
+file at the repo root:
 
 ```bash
-export JAVA_HOME="$(/usr/libexec/java_home -v 25)"   # macOS; on Windows point JAVA_HOME at JDK 25
-./mvnw test                                          # unit + web-slice (199 tests)
-./mvnw -DskipTests package                           # build the gotham-web boot jar
-
-# Run — Option A: Docker Compose (app :8080 + imagebind-service :8081)
-IMAGEBIND_BACKEND=stub docker compose up --build
-# Run — Option B: local boot jar (run from the repo root so it loads application-local.properties)
-java -jar gotham-web/target/gotham-web-0.0.1-SNAPSHOT.jar
-
-# Load the demo dataset, then smoke-test every route
-BASE_URL=http://localhost:8080 ./docs/demo/seed.sh
-BASE_URL=http://localhost:8080 ./docs/demo/smoke.sh   # exits non-zero on any regression
+cp application-local.properties.example application-local.properties
 ```
 
-Indexes bootstrap automatically on startup (idempotent). Then open <http://localhost:8080/>.
+Then open `application-local.properties` and fill in just the **two Elasticsearch lines** with your
+project's endpoint and API key:
 
-**Integration tests** (live deps; skip gracefully when absent, so `mvn test` stays offline):
+```properties
+gotham.elasticsearch.endpoint=https://YOUR-ES-ENDPOINT
+gotham.elasticsearch.api-key=YOUR_API_KEY
+```
+
+That's all you need. The example already sets `gotham.imagebind.stub=true`, which lets
+semantic/hybrid/vector search run **without** the heavy ImageBind model — perfect for a first look.
+Google Cloud Storage stays optional: leave its placeholders and everything works except uploading
+media. (Want real embeddings and media later? The [runbook](docs/demo/runbook.md) explains it.)
+
+### 3. Build, test, and start the app
 
 ```bash
-ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-es verify                                   # 15 ES ITs
+./mvnw test                              # runs the 209 unit tests — should say BUILD SUCCESS
+./mvnw -DskipTests package               # builds the runnable app
+java -jar gotham-web/target/gotham-web-0.0.1-SNAPSHOT.jar   # start it (run from the repo root)
+```
+
+Leave that last command running. It prints `Started GothamMediaBrowserApplication` and creates the
+Elasticsearch indexes for you. The app is now at **<http://localhost:8080/>**.
+
+### 4. Load the sample data and open the app
+
+In a **second terminal** (leave the app running in the first):
+
+```bash
+TEXT_ONLY=1 BASE_URL=http://localhost:8080 ./docs/demo/seed.sh   # adds 4 journalists + 4 articles
+```
+
+`TEXT_ONLY=1` skips media uploads so you don't need Google Cloud Storage. (Configured GCS? Drop
+`TEXT_ONLY=1` to also upload the sample image and audio.)
+
+Now open <http://localhost:8080/> and, on the Articles panel, search `transit funding`. Try the
+Full-text, Semantic, and Hybrid modes. To create your own content, use `New journalist` and
+`New article` in the UI.
+
+### 5. (Optional) Check everything works
+
+```bash
+BASE_URL=http://localhost:8080 ./docs/demo/smoke.sh   # green = every route works; non-zero = a problem
+```
+
+---
+
+**Other ways to run** (details in the [runbook](docs/demo/runbook.md)):
+
+```bash
+# Whole stack in Docker (app :8080 + imagebind-service :8081), no local Java needed to run:
+IMAGEBIND_BACKEND=stub docker compose up --build
+
+# Integration tests against live dependencies (skipped automatically when creds are absent):
+ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-es verify
 IMAGEBIND_BASE_URL=http://localhost:8081 ES_ENDPOINT=… ES_API_KEY=… ./mvnw -Pit-imagebind verify
 ```
 

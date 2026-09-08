@@ -1,6 +1,6 @@
 # Gotham News & Media Browser — Component Architecture
 
-**Status:** Locked for prototype (local Docker Compose). **Implementation:** P0–P9 done (36/42); next P10 (synthetic data) — [`implementation-state.md`](./implementation-state.md).  
+**Status:** Locked for prototype (local Docker Compose). **Implementation:** P0–P9 + P10-T01 done (37/42); next P10-T02 (Compose `datagen` profile) — [`implementation-state.md`](./implementation-state.md).  
 **Date:** 2026-09-08  
 **Persistence:** Elastic Cloud Serverless + Google Cloud Storage only (no RDBMS)  
 **Canonical overview:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)
@@ -18,7 +18,7 @@
 | Object storage | **GCS public bucket objects** (no signed URLs) |
 | Embeddings | Meta ImageBind (OSS), Docker helper, sync HTTP, **1024-d** |
 | Modalities | Image, audio, video (+ text queries via ImageBind text) |
-| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
+| App stack | Java 25 · Spring Boot 4.1.1 · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — non-Boot; skeleton in P10-T01) · Thymeleaf · ES Java API Client 9.4.x · package `com.gotham.newsmediabrowser` |
 | ES credentials | Endpoint + API key: **placeholders** in committed `application.properties`; real values in untracked `application-local.properties` (or env) |
 | GCS credentials | Bucket/project: placeholders in properties (real values in untracked override); SA JSON **secret file** `secrets/gcp-sa.json` |
 | Landing | `/` — two panels: articles · multimedia |

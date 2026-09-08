@@ -86,7 +86,7 @@ BASE_URL=http://localhost:8080 ./docs/demo/seed.sh
 ```
 
 Creates 4 journalists + 4 articles (2 with media). Media uploads need GCS configured; to seed text
-only, set every `media` cell in `fixtures/articles.tsv` to `-`. See [`README.md`](./README.md).
+only (no GCS), prefix with `TEXT_ONLY=1`. See [`README.md`](./README.md).
 
 ## 6. Smoke test
 
@@ -99,14 +99,14 @@ It prints an `ok` / `FAIL` line per check and exits non-zero if any fail. What i
 | Check | Expected |
 |-------|----------|
 | `/api/health/elasticsearch` | **200** (required) |
-| `/api/health/imagebind` | 200 = up · anything else = down (adjusts the expectations below) |
+| `/api/health/imagebind` | informational (a warning when DOWN; stub mode reports DOWN yet search still works) |
 | `GET /` , article & multimedia **full-text** | **200** (Elasticsearch only) |
 | article **`mode=vector`** | **400** branded (always rejected) |
-| article/multimedia **semantic · hybrid** , multimedia **vector** upload | **200** when ImageBind is up, **503** branded when it is down |
+| article/multimedia **semantic · hybrid** , multimedia **vector** upload | **200** (embedder available — stub or service) or a branded **503** (embedder down) |
 | journalist **create → list → delete** | 302 redirects; the throwaway record is cleaned up |
 
-The 200-vs-503 branch means the smoke passes both on a full stack and on a text-only stack, while
-still proving the fault-tolerant 503 path when the embedder is absent.
+Accepting **200 or 503** on the embedding-backed modes means the smoke passes on a full stack, a
+stub-mode run, and a text-only stack alike, while still catching a real error (400/500/no response).
 
 ### Integration test profiles (P9-T03)
 

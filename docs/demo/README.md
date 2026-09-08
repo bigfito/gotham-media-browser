@@ -38,9 +38,12 @@ The script pre-checks `/api/health/elasticsearch`, creates the 4 journalists (ca
 from the newest-first `/journalist` list), then creates the 4 articles — attaching `skyline.png` and
 `chime.wav` as multipart uploads. It exits non-zero with a clear message on the first failure.
 
-> Media uploads go to the public GCS bucket and require valid credentials. To seed **text only**,
-> set every `media` cell to `-` (or run against a build without GCS configured and expect the two
-> media articles to fail at upload — the other two still load).
+> Media uploads go to the public GCS bucket and require valid credentials. To seed **text only**
+> (no GCS needed), run with `TEXT_ONLY=1`:
+>
+> ```bash
+> TEXT_ONLY=1 BASE_URL=http://localhost:8080 ./docs/demo/seed.sh
+> ```
 
 ## Try the search modes
 

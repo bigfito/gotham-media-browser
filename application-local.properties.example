@@ -10,11 +10,17 @@
 #  For containerized runs use .env instead (see .env.example).
 # -----------------------------------------------------------------------------
 
-# --- Elasticsearch (Elastic Cloud Serverless) ---
+# --- Elasticsearch (Elastic Cloud Serverless) --- REQUIRED: fill these two.
 gotham.elasticsearch.endpoint=https://your-real-endpoint.es.cloud:443
 gotham.elasticsearch.api-key=YOUR_REAL_BASE64_API_KEY
 
-# --- Google Cloud Storage (public bucket) ---
+# --- ImageBind (embeddings for semantic / hybrid / vector search) ---
+# true = run those modes WITHOUT the heavy 4.5 GB model (deterministic vectors). Great for a first
+# run. Set false only when you have the imagebind-service container running (see docs/demo/runbook.md).
+gotham.imagebind.stub=true
+
+# --- Google Cloud Storage (public bucket) --- OPTIONAL: only needed to upload media.
+# Leave these as-is for a text-only demo (media uploads will simply fail; everything else works).
 gotham.gcs.project-id=your-real-project
 gotham.gcs.bucket=your-real-public-bucket
 gotham.gcs.credentials-file=secrets/gcp-sa.json

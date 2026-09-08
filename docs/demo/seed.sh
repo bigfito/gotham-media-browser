@@ -9,10 +9,12 @@
 # Requirements: bash 4+, curl. The app must be running with Elasticsearch (and, for media, GCS)
 # configured. Usage:
 #   BASE_URL=http://localhost:8080 ./docs/demo/seed.sh
+#   TEXT_ONLY=1 BASE_URL=http://localhost:8080 ./docs/demo/seed.sh   # skip media (no GCS needed)
 #
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
+TEXT_ONLY="${TEXT_ONLY:-}"   # when set (e.g. TEXT_ONLY=1), articles are created without media uploads
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIX="$HERE/fixtures"
 MEDIA="$FIX/media"
@@ -71,10 +73,12 @@ while IFS=$'\t' read -r title section tags status language bylines media summary
   done
 
   media_note=""
-  if [[ "$media" != "-" && -n "$media" ]]; then
+  if [[ -z "$TEXT_ONLY" && "$media" != "-" && -n "$media" ]]; then
     [[ -f "$MEDIA/$media" ]] || fail "article '$title' media file not found: $MEDIA/$media"
     args+=(-F "mediaFiles=@$MEDIA/$media")
     media_note=", media=$media"
+  elif [[ -n "$TEXT_ONLY" && "$media" != "-" && -n "$media" ]]; then
+    media_note=", media skipped (TEXT_ONLY)"
   fi
 
   code="$(curl "${args[@]}")"

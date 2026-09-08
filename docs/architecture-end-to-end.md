@@ -1,9 +1,9 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Implementation snapshot 2026-09-08 — **P0–P9 done** (36/42). Next: P10 synthetic data generation (`gotham-datagen` console + generative containers). Authoritative board: [`implementation-state.md`](./implementation-state.md).  
+**Status:** Implementation snapshot 2026-09-08 — **P0–P9 + P10-T01 done** (37/42). Next: P10-T02 (Compose `datagen` profile) → the rest of P10 synthetic data generation. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
-**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · Elasticsearch Java API Client · Docker Compose  
+**App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — non-Boot; skeleton in P10-T01) · Elasticsearch Java API Client · Docker Compose  
 
 Open parent `pom.xml` in IntelliJ IDEA Ultimate.
 
