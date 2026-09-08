@@ -50,6 +50,8 @@
     var attrBox = root.querySelector("[data-attrs]");
     var journalist = root.querySelector("[data-journalist-field]");
     var drop = root.querySelector("[data-drop]");
+    var queryField = root.querySelector("[data-query-field]");
+    var queryRow = root.querySelector("[data-query-row]");
     var form = root.closest("form") || root;
 
     function sync() {
@@ -60,6 +62,15 @@
       if (attrBox) attrBox.classList.toggle("is-visible", isFulltext);
       if (journalist) journalist.style.display = isFulltext ? "flex" : "none";
       if (drop) drop.classList.toggle("is-visible", isVector);
+      if (queryField) {
+        queryField.hidden = isVector;
+        queryField.querySelectorAll('input[name="q"]').forEach(function (input) {
+          input.disabled = isVector;
+        });
+      }
+      if (queryRow) {
+        queryRow.classList.toggle("results-search__row--file-only", isVector);
+      }
       if (form && form.tagName === "FORM") {
         form.method = isVector ? "post" : "get";
         if (isVector) {

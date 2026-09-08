@@ -509,6 +509,11 @@ a:hover { text-decoration: underline; }
   gap: 0.6rem;
 }
 
+.results-search__row--file-only {
+  grid-template-columns: auto;
+  justify-content: start;
+}
+
 .results-search__row .btn { width: auto; white-space: nowrap; }
 
 @media (max-width: 640px) {

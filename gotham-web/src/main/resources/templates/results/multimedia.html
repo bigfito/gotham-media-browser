@@ -22,8 +22,12 @@
                 <label><input type="radio" name="mode" value="vector" th:checked="${mode == 'vector'}"/><span>Vector</span></label>
             </div>
 
-            <div class="results-search__row">
-                <input type="search" name="q" th:value="${q}" aria-label="Query"/>
+            <div class="results-search__row" data-query-row
+                 th:classappend="${mode == 'vector'} ? ' results-search__row--file-only' : ''">
+                <div data-query-field th:hidden="${mode == 'vector'}">
+                    <input type="search" name="q" th:value="${q}" aria-label="Query"
+                           th:disabled="${mode == 'vector'}"/>
+                </div>
                 <button class="btn btn-coral" type="submit">Update</button>
             </div>
 

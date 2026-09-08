@@ -215,7 +215,8 @@ class ResultsControllerTest {
                 .andExpect(content().string(containsString("data-height=\"500\"")))
                 .andExpect(content().string(containsString("Council chamber after the vote")))
                 .andExpect(content().string(containsString("/article/art-1")))
-                .andExpect(content().string(containsString("name=\"mediaType\" value=\"IMAGE\"")));
+                .andExpect(content().string(containsString("name=\"mediaType\" value=\"IMAGE\"")))
+                .andExpect(content().string(not(containsString("results-search__row--file-only"))));
     }
 
     @Test
@@ -363,7 +364,10 @@ class ResultsControllerTest {
                         .param("mode", "vector"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("results/multimedia"))
-                .andExpect(content().string(containsString("Choose an image, audio, or video file")));
+                .andExpect(content().string(containsString("Choose an image, audio, or video file")))
+                .andExpect(content().string(containsString("data-query-field")))
+                .andExpect(content().string(containsString("results-search__row--file-only")))
+                .andExpect(content().string(containsString("disabled=\"disabled\"")));
 
         verify(multimediaVectorSearchService, never()).search(any(), any(), any(), any(), any(), any(), any(),
                 anyInt(), anyInt());

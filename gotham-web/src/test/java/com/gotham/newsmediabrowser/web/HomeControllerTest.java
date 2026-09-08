@@ -59,6 +59,7 @@ class HomeControllerTest {
                 .andExpect(content().string(containsString("name=\"entity\" value=\"multimedia\"")))
                 .andExpect(content().string(containsString("aria-label=\"Multimedia search method\"")))
                 .andExpect(content().string(containsString("value=\"vector\"")))
+                .andExpect(content().string(containsString("data-query-field")))
                 .andExpect(content().string(containsString("value=\"multimedia.title\"")))
                 .andExpect(content().string(containsString("type=\"file\"")))
                 .andExpect(content().string(containsString("name=\"media\"")))
