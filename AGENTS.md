@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** P0–P7 + **P8-T01** (Semantic kNN) complete (**30 / 42**). Next: **P8-T02** Hybrid RRF. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-08):** P0–P7 + **P8-T01** (Semantic kNN) + **P8-T02** (Hybrid RRF) complete (**31 / 42**). Next: **P8-T03** Multimedia vector (file) search. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 

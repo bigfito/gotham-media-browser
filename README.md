@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **30 / 42** tasks done (P0–P7 + P8-T01 Semantic kNN complete; next **P8-T02** Hybrid RRF)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **31 / 42** tasks done (P0–P7 + P8-T01 Semantic kNN + P8-T02 Hybrid RRF complete; next **P8-T03** Multimedia vector search)  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |

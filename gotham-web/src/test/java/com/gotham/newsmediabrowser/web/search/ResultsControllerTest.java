@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.gotham.newsmediabrowser.common.article.Article;
 import com.gotham.newsmediabrowser.common.article.ArticleFullTextQuery;
 import com.gotham.newsmediabrowser.common.article.ArticleFullTextService;
+import com.gotham.newsmediabrowser.common.article.ArticleHybridSearchService;
 import com.gotham.newsmediabrowser.common.article.ArticleJournalist;
 import com.gotham.newsmediabrowser.common.article.ArticleMetadata;
 import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
@@ -24,6 +25,7 @@ import com.gotham.newsmediabrowser.common.article.ArticleStatus;
 import com.gotham.newsmediabrowser.common.article.ContributionRole;
 import com.gotham.newsmediabrowser.common.article.MultimediaFullTextQuery;
 import com.gotham.newsmediabrowser.common.article.MultimediaFullTextService;
+import com.gotham.newsmediabrowser.common.article.MultimediaHybridSearchService;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchHit;
 import com.gotham.newsmediabrowser.common.article.MultimediaSearchPage;
 import com.gotham.newsmediabrowser.common.article.MultimediaSemanticSearchService;
@@ -57,6 +59,12 @@ class ResultsControllerTest {
 
     @MockitoBean
     private MultimediaSemanticSearchService multimediaSemanticSearchService;
+
+    @MockitoBean
+    private ArticleHybridSearchService articleHybridSearchService;
+
+    @MockitoBean
+    private MultimediaHybridSearchService multimediaHybridSearchService;
 
     private Article sampleArticle() {
         Journalist lois = new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace", null, null);
@@ -273,15 +281,53 @@ class ResultsControllerTest {
     }
 
     @Test
-    void hybridModeStillShowsLaterPhaseNoticeAndDoesNotSearch() throws Exception {
+    void articleHybridModeDispatchesToHybridService() throws Exception {
+        when(articleHybridSearchService.search(any(ArticleFullTextQuery.class)))
+                .thenReturn(new ArticlePage(List.of(sampleArticle()), 1));
+
         mockMvc.perform(get("/results")
                         .param("entity", "article")
                         .param("mode", "hybrid")
-                        .param("q", "transit"))
+                        .param("q", "transit funding"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/articles"))
+                .andExpect(content().string(containsString("Gotham Transit Expansion")))
+                .andExpect(content().string(not(containsString("later phase"))));
+
+        verify(articleHybridSearchService).search(any(ArticleFullTextQuery.class));
+        verify(articleFullTextService, never()).search(any());
+        verify(articleSemanticSearchService, never()).search(any());
+    }
+
+    @Test
+    void multimediaHybridModeDispatchesToHybridService() throws Exception {
+        when(multimediaHybridSearchService.search(any(MultimediaFullTextQuery.class)))
+                .thenReturn(new MultimediaSearchPage(List.of(), 0));
+
+        mockMvc.perform(get("/results")
+                        .param("entity", "multimedia")
+                        .param("mode", "hybrid")
+                        .param("q", "council chamber"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/multimedia"))
+                .andExpect(content().string(not(containsString("later phase"))));
+
+        verify(multimediaHybridSearchService).search(any(MultimediaFullTextQuery.class));
+        verify(multimediaFullTextService, never()).search(any());
+        verify(multimediaSemanticSearchService, never()).search(any());
+    }
+
+    @Test
+    void multimediaVectorModeStillShowsLaterPhaseNotice() throws Exception {
+        mockMvc.perform(get("/results")
+                        .param("entity", "multimedia")
+                        .param("mode", "vector")
+                        .param("q", "council chamber"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("later phase")));
 
-        verify(articleFullTextService, never()).search(any());
-        verify(articleSemanticSearchService, never()).search(any());
+        verify(multimediaFullTextService, never()).search(any());
+        verify(multimediaSemanticSearchService, never()).search(any());
+        verify(multimediaHybridSearchService, never()).search(any());
     }
 }

@@ -6,8 +6,10 @@ import co.elastic.clients.json.JsonData;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Flattens a parent article hit and its {@code inner_hits.matched_media} nested hits into
@@ -22,6 +24,13 @@ final class MultimediaHitMapper {
 
     /** Inner-hits block name; the parsed response is looked up by this key. */
     static final String INNER_HITS_NAME = "matched_media";
+
+    /**
+     * Distinct inner-hits name for the kNN leg of hybrid search. RRF merges every leg's
+     * {@code inner_hits} into one map, so the BM25 leg ({@link #INNER_HITS_NAME}) and the kNN leg
+     * must use different names or Elasticsearch rejects the search with a duplicate-key error.
+     */
+    static final String INNER_HITS_NAME_KNN = "matched_media_knn";
 
     /** Matched assets returned per parent article (cookbook §11 recommends 3–5). */
     static final int INNER_HITS_SIZE = 5;
@@ -46,14 +55,23 @@ final class MultimediaHitMapper {
     private MultimediaHitMapper() {}
 
     /**
-     * Builds one card per matched nested asset. Returns an empty list when the parent hit carried no
-     * {@code matched_media} inner hits (it matched only on parent projection fields, which have no
-     * asset to show).
+     * Builds one card per matched nested asset from the {@link #INNER_HITS_NAME} block. Returns an
+     * empty list when the parent hit carried no such inner hits (it matched only on parent projection
+     * fields, which have no asset to show).
      *
      * @param hit        a parent article search hit
      * @param repository reused to rebuild each nested {@link ArticleMultimedia} from its source map
      */
     static List<MultimediaSearchHit> cards(Hit<Map> hit, ArticleRepository repository) {
+        return cards(hit, repository, List.of(INNER_HITS_NAME));
+    }
+
+    /**
+     * Builds cards from several inner-hits blocks (hybrid search fuses a BM25 leg and a kNN leg, each
+     * with its own inner-hits name). Assets are de-duplicated by {@code multimedia_element_id} so an
+     * asset matched by both legs renders once, keeping first-seen order across the given names.
+     */
+    static List<MultimediaSearchHit> cards(Hit<Map> hit, ArticleRepository repository, List<String> innerHitsNames) {
         Map<String, Object> parent = asMap(hit.source());
         String articleId = hit.id();
         String title = asString(parent.get("title"));
@@ -64,15 +82,21 @@ final class MultimediaHitMapper {
         String slug = asString(parent.get("slug"));
         Instant publishedAt = parseInstant(parent.get("published_at"));
 
-        InnerHitsResult inner = hit.innerHits() != null ? hit.innerHits().get(INNER_HITS_NAME) : null;
-        if (inner == null || inner.hits() == null || inner.hits().hits().isEmpty()) {
-            return List.of();
-        }
         List<MultimediaSearchHit> cards = new ArrayList<>();
-        for (Hit<JsonData> innerHit : inner.hits().hits()) {
-            Map<String, Object> nested = nestedSource(innerHit.source());
-            ArticleMultimedia media = repository.fromNestedMultimedia(nested);
-            cards.add(new MultimediaSearchHit(articleId, title, status, section, slug, publishedAt, media));
+        Set<String> seen = new LinkedHashSet<>();
+        for (String name : innerHitsNames) {
+            InnerHitsResult inner = hit.innerHits() != null ? hit.innerHits().get(name) : null;
+            if (inner == null || inner.hits() == null) {
+                continue;
+            }
+            for (Hit<JsonData> innerHit : inner.hits().hits()) {
+                Map<String, Object> nested = nestedSource(innerHit.source());
+                ArticleMultimedia media = repository.fromNestedMultimedia(nested);
+                if (media.multimediaElementId() != null && !seen.add(media.multimediaElementId())) {
+                    continue;
+                }
+                cards.add(new MultimediaSearchHit(articleId, title, status, section, slug, publishedAt, media));
+            }
         }
         return cards;
     }

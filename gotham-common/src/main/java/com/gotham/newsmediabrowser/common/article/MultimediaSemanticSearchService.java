@@ -158,6 +158,15 @@ public class MultimediaSemanticSearchService {
      * matching assets are considered and surfaced.
      */
     Query nestedKnnQuery(List<Float> vector, int numCandidates, List<MediaType> mediaTypes) {
+        return nestedKnnQuery(vector, numCandidates, mediaTypes, MultimediaHitMapper.INNER_HITS_NAME);
+    }
+
+    /**
+     * Same nested kNN query but with a caller-chosen {@code inner_hits} name. Hybrid search fuses
+     * this leg with a BM25 leg under RRF, which rejects two legs that share an inner-hits name, so
+     * the hybrid path passes a distinct name.
+     */
+    Query nestedKnnQuery(List<Float> vector, int numCandidates, List<MediaType> mediaTypes, String innerHitsName) {
         Query knn = Query.of(q -> q.knn(k -> k
                 .field(VECTOR_FIELD)
                 .queryVector(vector)
@@ -178,7 +187,7 @@ public class MultimediaSemanticSearchService {
                 .path("multimedia")
                 .query(nestedBody)
                 .innerHits(ih -> ih
-                        .name(MultimediaHitMapper.INNER_HITS_NAME)
+                        .name(innerHitsName)
                         .size(MultimediaHitMapper.INNER_HITS_SIZE)
                         .source(src -> src.filter(f -> f.includes(MultimediaHitMapper.INNER_SOURCE_FIELDS))))));
     }
