@@ -24,6 +24,13 @@ class GothamExceptionTest {
     }
 
     @Test
+    void badRequestMapsTo400() {
+        BadRequestException ex = new BadRequestException("Vector search is only available for multimedia.");
+        assertThat(ex.getHttpStatus()).isEqualTo(400);
+        assertThat(ex.getUserReason()).isEqualTo("Vector search is only available for multimedia.");
+    }
+
+    @Test
     void mediaLimitMapsTo413() {
         MediaLimitException ex = new MediaLimitException("Video exceeds 50 MiB.");
         assertThat(ex.getHttpStatus()).isEqualTo(413);

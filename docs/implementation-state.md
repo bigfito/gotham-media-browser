@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T01:35:00Z  
-**Active phase:** P7 (P7-T01–T03 done; next P7-T04)  
+**Last updated:** 2026-09-08T01:45:00Z  
+**Active phase:** P7 (4/4 done) · next P8-T01  
 **Prototype status:** `in_progress`  
-**Next task:** `P7-T04` (Results Thymeleaf pages — dep P7-T01, P7-T02, P7-T03 done)
+**Next task:** `P8-T01` (Semantic kNN — dep P6-T03, P7-T04 done)
 
 ---
 
@@ -61,12 +61,12 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P4 | `/article` CRUD + journalist cascade-strip delete | 5/5 | done |
 | P5 | GCS + multimedia | 3/3 | done |
 | P6 | ImageBind + embeddings | 3/3 | done |
-| P7 | Public FTS search | 3/4 | in_progress |
+| P7 | Public FTS search | 4/4 | done |
 | P8 | Semantic · Hybrid · Vector | 0/3 | pending |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 0/4 | pending |
 | P10 | Synthetic data generation (**last**) | 0/6 | pending |
 
-**Totals:** 28 / **42** tasks done
+**Totals:** 29 / **42** tasks done
 
 ---
 
@@ -104,7 +104,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P7-T01 | P7 | Landing GET / | done | P0-T04, P1-T04 | Cursor Grok 4.6 | 2026-09-08T00:55:00Z | 2026-09-08T01:15:00Z | Dual-panel landing from ui-mockups/index.html → GET /results with IA params (entity/mode/q/fields/journalist). Media vector mode POST+multipart via chrome.js. Article panel has no vector. `mvn test` green (common 66 + web 48). Live: form → `/results?entity=article&mode=fulltext&q=…&fields=title&…&journalist=…` (404 until P7-T04, branded). |
 | P7-T02 | P7 | Article FTS service | done | P4-T04, P2-T02 | Cursor Grok 4.6 | 2026-09-08T01:20:00Z | 2026-09-08T01:25:00Z | Cookbook §4: `ArticleFullTextService` + field remap / pagination / sort helpers. `multi_match` best_fields+AND, filters (status/section/language/published_at), journalist id=`term` vs name=`match`. `mvn test` green (common 87 + web 48). LIVE `ArticleFullTextServiceIT`: transit-funding hit vs sports miss; size 25/50/100; demo docs cleaned. |
 | P7-T03 | P7 | Multimedia FTS + inner_hits | done | P5-T02 | Cursor Grok 4.6 | 2026-09-08T01:30:00Z | 2026-09-08T01:35:00Z | Cookbook §7: `MultimediaFullTextService` nested BM25 + `inner_hits.matched_media` (size 5), media_type filter, parent projections as extra must, cards flattened with `storage_uri`. `mvn test` green (common 96 + web 48). LIVE `MultimediaFullTextServiceIT`: IMAGE caption hit vs AUDIO miss; demo doc cleaned. |
-| P7-T04 | P7 | Results Thymeleaf pages | pending | P7-T01, P7-T02, P7-T03 | | | | |
+| P7-T04 | P7 | Results Thymeleaf pages | done | P7-T01, P7-T02, P7-T03 | Cursor Grok 4.6 | 2026-09-08T01:40:00Z | 2026-09-08T01:45:00Z | `GET/POST /results` articles + multimedia from mockups. Wires P7-T02/T03; status+journalist on article FTS; filters/sort/pagination preserve params. Article `mode=vector` → branded 400. Semantic/hybrid/vector notice until P8. `mvn test` green (common 97 + web 55). MockMvc round-trips. Live browser not run (app not started). |
 | P8-T01 | P8 | Semantic kNN | pending | P6-T03, P7-T04 | | | | |
 | P8-T02 | P8 | Hybrid RRF | pending | P8-T01, P7-T02 | | | | |
 | P8-T03 | P8 | Multimedia vector (file) search | pending | P8-T01, P7-T01, P1-T04 | | | | |

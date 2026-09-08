@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+  P7-T04 article results (GET /results?entity=article). Ported from ui-mockups/results-articles.html.
+  Filter + pagination links preserve IA query params. FTS is wired; other modes notice until P8.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/chrome :: head('Article results — Gotham News & Media Browser')}"></head>
+<body th:attr="data-page='results-articles'">
+
+<header th:replace="~{fragments/chrome :: header}"></header>
+
+<div class="shell">
+    <section class="results-header">
+        <span class="entity-badge entity-badge--article">Entity · Articles</span>
+        <form class="results-search" th:action="@{/results}" action="/results" method="get" data-search-panel>
+            <input type="hidden" name="entity" value="article"/>
+            <input type="hidden" name="page" value="1"/>
+            <div class="methods" role="radiogroup" aria-label="Article search method" data-methods>
+                <label><input type="radio" name="mode" value="fulltext" th:checked="${mode == 'fulltext'}"/><span>Full-text</span></label>
+                <label><input type="radio" name="mode" value="semantic" th:checked="${mode == 'semantic'}"/><span>Semantic</span></label>
+                <label><input type="radio" name="mode" value="hybrid" th:checked="${mode == 'hybrid'}"/><span>Hybrid</span></label>
+            </div>
+
+            <div class="results-search__row">
+                <input type="search" name="q" th:value="${q}" aria-label="Query"/>
+                <button class="btn btn-sky" type="submit">Update</button>
+            </div>
+
+            <div class="attr-box" th:classappend="${mode == 'fulltext'} ? ' is-visible' : ''" data-attrs>
+                <div class="attr-box__title">Full-text attributes</div>
+                <p class="attr-box__hint">Denormalized article text fields included in this query.</p>
+                <div class="attr-grid">
+                    <label th:each="option : ${fieldOptions}">
+                        <input type="checkbox" name="fields" th:value="${option}" th:checked="${fields.contains(option)}"/>
+                        <th:block th:text="${option}">title</th:block>
+                    </label>
+                </div>
+            </div>
+
+            <div class="field" data-journalist-field th:style="${mode == 'fulltext'} ? 'display:flex' : 'display:none'">
+                <label for="journalist">Journalist (full-text filter)</label>
+                <input id="journalist" type="text" name="journalist" th:value="${journalist}"/>
+            </div>
+        </form>
+    </section>
+
+    <div class="flash flash--error" role="status" th:if="${queryNotice}" th:text="${queryNotice}">Enter a search query.</div>
+    <div class="flash flash--ok" role="status" th:if="${modeNotice}" th:text="${modeNotice}">Later phase.</div>
+
+    <div class="layout">
+        <aside class="filters" aria-label="Filters">
+            <form id="results-filters" th:action="@{/results}" action="/results" method="get">
+                <input type="hidden" name="entity" value="article"/>
+                <input type="hidden" name="mode" th:value="${mode}"/>
+                <input type="hidden" name="q" th:value="${q}"/>
+                <input type="hidden" name="journalist" th:value="${journalist}"/>
+                <input type="hidden" name="page" value="1"/>
+                <input type="hidden" name="fields" th:each="f : ${fields}" th:value="${f}"/>
+                <h2>Filters</h2>
+                <div class="field">
+                    <label>Status</label>
+                    <div class="check-list">
+                        <label><input type="checkbox" name="status" value="PUBLISHED" th:checked="${statusValues.contains('PUBLISHED')}"/> Published</label>
+                        <label><input type="checkbox" name="status" value="DRAFT" th:checked="${statusValues.contains('DRAFT')}"/> Draft</label>
+                        <label><input type="checkbox" name="status" value="ARCHIVED" th:checked="${statusValues.contains('ARCHIVED')}"/> Archived</label>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="section">Section</label>
+                    <select id="section" name="section">
+                        <option value="" th:selected="${section == null or section.isEmpty()}">All sections</option>
+                        <option th:each="opt : ${sectionOptions}" th:value="${opt}" th:text="${opt}"
+                                th:selected="${opt == section}">Politics</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="language">Language</label>
+                    <select id="language" name="language">
+                        <option value="" th:selected="${language == null or language.isEmpty()}">Any</option>
+                        <option th:each="opt : ${languageOptions}" th:value="${opt}" th:text="${opt}"
+                                th:selected="${opt == language}">en</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="published_from">Published from</label>
+                    <input id="published_from" type="date" name="published_from" th:value="${publishedFrom}"/>
+                </div>
+                <div class="field">
+                    <label for="published_to">Published to</label>
+                    <input id="published_to" type="date" name="published_to" th:value="${publishedTo}"/>
+                </div>
+                <button class="btn btn-sky" type="submit">Apply filters</button>
+            </form>
+        </aside>
+
+        <main>
+            <div class="results-toolbar">
+                <div class="results-meta">
+                    <strong th:text="${total}">0</strong> articles
+                    <th:block th:if="${total > 0}">· showing <strong th:text="${showingFrom} + '–' + ${showingTo}">1–25</strong></th:block>
+                    <span class="results-meta__es">ES <code th:text="'from=' + ${from}">from=0</code> ·
+                        <code th:text="'size=' + ${size}">size=25</code> · <code>track_total_hits</code></span>
+                </div>
+                <div class="toolbar-controls">
+                    <div class="field">
+                        <label for="size">Per page</label>
+                        <select id="size" name="size" form="results-filters">
+                            <option th:each="option : ${allowedSizes}" th:value="${option}" th:text="${option}"
+                                    th:selected="${option == size}">25</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="sort">Sort</label>
+                        <select id="sort" name="sort" form="results-filters">
+                            <option value="relevance" th:selected="${sort == 'relevance'}">Relevance</option>
+                            <option value="published_at_desc" th:selected="${sort == 'published_at_desc'}">Newest published</option>
+                            <option value="published_at_asc" th:selected="${sort == 'published_at_asc'}">Oldest published</option>
+                            <option value="title_asc" th:selected="${sort == 'title_asc'}">Title A–Z</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-list" th:if="${!articleRows.isEmpty()}">
+                <article class="result" th:each="row : ${articleRows}">
+                    <h2 class="result__title">
+                        <a th:href="@{/article/{id}(id=${row.id})}" th:text="${row.title}">Title</a>
+                    </h2>
+                    <p class="result__deck" th:text="${row.summary}">Summary</p>
+                    <div class="result__meta">
+                        <span class="chip"
+                              th:if="${row.status != null}"
+                              th:classappend="'chip--' + ${#strings.toLowerCase(row.status)}"
+                              th:text="${#strings.capitalize(#strings.toLowerCase(row.status))}">Published</span>
+                        <span class="chip" th:if="${row.section != null and !row.section.isEmpty()}" th:text="${row.section}">Politics</span>
+                        <span th:if="${row.bylines != null and !row.bylines.isEmpty()}" th:text="${row.bylines}">Bylines</span>
+                        <span th:if="${row.published != null and !row.published.isEmpty()}" th:text="${row.published}">Sep 6, 2026</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="empty-state" th:if="${articleRows.isEmpty()}">
+                <p class="empty-state__title">No article hits</p>
+                <p class="empty-state__hint">Adjust the query, attributes, or filters and search again.</p>
+            </div>
+
+            <nav class="pagination" aria-label="Pagination" th:if="${total > 0}">
+                <div class="pagination__pages">
+                    <a th:if="${hasPrev}"
+                       th:href="@{/results(entity=${entity}, mode=${mode}, q=${q}, page=${page - 1}, size=${size}, sort=${sort}, journalist=${journalist}, section=${section}, language=${language}, published_from=${publishedFrom}, published_to=${publishedTo}, fields=${fields}, status=${statusValues})}">Prev</a>
+                    <span th:unless="${hasPrev}" class="pagination__disabled">Prev</span>
+                    <span class="is-current" aria-current="page" th:text="${page} + ' / ' + ${totalPages}">1 / 1</span>
+                    <a th:if="${hasNext}"
+                       th:href="@{/results(entity=${entity}, mode=${mode}, q=${q}, page=${page + 1}, size=${size}, sort=${sort}, journalist=${journalist}, section=${section}, language=${language}, published_from=${publishedFrom}, published_to=${publishedTo}, fields=${fields}, status=${statusValues})}">Next</a>
+                    <span th:unless="${hasNext}" class="pagination__disabled">Next</span>
+                </div>
+                <p class="pagination__hint"><code>from = (page − 1) × size</code> · size 25 / 50 / 100</p>
+            </nav>
+        </main>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/chrome :: footer}"></footer>
+
+</body>
+</html>
