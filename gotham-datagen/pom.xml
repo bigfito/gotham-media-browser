@@ -17,16 +17,20 @@
     <description>
         Plain Java console app (public static void main — NOT Spring Boot) that generates synthetic
         journalists + articles with IMAGE/AUDIO/VIDEO and loads them ONLY through the live HTTP CRUD
-        (POST /journalist, POST /article). Generative helpers (Qwen/SDXL-Turbo/Kokoro/Wan) and the
-        orchestrator arrive in P10-T02…T04; this module is the skeleton (config + CLI).
+        (POST /journalist, POST /article).
     </description>
 
     <!--
-      Deliberately NO Spring Boot dependencies and NO spring-boot-maven-plugin: this is a standalone
-      console tool. It uses only the JDK (java.net.http) at runtime. Versions for the two test
-      libraries are managed by the Spring Boot BOM inherited from the parent, so no <version> here.
+      Deliberately NO Spring Boot starter dependencies and NO spring-boot-maven-plugin: this is a
+      standalone console tool. Jackson databind is version-managed by the Spring Boot BOM inherited
+      from the parent.
     -->
     <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -42,12 +46,6 @@
     <build>
         <finalName>gotham-datagen</finalName>
         <plugins>
-            <!--
-              Runnable jar: set Main-Class so `java -jar gotham-datagen/target/gotham-datagen.jar`
-              works (pass options such as the help flag after it). The module has no runtime
-              dependencies, so a plain jar is self-contained; a shade plugin can be added later
-              (P10-T03) if a JSON/HTTP library is introduced.
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -58,6 +56,29 @@
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.gotham.newsmediabrowser.datagen.DatagenApplication</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
