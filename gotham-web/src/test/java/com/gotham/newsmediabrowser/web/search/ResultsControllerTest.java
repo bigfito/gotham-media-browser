@@ -209,6 +209,10 @@ class ResultsControllerTest {
                 .andExpect(view().name("results/multimedia"))
                 .andExpect(content().string(containsString("https://storage.googleapis.com/b/media/image/x.png")))
                 .andExpect(content().string(containsString("<img")))
+                .andExpect(content().string(containsString("class=\"media-card__original\"")))
+                .andExpect(content().string(containsString("target=\"gothamOriginalImage\"")))
+                .andExpect(content().string(containsString("data-width=\"800\"")))
+                .andExpect(content().string(containsString("data-height=\"500\"")))
                 .andExpect(content().string(containsString("Council chamber after the vote")))
                 .andExpect(content().string(containsString("/article/art-1")))
                 .andExpect(content().string(containsString("name=\"mediaType\" value=\"IMAGE\"")));

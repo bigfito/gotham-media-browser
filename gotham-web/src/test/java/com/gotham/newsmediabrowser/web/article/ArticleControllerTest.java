@@ -167,6 +167,32 @@ class ArticleControllerTest {
     }
 
     @Test
+    void editImagePreviewOpensOriginalInChildWindow() throws Exception {
+        oneJournalistAvailable();
+        com.gotham.newsmediabrowser.common.article.ArticleMultimedia photo =
+                new com.gotham.newsmediabrowser.common.article.ArticleMultimedia(
+                        "m1", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
+                        "https://storage.googleapis.com/b/media/image/x.png", "image/png", 0,
+                        null, null, null, null, "Council chamber", "x.png", 10L, null,
+                        512, 512, null, null, null, null, null, null, null);
+        Article existing = new Article("a1", "Transit vote", null, "s", "b", "transit",
+                ArticleStatus.PUBLISHED, "en", null, null, null,
+                new ArticleMetadata("Politics", List.of(), null, null, null, null, null, null),
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)),
+                List.of(photo));
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(existing));
+
+        mockMvc.perform(get("/article/a1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("article/form"))
+                .andExpect(content().string(containsString("class=\"media-card__original\"")))
+                .andExpect(content().string(containsString("href=\"https://storage.googleapis.com/b/media/image/x.png\"")))
+                .andExpect(content().string(containsString("target=\"gothamOriginalImage\"")))
+                .andExpect(content().string(containsString("data-width=\"512\"")))
+                .andExpect(content().string(containsString("data-height=\"512\"")));
+    }
+
+    @Test
     void editUnknownArticleRendersBranded404() throws Exception {
         when(articleRepository.findById("ghost")).thenReturn(Optional.empty());
 

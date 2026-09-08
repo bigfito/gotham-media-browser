@@ -142,7 +142,9 @@
 
             <div class="media-grid" th:if="${!existingMultimedia.isEmpty()}">
                 <figure class="media-card" th:each="m : ${existingMultimedia}" th:switch="${m.mediaType().name()}">
-                    <img th:case="'IMAGE'" th:src="${m.storageUri()}" th:alt="${m.altText()} ?: ${m.originalFilename()}"/>
+                    <th:block th:case="'IMAGE'">
+                        <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()})}"></a>
+                    </th:block>
                     <audio th:case="'AUDIO'" controls="controls">
                         <source th:src="${m.storageUri()}" th:type="${m.mimeType()}"/>
                     </audio>

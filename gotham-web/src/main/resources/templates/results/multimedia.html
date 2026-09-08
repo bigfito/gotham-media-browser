@@ -128,10 +128,9 @@
             <div class="media-grid" th:if="${!mediaHits.isEmpty()}">
                 <article class="media-card" th:each="hit : ${mediaHits}">
                     <div class="media-card__player" th:switch="${hit.media().mediaType() != null ? hit.media().mediaType().name() : ''}">
-                        <img th:case="'IMAGE'"
-                             th:src="${hit.media().storageUri()}"
-                             th:alt="${hit.media().altText() != null ? hit.media().altText() : hit.media().title()}"
-                             loading="lazy"/>
+                        <th:block th:case="'IMAGE'">
+                            <a th:replace="~{fragments/media-original :: preview(${hit.media().storageUri()}, ${hit.media().width()}, ${hit.media().height()}, ${hit.media().altText() != null ? hit.media().altText() : hit.media().title()})}"></a>
+                        </th:block>
                         <audio th:case="'AUDIO'" controls="controls" preload="metadata"
                                th:src="${hit.media().storageUri()}">
                             Your browser does not support HTML5 audio.

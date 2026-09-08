@@ -710,6 +710,20 @@ a:hover { text-decoration: underline; }
   background: #d9e3ee;
 }
 
+a.media-card__original {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  cursor: zoom-in;
+}
+
+a.media-card__original:focus-visible {
+  outline: 2px solid var(--sky-deep);
+  outline-offset: 2px;
+}
+
 .media-card__player audio {
   width: 100%;
 }
@@ -1161,6 +1175,12 @@ a:hover { text-decoration: underline; }
   max-height: 220px;
   object-fit: contain;
   border-radius: 8px;
+}
+
+.media-card > a.media-card__original {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .media-card figcaption {

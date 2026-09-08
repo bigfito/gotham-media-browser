@@ -74,8 +74,60 @@
     sync();
   }
 
+  /**
+   * Opens the original IMAGE bytes in a child browser window sized to the stored
+   * pixel dimensions (scrollbars if the file is larger than the screen).
+   */
+  function openOriginalImage(url, width, height) {
+    if (!url) {
+      return;
+    }
+    var availW = window.screen.availWidth || 1200;
+    var availH = window.screen.availHeight || 800;
+    var imgW = parseInt(width, 10);
+    var imgH = parseInt(height, 10);
+    var winW = imgW > 0 ? imgW : 800;
+    var winH = imgH > 0 ? imgH : 600;
+    winW = Math.min(Math.max(winW, 200), availW);
+    winH = Math.min(Math.max(winH, 200), availH);
+    var features = "popup=yes,width=" + winW + ",height=" + winH + ",resizable=yes,scrollbars=yes";
+    var child = window.open("", "gothamOriginalImage", features);
+    if (!child) {
+      window.open(url, "gothamOriginalImage");
+      return;
+    }
+    child.opener = null;
+    var safeUrl = String(url)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    child.document.open();
+    child.document.write(
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Original image</title>" +
+        "<style>html,body{margin:0;background:#111;}img{display:block;width:auto;height:auto;max-width:none;}</style>" +
+        "</head><body><img src=\"" + safeUrl + "\" alt=\"\"></body></html>");
+    child.document.close();
+    child.focus();
+  }
+
+  function bindOriginalImageLinks(root) {
+    root.addEventListener("click", function (event) {
+      var link = event.target.closest("a.media-card__original");
+      if (!link) {
+        return;
+      }
+      event.preventDefault();
+      openOriginalImage(link.href, link.getAttribute("data-width"), link.getAttribute("data-height"));
+    });
+  }
+
+  window.GothamMedia = {
+    openOriginalImage: openOriginalImage
+  };
+
   function init() {
     document.querySelectorAll("[data-search-panel]").forEach(setupModePanels);
+    bindOriginalImageLinks(document);
     refresh();
   }
 
