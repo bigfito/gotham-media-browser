@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
-  P0 landing: shared chrome + a placeholder main. The full dual-panel search
-  (articles / multimedia) is built in P7-T01 against ui-mockups/index.html.
+  P7-T01 landing: dual search panels. Both forms target GET /results with IA
+  query params (entity, mode, q, fields, journalist). Vector mode on the media
+  panel switches to POST (file upload) via chrome.js — search itself is P7–P8.
 -->
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head th:replace="~{fragments/chrome :: head('Gotham News & Media Browser')}"></head>
@@ -11,17 +12,105 @@
 
 <main class="shell">
     <p class="hero-line">Search the desk in two lanes — articles for the story, multimedia for the asset.</p>
+
     <section class="panels" aria-label="Search panels">
-        <div class="panel panel--articles">
-            <div class="panel__eyebrow">Panel 1</div>
-            <h1 class="panel__title">Articles</h1>
-            <p class="panel__hint">Full-text, semantic, and hybrid search over the denormalized article model. Coming online in P7.</p>
-        </div>
-        <div class="panel panel--media">
-            <div class="panel__eyebrow">Panel 2</div>
-            <h1 class="panel__title">Multimedia</h1>
-            <p class="panel__hint">Full-text, semantic, hybrid, and file→vector search over nested media assets. Coming online in P7–P8.</p>
-        </div>
+        <form class="panel panel--articles" th:action="@{/results}" action="/results" method="get" data-search-panel>
+            <div>
+                <div class="panel__eyebrow">Panel 1</div>
+                <h1 class="panel__title">Articles</h1>
+                <p class="panel__hint">Full-text searches selected denormalized text attributes. Semantic and hybrid use embeddings.</p>
+            </div>
+
+            <div class="methods" role="radiogroup" aria-label="Article search method" data-methods>
+                <label><input type="radio" name="mode" value="fulltext" checked="checked"/><span>Full-text</span></label>
+                <label><input type="radio" name="mode" value="semantic"/><span>Semantic</span></label>
+                <label><input type="radio" name="mode" value="hybrid"/><span>Hybrid</span></label>
+            </div>
+
+            <div class="field">
+                <label for="article-q">Query</label>
+                <input id="article-q" type="search" name="q" placeholder="e.g. transit funding vote"/>
+            </div>
+
+            <div class="attr-box is-visible" data-attrs>
+                <div class="attr-box__title">Full-text attributes</div>
+                <p class="attr-box__hint">From the article denormalized model — check fields to include in BM25.</p>
+                <div class="attr-grid">
+                    <label><input type="checkbox" name="fields" value="title" checked="checked"/> title</label>
+                    <label><input type="checkbox" name="fields" value="subtitle" checked="checked"/> subtitle</label>
+                    <label><input type="checkbox" name="fields" value="summary" checked="checked"/> summary</label>
+                    <label><input type="checkbox" name="fields" value="body" checked="checked"/> body</label>
+                    <label><input type="checkbox" name="fields" value="section"/> section</label>
+                    <label><input type="checkbox" name="fields" value="tags"/> tags</label>
+                    <label><input type="checkbox" name="fields" value="location"/> location</label>
+                    <label><input type="checkbox" name="fields" value="source"/> source</label>
+                    <label><input type="checkbox" name="fields" value="seo_title"/> seo_title</label>
+                    <label><input type="checkbox" name="fields" value="seo_description"/> seo_description</label>
+                    <label><input type="checkbox" name="fields" value="seo_keywords"/> seo_keywords</label>
+                    <label><input type="checkbox" name="fields" value="journalist_names"/> journalist_names</label>
+                    <label><input type="checkbox" name="fields" value="journalist_bios"/> journalist_bios</label>
+                    <label><input type="checkbox" name="fields" value="journalist_search_text"/> journalist_search_text</label>
+                    <label><input type="checkbox" name="fields" value="article_search_text"/> article_search_text</label>
+                </div>
+            </div>
+
+            <div class="field" data-journalist-field>
+                <label for="journalist">Journalist (full-text filter)</label>
+                <input id="journalist" type="text" name="journalist" placeholder="Name or id"/>
+            </div>
+
+            <input type="hidden" name="entity" value="article"/>
+            <div class="panel__footer">
+                <button class="btn btn-sky" type="submit">Search articles</button>
+            </div>
+        </form>
+
+        <form class="panel panel--media" th:action="@{/results}" action="/results" method="get" data-search-panel>
+            <div>
+                <div class="panel__eyebrow">Panel 2</div>
+                <h1 class="panel__title">Multimedia</h1>
+                <p class="panel__hint">Full-text uses nested media text fields. Vector opens a media file picker.</p>
+            </div>
+
+            <div class="methods" role="radiogroup" aria-label="Multimedia search method" data-methods>
+                <label><input type="radio" name="mode" value="fulltext" checked="checked"/><span>Full-text</span></label>
+                <label><input type="radio" name="mode" value="semantic"/><span>Semantic</span></label>
+                <label><input type="radio" name="mode" value="hybrid"/><span>Hybrid</span></label>
+                <label><input type="radio" name="mode" value="vector"/><span>Vector</span></label>
+            </div>
+
+            <div class="field">
+                <label for="media-q">Query</label>
+                <input id="media-q" type="search" name="q" placeholder="e.g. council chamber after vote"/>
+            </div>
+
+            <div class="attr-box is-visible" data-attrs>
+                <div class="attr-box__title">Full-text attributes</div>
+                <p class="attr-box__hint">From nested multimedia (+ flattened media text) in the denormalized model.</p>
+                <div class="attr-grid">
+                    <label><input type="checkbox" name="fields" value="multimedia.title" checked="checked"/> multimedia.title</label>
+                    <label><input type="checkbox" name="fields" value="multimedia.caption" checked="checked"/> multimedia.caption</label>
+                    <label><input type="checkbox" name="fields" value="multimedia.description" checked="checked"/> multimedia.description</label>
+                    <label><input type="checkbox" name="fields" value="multimedia.alt_text" checked="checked"/> multimedia.alt_text</label>
+                    <label><input type="checkbox" name="fields" value="multimedia.credit"/> multimedia.credit</label>
+                    <label><input type="checkbox" name="fields" value="multimedia_text"/> multimedia_text</label>
+                    <label><input type="checkbox" name="fields" value="multimedia_search_text"/> multimedia_search_text</label>
+                </div>
+            </div>
+
+            <div class="drop" data-drop aria-live="polite">
+                <strong>Drop media for vector search</strong>
+                Image ≤ 10&nbsp;MiB · Audio ≤ 20&nbsp;MiB / 5&nbsp;min · Video ≤ 50&nbsp;MiB / 90&nbsp;s
+                <div style="margin-top:0.65rem">
+                    <input type="file" name="media" accept="image/*,audio/*,video/*"/>
+                </div>
+            </div>
+
+            <input type="hidden" name="entity" value="multimedia"/>
+            <div class="panel__footer">
+                <button class="btn btn-coral" type="submit">Search multimedia</button>
+            </div>
+        </form>
     </section>
 </main>
 

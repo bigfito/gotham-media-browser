@@ -44,9 +44,45 @@
     setStatus(elasticsearch, results[1] ? "up" : "down");
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", refresh);
-  } else {
+  function setupModePanels(root) {
+    var modeGroup = root.querySelector("[data-methods]");
+    if (!modeGroup) return;
+    var attrBox = root.querySelector("[data-attrs]");
+    var journalist = root.querySelector("[data-journalist-field]");
+    var drop = root.querySelector("[data-drop]");
+    var form = root.closest("form") || root;
+
+    function sync() {
+      var checked = modeGroup.querySelector('input[name="mode"]:checked');
+      var mode = checked ? checked.value : "";
+      var isFulltext = mode === "fulltext";
+      var isVector = mode === "vector";
+      if (attrBox) attrBox.classList.toggle("is-visible", isFulltext);
+      if (journalist) journalist.style.display = isFulltext ? "flex" : "none";
+      if (drop) drop.classList.toggle("is-visible", isVector);
+      if (form && form.tagName === "FORM") {
+        form.method = isVector ? "post" : "get";
+        if (isVector) {
+          form.enctype = "multipart/form-data";
+        } else {
+          form.removeAttribute("enctype");
+        }
+      }
+    }
+
+    modeGroup.addEventListener("change", sync);
+    sync();
+  }
+
+  function init() {
+    document.querySelectorAll("[data-search-panel]").forEach(setupModePanels);
     refresh();
   }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
+
