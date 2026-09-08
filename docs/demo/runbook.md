@@ -108,6 +108,26 @@ It prints an `ok` / `FAIL` line per check and exits non-zero if any fail. What i
 The 200-vs-503 branch means the smoke passes both on a full stack and on a text-only stack, while
 still proving the fault-tolerant 503 path when the embedder is absent.
 
+### Integration test profiles (P9-T03)
+
+Beyond the black-box smoke, two Failsafe profiles drive the code against real dependencies. They run
+through the `verify` phase (so the reactor builds `gotham-common` before `gotham-web`'s ITs fork) and
+each IT self-skips when its deps are absent, so they never go red on a partial box.
+
+```bash
+# Elasticsearch suite (index bootstrap, journalist/article CRUD + cascade-strip, FTS, kNN, RRF,
+# file-vector, and a @SpringBootTest MockMvc web pass) — 15 ITs on the lab.
+ES_ENDPOINT="…" ES_API_KEY="…" ./mvnw -Pit-es verify
+
+# ImageBind suite (live 1024-d embeds + the article write-path embedding). Start the embedder first;
+# the stub backend needs no model download.
+docker run -d --name gotham-ib -p 8081:8081 -e IMAGEBIND_BACKEND=stub imagebind-service:stub
+IMAGEBIND_BASE_URL=http://localhost:8081 ES_ENDPOINT="…" ES_API_KEY="…" ./mvnw -Pit-imagebind verify
+docker rm -f gotham-ib
+```
+
+`mvn test` (unit + web-slice) never runs `*IT`. See [`../testing-strategy.md`](../testing-strategy.md).
+
 ## 7. Manual search walkthrough
 
 Open <http://localhost:8080/>. On the **articles** panel search `transit funding`:

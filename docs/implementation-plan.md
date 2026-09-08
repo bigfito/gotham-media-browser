@@ -123,7 +123,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 **Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).  
 **Canonical testing design:** [`testing-strategy.md`](./testing-strategy.md).
 
-**Progress:** P0–P8 + P9-T01/T02 **done** (34/42). Next task **P9-T03**. Live board: [`implementation-state.md`](./implementation-state.md).
+**Progress:** P0–P8 + P9-T01/T02/T03 **done** (35/42). Next task **P9-T04**. Live board: [`implementation-state.md`](./implementation-state.md).
 
 ### Task inventory (authoritative IDs)
 
@@ -400,7 +400,7 @@ See [`testing-strategy.md`](./testing-strategy.md).
 - **Create:** Failsafe suites (`*IT`) + Maven profiles `it-es` and `it-imagebind` per [`testing-strategy.md`](./testing-strategy.md).  
 - **Do:** Cover index bootstrap, journalist/article CRUD + cascade-strip, FTS smoke, ImageBind health + 1024-d embed, write-path embeddings when service up; MockMvc/IT coverage for critical `/journalist`, `/article`, `/results` flows against real ES (or documented assumption skip).  
 - **Don’t:** Require datagen helpers here (that is P10-T06).  
-- **Verification:** `mvn -Pit-es failsafe:integration-test failsafe:verify` and `mvn -Pit-imagebind …` pass on the lab with deps up; when deps absent, tests are skipped via assumptions (not red failures). Document operator commands in runbook.  
+- **Verification:** `mvn -Pit-es verify` and `mvn -Pit-imagebind verify` pass on the lab with deps up (run through the `verify` phase so the reactor builds `gotham-common` first); when deps absent, tests are skipped via assumptions (not red failures). Document operator commands in runbook.  
 - **Depends on:** P9-T02, P6-T03, P5-T02, P8-T03, P4-T03, P4-T05
 
 ### P9-T04 — Hardening sync pass

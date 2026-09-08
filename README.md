@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **34 / 42** tasks done (P0–P8 + P9-T01/T02 demo fixtures/runbook/smoke complete; next **P9-T03** ES + ImageBind + web ITs)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **35 / 42** tasks done (P0–P8 + P9-T01/T02/T03; Failsafe `it-es`/`it-imagebind` green on the lab; next **P9-T04** Hardening sync pass)  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |

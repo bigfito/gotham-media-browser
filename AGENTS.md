@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** **P0–P8 + P9-T01/T02 complete (34 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`. Next: **P9-T03** ES + ImageBind + web integration tests. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-08):** **P0–P8 + P9-T01/T02/T03 complete (35 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es`/`it-imagebind` profiles green on the lab. Next: **P9-T04** Hardening sync pass. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 
@@ -37,7 +37,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  
 - Datagen defaults: 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article.  
 - Plan/state: **42** tasks (P0–P10).  
-- Testing: unit + MockMvc always; env-gated `*IT` in `gotham-common`; Failsafe profiles in P9/P10 — [`docs/testing-strategy.md`](docs/testing-strategy.md).
+- Testing: unit + MockMvc always; env-gated `*IT`; Failsafe profiles `it-es` / `it-imagebind` live (P9-T03), `it-datagen-helpers` in P10 — [`docs/testing-strategy.md`](docs/testing-strategy.md).
 
 ## Build & verify (JDK 25)
 
@@ -51,7 +51,7 @@ mvn -DskipTests package      # build the gotham-web boot jar
 docker compose config        # validate the Compose stack (gotham-web + imagebind-service)
 ```
 
-Live `*IT` classes skip unless env vars are set. Failsafe profiles (`it-es`, `it-imagebind`, `it-datagen-helpers`) arrive in P9/P10 — see [`docs/testing-strategy.md`](docs/testing-strategy.md).
+Live `*IT` classes skip unless env vars are set. Failsafe profiles `it-es` / `it-imagebind` are live (P9-T03) — run via the `verify` phase: `mvn -Pit-es verify`, `mvn -Pit-imagebind verify` (see [`docs/testing-strategy.md`](docs/testing-strategy.md)). `it-datagen-helpers` arrives in P10.
 
 ## Source of truth
 

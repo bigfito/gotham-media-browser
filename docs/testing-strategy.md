@@ -36,11 +36,16 @@ Commands (from package root):
 # Unit + web-slice (required on every coding task)
 mvn -q test
 
-# Integration (profiles; skip gracefully when deps unavailable)
-mvn -q -Pit-es failsafe:integration-test failsafe:verify
-mvn -q -Pit-imagebind failsafe:integration-test failsafe:verify
-mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
+# Integration (profiles; run through `verify` so the reactor builds gotham-common first;
+# each IT skips gracefully via JUnit assumptions / @EnabledIf when its deps are unavailable)
+ES_ENDPOINT=… ES_API_KEY=…            mvn -q -Pit-es verify
+IMAGEBIND_BASE_URL=http://127.0.0.1:8081 ES_ENDPOINT=… ES_API_KEY=… mvn -q -Pit-imagebind verify
+mvn -q -Pit-datagen-helpers verify    # P10-T06
 ```
+
+`it-es` runs every `@Tag("integration")` IT except the `@Tag("imagebind")` ones; `it-imagebind` runs
+only the `@Tag("imagebind")` ITs (which also need Elasticsearch for the write-path check). Plain
+`mvn test` (Surefire) never runs `*IT`.
 
 ---
 
@@ -61,23 +66,33 @@ mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
 
 ## 4. Integration test suites
 
-**Already in tree (env-gated, not Failsafe profiles):** `*IT.java` in `gotham-common` (and one in `gotham-web`) use JUnit `assumeTrue` so they skip when secrets/deps are missing. Default Surefire does **not** include `*IT` (`mvn test` stays unit + `*Test`). Run a live class with e.g. `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (add `-am` for the `gotham-web` class). Failsafe profiles `it-es` / `it-imagebind` / `it-datagen-helpers` remain **P9 / P10**.
+**Failsafe profiles `it-es` and `it-imagebind` exist (P9-T03).** All `*IT.java` self-skip via JUnit
+`assumeTrue` / `@EnabledIf` when their deps are missing, so a profile run stays green without them.
+Default Surefire does **not** include `*IT` (`mvn test` stays unit + `*Test`). Run a suite with
+`mvn -Pit-es verify` / `mvn -Pit-imagebind verify` (through `verify` so the reactor builds first), or a
+single class with `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (add `-am` for a
+`gotham-web` class). Split by JUnit tag: **`it-es`** = `integration` − `imagebind`; **`it-imagebind`**
+= `imagebind`. `it-datagen-helpers` remains **P10**.
 
-| Class | Gate | Covers |
-|-------|------|--------|
-| `JournalistRepositoryIT` | `ES_ENDPOINT` + `ES_API_KEY` | Live journalist CRUD |
-| `ArticleRepositoryIT` | same | Live article CRUD / nest |
-| `ArticleFullTextServiceIT` | same | Cookbook §4 FTS |
-| `MultimediaFullTextServiceIT` | same | Cookbook §7 nested FTS + inner_hits |
-| `ArticleSemanticSearchServiceIT` | same | Cookbook §5 article kNN |
-| `MultimediaSemanticSearchServiceIT` | same | Cookbook §8 nested kNN + inner_hits |
-| `ArticleHybridSearchServiceIT` | same | Cookbook §6 article RRF |
-| `MultimediaHybridSearchServiceIT` | same | Cookbook §9 nested RRF (distinct inner_hits names) |
-| `MultimediaVectorSearchServiceIT` (`gotham-web`) | same | Cookbook §10 file→vector nested kNN |
-| `HttpImageBindClientIT` | `IMAGEBIND_BASE_URL` | Live 1024-d embed |
-| `GcsStorageServiceIT` | GCS secret / env | Live public object put |
+| Class | Tag / gate | Covers |
+|-------|------------|--------|
+| `IndexBootstrapIT` | es · `ES_ENDPOINT`+`ES_API_KEY` | Idempotent index bootstrap (create / no-op) |
+| `JournalistRepositoryIT` | es · same | Live journalist CRUD |
+| `JournalistServiceIT` | es · same | Cascade-strip delete + article reindex |
+| `ArticleRepositoryIT` | es · same | Live article CRUD / nest |
+| `ArticleFullTextServiceIT` | es · same | Cookbook §4 FTS |
+| `MultimediaFullTextServiceIT` | es · same | Cookbook §7 nested FTS + inner_hits |
+| `ArticleSemanticSearchServiceIT` | es · same | Cookbook §5 article kNN |
+| `MultimediaSemanticSearchServiceIT` | es · same | Cookbook §8 nested kNN + inner_hits |
+| `ArticleHybridSearchServiceIT` | es · same | Cookbook §6 article RRF |
+| `MultimediaHybridSearchServiceIT` | es · same | Cookbook §9 nested RRF (distinct inner_hits names) |
+| `MultimediaVectorSearchServiceIT` (`gotham-web`) | es · same | Cookbook §10 file→vector nested kNN |
+| `WebFlowsIT` (`gotham-web`) | es · `@EnabledIf` `ES_ENDPOINT`+`ES_API_KEY` | `@SpringBootTest` MockMvc: `/`, `/journalist`, `/results`, article-vector 400 |
+| `HttpImageBindClientIT` | imagebind · `IMAGEBIND_BASE_URL` | Live 1024-d embed (text + image) |
+| `ArticleEmbeddingImageBindIT` | imagebind · `IMAGEBIND_BASE_URL` + ES | Write path: article save → `article_embedding` 1024-d |
+| `GcsStorageServiceIT` | es · GCS secret / env | Live public object put |
 
-### 4.1 Elasticsearch (`it-es`) — task **P9-T03** (and earlier repo ITs as built)
+### 4.1 Elasticsearch (`it-es`) — **done (P9-T03)**; lab run `mvn -Pit-es verify` green (15 ITs)
 
 | Case | Intent |
 |------|--------|
@@ -88,7 +103,7 @@ mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
 | FTS / filters | Article + multimedia queries from cookbook smoke set |
 | kNN / hybrid (when embeddings present) | Semantic/hybrid smoke with 1024-d vectors |
 
-### 4.2 ImageBind (`it-imagebind`) — task **P9-T03** / **P6** verification
+### 4.2 ImageBind (`it-imagebind`) — **done (P9-T03)**; lab run `mvn -Pit-imagebind verify` green (3 ITs, stub backend)
 
 | Case | Intent |
 |------|--------|
@@ -123,8 +138,8 @@ mvn -q -Pit-datagen-helpers failsafe:integration-test failsafe:verify
 
 - [ ] Every production module ships Surefire unit (and MockMvc) coverage for shipped features  
 - [ ] `mvn test` passes on a clean checkout with placeholders  
-- [ ] Failsafe profiles exist for **ES**, **ImageBind**, and **datagen helpers**  
-- [ ] P9-T03 and P10-T06 documented and green on the lab (or assumptions documented with operator runbook)  
+- [x] Failsafe profiles exist for **ES** and **ImageBind** (`it-es` / `it-imagebind`, P9-T03); **datagen helpers** → P10-T06  
+- [x] P9-T03 documented and green on the lab (`it-es` 15 ITs, `it-imagebind` 3 ITs); **P10-T06** pending  
 - [ ] Agents record test commands in task `notes` when closing tasks  
 
 ---

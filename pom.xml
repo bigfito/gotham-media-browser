@@ -84,4 +84,47 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <!--
+      Integration-test profiles (P9-T03). Failsafe runs the `*IT` classes, split by JUnit tag:
+        it-es        → every @Tag("integration") IT EXCEPT the @Tag("imagebind") ones (live ES / GCS)
+        it-imagebind → only @Tag("imagebind") ITs (need a running imagebind-service; write path also needs ES)
+      Every IT still self-skips via JUnit assumptions when its env vars / deps are absent, so a profile
+      run stays green on a box without the dependency. Plain `mvn test` (Surefire) never runs `*IT`.
+      Run through the `verify` phase (the reactor must build gotham-common before gotham-web's ITs fork):
+        mvn -Pit-es        verify     # env: ES_ENDPOINT, ES_API_KEY (GCS IT also needs GCS_* / skips)
+        mvn -Pit-imagebind verify     # env: IMAGEBIND_BASE_URL (+ ES_ENDPOINT/ES_API_KEY for the write path)
+      Datagen helpers (it-datagen-helpers) arrive with P10-T06.
+    -->
+    <profiles>
+        <profile>
+            <id>it-es</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <groups>integration</groups>
+                            <excludedGroups>imagebind</excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>it-imagebind</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <groups>imagebind</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

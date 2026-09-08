@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
  * </pre>
  */
 @Tag("integration")
+@Tag("imagebind")
 class HttpImageBindClientIT {
 
     private static final String BASE_URL = System.getenv("IMAGEBIND_BASE_URL");
