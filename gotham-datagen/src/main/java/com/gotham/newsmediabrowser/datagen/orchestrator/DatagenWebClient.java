@@ -26,7 +26,8 @@ import java.util.regex.Pattern;
 public class DatagenWebClient {
 
     private static final String SERVICE_NAME = "GothamWeb";
-    private static final Pattern DELETE_FORM_PATTERN = Pattern.compile("/journalist/([A-Za-z0-9_-]+)/delete");
+    private static final Pattern JOURNALIST_DELETE_FORM = Pattern.compile("/journalist/([A-Za-z0-9_-]+)/delete");
+    private static final Pattern ARTICLE_DELETE_FORM = Pattern.compile("/article/([A-Za-z0-9_-]+)/delete");
 
     private final String baseUrl;
     private final Duration timeout;
@@ -107,15 +108,7 @@ public class DatagenWebClient {
                 throw new DatagenClientException(SERVICE_NAME, resp.statusCode(), "Failed to list journalists");
             }
 
-            List<String> ids = new ArrayList<>();
-            Matcher matcher = DELETE_FORM_PATTERN.matcher(resp.body());
-            while (matcher.find()) {
-                String id = matcher.group(1);
-                if (!ids.contains(id)) {
-                    ids.add(id);
-                }
-            }
-            return ids;
+            return extractIds(resp.body(), JOURNALIST_DELETE_FORM);
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -166,12 +159,89 @@ public class DatagenWebClient {
             throw new DatagenClientException(SERVICE_NAME, resp.statusCode(), "Failed to read /journalist after creation");
         }
 
-        Matcher matcher = DELETE_FORM_PATTERN.matcher(resp.body());
+        Matcher matcher = JOURNALIST_DELETE_FORM.matcher(resp.body());
         if (matcher.find()) {
             return matcher.group(1);
         }
 
         throw new DatagenClientException(SERVICE_NAME, "Could not extract newest journalist ID from /journalist response");
+    }
+
+    /**
+     * Newest-first article ids scraped from the list page delete forms (same contract as
+     * {@link #listJournalistIds()}). Used by integration tests to clean up a small run.
+     */
+    public List<String> listArticleIds() {
+        try {
+            HttpRequest getReq = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/article?size=100"))
+                    .timeout(timeout)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> resp = httpClient.send(getReq, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() != 200) {
+                throw new DatagenClientException(SERVICE_NAME, resp.statusCode(), "Failed to list articles");
+            }
+            return extractIds(resp.body(), ARTICLE_DELETE_FORM);
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new DatagenClientException(SERVICE_NAME, "Failed to GET /article at " + baseUrl, e);
+        }
+    }
+
+    /**
+     * {@code POST /journalist/{id}/delete} — cascade-strips nested bylines then deletes the master.
+     * Treats 404 as already-gone (idempotent cleanup).
+     */
+    public void deleteJournalist(String journalistId) {
+        postDelete("/journalist/" + journalistId + "/delete", "journalist " + journalistId);
+    }
+
+    /**
+     * {@code POST /article/{id}/delete} — removes GCS objects then the ES document.
+     * Treats 404 as already-gone (idempotent cleanup).
+     */
+    public void deleteArticle(String articleId) {
+        postDelete("/article/" + articleId + "/delete", "article " + articleId);
+    }
+
+    private void postDelete(String path, String label) {
+        try {
+            HttpRequest postReq = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + path))
+                    .timeout(timeout)
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .header("Accept", "text/html, */*")
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            HttpResponse<String> resp = httpClient.send(postReq, HttpResponse.BodyHandlers.ofString());
+            int code = resp.statusCode();
+            if (code == 302 || code == 200 || code == 404) {
+                return;
+            }
+            throw new DatagenClientException(SERVICE_NAME, code, "Failed to delete " + label);
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new DatagenClientException(SERVICE_NAME, "Failed to POST " + path + " at " + baseUrl, e);
+        }
+    }
+
+    private static List<String> extractIds(String html, Pattern deleteForm) {
+        List<String> ids = new ArrayList<>();
+        Matcher matcher = deleteForm.matcher(html != null ? html : "");
+        while (matcher.find()) {
+            String id = matcher.group(1);
+            if (!ids.contains(id)) {
+                ids.add(id);
+            }
+        }
+        return ids;
     }
 
     private byte[] buildMultipartBody(String boundary, ArticlePayload payload, List<GeneratedMedia> mediaFiles) throws IOException {

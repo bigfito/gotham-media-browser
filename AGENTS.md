@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** **P0–P9 + P10-T01 complete (37 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es`/`it-imagebind` green; the non-Boot `gotham-datagen` console skeleton is in. Next: **P10-T02** Compose profile `datagen` (Ollama · ComfyUI · Kokoro). Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-08):** **P0–P10 complete (42 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es` / `it-imagebind` / `it-datagen-helpers` wired; `gotham-datagen` console + Compose profile `datagen` load via HTTP CRUD. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 
@@ -38,7 +38,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 - Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  
 - Datagen defaults: 15 journalists · 25 articles · 5 IMAGE + 5 AUDIO + 5 VIDEO (5 s) per article.  
 - Plan/state: **42** tasks (P0–P10).  
-- Testing: unit + MockMvc always; env-gated `*IT`; Failsafe profiles `it-es` / `it-imagebind` live (P9-T03), `it-datagen-helpers` in P10 — [`docs/testing-strategy.md`](docs/testing-strategy.md).
+- Testing: unit + MockMvc always; env-gated `*IT`; Failsafe profiles `it-es` / `it-imagebind` / `it-datagen-helpers` — [`docs/testing-strategy.md`](docs/testing-strategy.md).
 
 ## Build & verify (JDK 25)
 
@@ -52,7 +52,7 @@ mvn -DskipTests package      # build the gotham-web boot jar
 docker compose config        # validate the Compose stack (gotham-web + imagebind-service)
 ```
 
-Live `*IT` classes skip unless env vars are set. Failsafe profiles `it-es` / `it-imagebind` are live (P9-T03) — run via the `verify` phase: `mvn -Pit-es verify`, `mvn -Pit-imagebind verify` (see [`docs/testing-strategy.md`](docs/testing-strategy.md)). `it-datagen-helpers` arrives in P10.
+Live `*IT` classes skip unless env vars are set (datagen helper ITs probe Compose ports and skip when down). Failsafe profiles: `mvn -Pit-es verify`, `mvn -Pit-imagebind verify`, `mvn -Pit-datagen-helpers verify` (see [`docs/testing-strategy.md`](docs/testing-strategy.md)).
 
 ## Source of truth
 

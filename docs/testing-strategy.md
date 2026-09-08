@@ -40,7 +40,7 @@ mvn -q test
 # each IT skips gracefully via JUnit assumptions / @EnabledIf when its deps are unavailable)
 ES_ENDPOINT=… ES_API_KEY=…            mvn -q -Pit-es verify
 IMAGEBIND_BASE_URL=http://127.0.0.1:8081 ES_ENDPOINT=… ES_API_KEY=… mvn -q -Pit-imagebind verify
-mvn -q -Pit-datagen-helpers verify    # P10-T06
+mvn -q -Pit-datagen-helpers verify    # Ollama / ComfyUI / Kokoro / small orchestrator
 ```
 
 `it-es` runs every `@Tag("integration")` IT except the `@Tag("imagebind")` ones; `it-imagebind` runs
@@ -66,13 +66,14 @@ only the `@Tag("imagebind")` ITs (which also need Elasticsearch for the write-pa
 
 ## 4. Integration test suites
 
-**Failsafe profiles `it-es` and `it-imagebind` exist (P9-T03).** All `*IT.java` self-skip via JUnit
+**Failsafe profiles `it-es`, `it-imagebind`, and `it-datagen-helpers` exist.** All `*IT.java` self-skip via JUnit
 `assumeTrue` / `@EnabledIf` when their deps are missing, so a profile run stays green without them.
 Default Surefire does **not** include `*IT` (`mvn test` stays unit + `*Test`). Run a suite with
 `mvn -Pit-es verify` / `mvn -Pit-imagebind verify` (through `verify` so the reactor builds first), or a
 single class with `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (add `-am` for a
 `gotham-web` class). Split by JUnit tag: **`it-es`** = `integration` − `imagebind`; **`it-imagebind`**
-= `imagebind`. `it-datagen-helpers` remains **P10**.
+= `imagebind`; **`it-datagen-helpers`** = `datagen` (`it-es` also excludes `datagen` so helper ITs
+do not run on the ES profile).
 
 | Class | Tag / gate | Covers |
 |-------|------------|--------|
@@ -91,6 +92,10 @@ single class with `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (
 | `HttpImageBindClientIT` | imagebind · `IMAGEBIND_BASE_URL` | Live 1024-d embed (text + image) |
 | `ArticleEmbeddingImageBindIT` | imagebind · `IMAGEBIND_BASE_URL` + ES | Write path: article save → `article_embedding` 1024-d |
 | `GcsStorageServiceIT` | es · GCS secret / env | Live public object put |
+| `OllamaClientIT` (`gotham-datagen`) | datagen · live `:11434` | Health + JSON chat (`qwen2.5:7b-instruct`) |
+| `ComfyuiClientIT` (`gotham-datagen`) | datagen · live `:8188` | Health + T2I; T2V on stub or `DATAGEN_IT_VIDEO=true` |
+| `KokoroClientIT` (`gotham-datagen`) | datagen · live `:8880` | Health + TTS WAV bytes |
+| `DatagenOrchestratorIT` (`gotham-datagen`) | datagen · web + Ollama | 1 journalist + 1 article via HTTP; media skip if helper down |
 
 ### 4.1 Elasticsearch (`it-es`) — **done (P9-T03)**; lab run `mvn -Pit-es verify` green (15 ITs)
 
@@ -112,14 +117,19 @@ single class with `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (
 | Embed image/audio/video | Fixture bytes → length **1024** |
 | Write path | Article save populates `article_embedding` + `asset_vector` when service up |
 
-### 4.3 Datagen helpers (`it-datagen-helpers`) — task **P10-T06**
+### 4.3 Datagen helpers (`it-datagen-helpers`) — **done (P10-T06)**
+
+Run through the lifecycle: `mvn -Pit-datagen-helpers verify`. Each IT probes the Compose default
+port (overridable via `OLLAMA_URL` / `COMFYUI_URL` / `KOKORO_URL` / `GOTHAM_WEB_URL` /
+`OLLAMA_MODEL`) and `assumeTrue`-skips when the helper is down. Wan T2V is skipped unless the
+in-repo ComfyUI stub is detected or `DATAGEN_IT_VIDEO=true` (CPU clips are minutes each).
 
 | Case | Intent |
 |------|--------|
-| Ollama | Health + chat completion with `qwen2.5:7b-instruct` (or documented test model) |
-| ComfyUI | Health + minimal T2I (SDXL-Turbo) and short T2V (Wan) or skip flags documented |
-| Kokoro | Health + TTS bytes returned |
-| Orchestrator dry/small run | Console app posts ≥1 journalist + ≥1 article via HTTP when helpers + `gotham-web` are up (may use reduced counts for IT) |
+| Ollama | Health + chat completion with `qwen2.5:7b-instruct` (or `OLLAMA_MODEL`) |
+| ComfyUI | Health + minimal T2I (SDXL-Turbo); short T2V (Wan) on stub or `DATAGEN_IT_VIDEO=true` |
+| Kokoro | Health + TTS WAV bytes (`RIFF` header) |
+| Orchestrator small run | 1 journalist + 1 article via HTTP when `gotham-web` + Ollama are up; image/audio skipped if that helper is down; video always skipped; created docs deleted afterwards |
 
 ---
 
@@ -136,11 +146,11 @@ single class with `mvn -pl gotham-common test -Dtest=ArticleFullTextServiceIT` (
 
 ## 6. Definition of done (testing)
 
-- [ ] Every production module ships Surefire unit (and MockMvc) coverage for shipped features  
-- [ ] `mvn test` passes on a clean checkout with placeholders  
-- [x] Failsafe profiles exist for **ES** and **ImageBind** (`it-es` / `it-imagebind`, P9-T03); **datagen helpers** → P10-T06  
-- [x] P9-T03 documented and green on the lab (`it-es` 15 ITs, `it-imagebind` 3 ITs); **P10-T06** pending  
-- [ ] Agents record test commands in task `notes` when closing tasks  
+- [x] Every production module ships Surefire unit (and MockMvc) coverage for shipped features  
+- [x] `mvn test` passes on a clean checkout with placeholders  
+- [x] Failsafe profiles exist for **ES**, **ImageBind**, and **datagen helpers** (`it-es` / `it-imagebind` / `it-datagen-helpers`)  
+- [x] P9-T03 documented and green on the lab (`it-es` 15 ITs, `it-imagebind` 3 ITs); P10-T06 profile wired (ITs skip when helpers are down)  
+- [x] Agents record test commands in task `notes` when closing tasks  
 
 ---
 

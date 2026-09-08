@@ -152,3 +152,19 @@ After running `gotham-datagen`:
 | `Ollama HTTP 404 / Model not found` | Qwen 2.5 model has not been pulled | Run `docker exec -it gotham-ollama ollama pull qwen2.5:7b-instruct`. |
 | `ComfyUI connection refused` | Container starting or not launched | Check `docker compose --profile datagen ps` or use `--skip-image --skip-video`. |
 | `gotham-web HTTP 413` | Uploaded media exceeds size limits | Datagen automatically enforces product limits (Image ≤ 10 MB, Audio ≤ 20 MB, Video ≤ 50 MB / 5s). |
+
+---
+
+## 7. Integration tests (`it-datagen-helpers`)
+
+Health + one tiny generation per helper, plus a 1×1 orchestrator run through HTTP CRUD. Tests
+**skip** (they do not fail) when a container or `gotham-web` is down.
+
+```bash
+export JAVA_HOME="$(/usr/libexec/java_home -v 25)"
+mvn -Pit-datagen-helpers verify
+```
+
+Optional overrides: `OLLAMA_URL`, `COMFYUI_URL`, `KOKORO_URL`, `GOTHAM_WEB_URL`, `OLLAMA_MODEL`.
+Set `DATAGEN_IT_VIDEO=true` to exercise real Wan T2V (slow on CPU). The default video path is the
+ComfyUI stub (`COMFYUI_BACKEND=stub`).

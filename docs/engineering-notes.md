@@ -76,9 +76,15 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
   `ClassNotFoundException: …MultimediaSearchHit` in the `gotham-web` fork.
 - **Cause:** invoking the Failsafe goals directly does not build the reactor dependency
   (`gotham-common`) onto the `gotham-web` test classpath.
-- **Fix:** run through the lifecycle — `mvn -Pit-es verify` / `mvn -Pit-imagebind verify`. Profiles
-  split ITs by JUnit tag (`it-es` = `integration` − `imagebind`; `it-imagebind` = `imagebind`); every
-  IT self-skips via `assumeTrue` / `@EnabledIf` when its deps are absent. Found in P9-T03.
+- **Fix:** run through the lifecycle — `mvn -Pit-es verify` / `mvn -Pit-imagebind verify` /
+  `mvn -Pit-datagen-helpers verify`. Profiles split ITs by JUnit tag (`it-es` = `integration` −
+  `imagebind` − `datagen`; `it-imagebind` = `imagebind`; `it-datagen-helpers` = `datagen`); every
+  IT self-skips via `assumeTrue` / `@EnabledIf` when its deps are absent. Found in P9-T03 / P10-T06.
+
+### Datagen helper ITs skip real Wan unless opted in
+- **Symptom:** a live ComfyUI T2V IT would sit for minutes (or timeout) on M4 CPU.
+- **Fix:** `ComfyuiClientIT` runs T2V only against the in-repo stub (`system_stats` contains `stub`)
+  or when `DATAGEN_IT_VIDEO=true`. The small orchestrator IT always `--skip-video`.
 
 ### Spring Boot 4 moved the test auto-configuration packages
 - `@WebMvcTest` → `org.springframework.boot.webmvc.test.autoconfigure` (needs

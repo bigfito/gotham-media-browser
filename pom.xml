@@ -66,7 +66,7 @@
             <plugins>
                 <!--
                   Failsafe is WIRED here but not bound to any module yet: integration
-                  suites (it-es / it-imagebind / it-datagen-helpers) arrive in P9/P10.
+                  suites (it-es / it-imagebind / it-datagen-helpers) are activated by profiles.
                   Surefire (unit tests) is already managed by the Spring Boot parent,
                   so `mvn test` runs unit tests only.
                 -->
@@ -95,7 +95,8 @@
       Run through the `verify` phase (the reactor must build gotham-common before gotham-web's ITs fork):
         mvn -Pit-es        verify     # env: ES_ENDPOINT, ES_API_KEY (GCS IT also needs GCS_* / skips)
         mvn -Pit-imagebind verify     # env: IMAGEBIND_BASE_URL (+ ES_ENDPOINT/ES_API_KEY for the write path)
-      Datagen helpers (it-datagen-helpers) arrive with P10-T06.
+      Datagen helpers (P10-T06):
+        mvn -Pit-datagen-helpers verify   # env optional; ITs skip when helpers / gotham-web are down
     -->
     <profiles>
         <profile>
@@ -107,7 +108,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <groups>integration</groups>
-                            <excludedGroups>imagebind</excludedGroups>
+                            <excludedGroups>imagebind,datagen</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -122,6 +123,20 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <groups>imagebind</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>it-datagen-helpers</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <groups>datagen</groups>
                         </configuration>
                     </plugin>
                 </plugins>

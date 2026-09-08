@@ -123,7 +123,7 @@ Dependency spine: `P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 �
 **Canonical generative design:** [`synthetic-data-generation.md`](./synthetic-data-generation.md).  
 **Canonical testing design:** [`testing-strategy.md`](./testing-strategy.md).
 
-**Progress:** P0–P9 + P10-T01 **done** (37/42). Next task **P10-T02**. Live board: [`implementation-state.md`](./implementation-state.md).
+**Progress:** P0–P10 **done** (42/42). Live board: [`implementation-state.md`](./implementation-state.md).
 
 ### Task inventory (authoritative IDs)
 
@@ -492,10 +492,10 @@ _Ticked for the P0–P9 smoke demo (P9-T04 hardening sync). P10 items stay open.
 - [x] Header health legends + MIT footer  
 - [x] **Fault tolerant UX:** unexpected errors on any endpoint show branded error page with reason (no Whitelabel/stack dumps) — verified live (smoke: 400 + 503 branded)  
 - [x] **Unit tests** for backend + frontend (MockMvc) with `mvn test` green (199)  
-- [x] **Integration tests** for Elasticsearch + ImageBind (**P9-T03** — `it-es` 15 ITs, `it-imagebind` 3 ITs green on the lab); datagen helpers (**P10-T06**) pending  
+- [x] **Integration tests** for Elasticsearch + ImageBind (**P9-T03** — `it-es` 15 ITs, `it-imagebind` 3 ITs green on the lab); datagen helpers (**P10-T06** — `it-datagen-helpers`)  
 - [x] P9 static smoke path works without generative helpers (`docs/demo/` fixtures + `seed.sh` + `smoke.sh`; smoke passed text-only)  
-- [ ] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; **Java console** `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
-- [ ] State file tasks completed (through P9; **P10** remains)  
+- [x] **P10:** `docker compose --profile datagen` runs Ollama + ComfyUI + Kokoro containers; **Java console** `gotham-datagen` loads **15** / **25** / **5+5+5** via HTTP CRUD using **Qwen 7B / SDXL-Turbo / Kokoro / Wan 1.3B** (or documented skip flags)  
+- [x] State file tasks completed (P0–P10)  
 
 ---
 

@@ -110,4 +110,4 @@ mvn test
 
 ## 6. Conclusion
 
-Phase 10 tasks P10-T01 through P10-T05 are fully verified and operational. The runbook is complete and the orchestrator is ready for integration testing in P10-T06.
+Phase 10 tasks P10-T01 through P10-T06 are complete. Failsafe profile `it-datagen-helpers` covers live helper health/generation and a 1×1 orchestrator HTTP run; tests skip when containers are absent (`mvn -Pit-datagen-helpers verify`).

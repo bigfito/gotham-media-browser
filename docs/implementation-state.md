@@ -5,35 +5,20 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T12:20:00Z  
-**Active phase:** P10 (5/6 done) — next `P10-T06`  
-**Prototype status:** `in_progress`  
-**Next task:** `P10-T06` (Integration tests: datagen helpers + orchestrator — dep P10-T05 done)
+**Last updated:** 2026-09-08T05:20:00Z  
+**Active phase:** P10 (6/6 done) — plan complete  
+**Prototype status:** `done`  
+**Next task:** none (42/42). Optional lab: full overnight `gotham-datagen` run on the M4 with Compose profile `datagen`.
 
 ---
 
-## Handoff notes for the next agent (P10-T02…T06)
+## Handoff notes (P10 complete)
 
-All remaining code + docs are implementable and **unit/mock-verifiable offline**. The full generative
-run (375 assets, CPU-in-Docker, "overnight") needs the **M4 lab** — the design already accommodates
-this via skip flags, mocked unit tests, and env-gated `*IT` that skip when containers are absent.
+The implementation plan is closed. Remaining work is **operator / lab**, not a numbered task:
 
-- **Config keys are shipped and fixed** (P10-T01): use the exact keys in
-  `gotham-datagen/src/main/resources/datagen.properties` and the `DatagenConfig` record getters
-  (`ollamaUrl`, `comfyuiUrl`, `kokoroUrl`, `textModel`, `imagesPerArticle`, `audioPerArticle`,
-  `videoPerArticle`, `videoSeconds`, `skip*`). The spec §4 now matches these.
-- **Reference assets to copy from:**
-  - CRUD HTTP contract for the orchestrator (P10-T04) → **`docs/demo/seed.sh`** is a working
-    reference: journalist `POST` + capturing the new ES id from the newest-first list, and the
-    article multipart `POST` with `journalistIds` / `bylineOrder[id]` / `role[id]` / `mediaFiles`.
-  - In-repo CPU container pattern for **`comfyui-service/`** (P10-T02, does not exist yet) →
-    **`imagebind-service/`** (Dockerfile + FastAPI `app.py` + requirements) is the template.
-  - Failsafe profile wiring for `it-datagen-helpers` (P10-T06) → copy `it-es`/`it-imagebind` in the
-    parent `pom.xml`; tag its ITs `@Tag("integration")` + a new datagen tag; run via `verify`.
-- **Highest risk:** P10-T02's `comfyui-service` (CPU multi-arch ComfyUI with SDXL-Turbo T2I + Wan2.1
-  T2V 5 s). CPU ComfyUI/Wan is slow and finicky; validate the image on the lab early, and keep
-  `--skip-video` / `--skip-image` as the documented fallback.
-- **Never** bypass the CRUD (no direct ES/GCS writes from datagen); `gotham-datagen` stays non-Boot.
+- Full generative run (15 / 25 / 5+5+5 = 375 assets) on the M4 — see [`datagen-runbook.md`](./datagen-runbook.md). CPU Wan video is overnight; `--skip-video` is the daytime path.
+- Live `mvn -Pit-datagen-helpers verify` against Compose profile `datagen` + `gotham-web` (this task verified the skip path: 5 ITs skipped, 0 failures).
+- Never bypass CRUD (no direct ES/GCS writes from datagen); `gotham-datagen` stays non-Boot.
 
 ---
 
@@ -89,9 +74,9 @@ Status values: `pending` | `in_progress` | `done` | `blocked` | `cancelled`
 | P7 | Public FTS search | 4/4 | done |
 | P8 | Semantic · Hybrid · Vector | 3/3 | done |
 | P9 | Demo smoke + static fixtures + ES/ImageBind ITs | 4/4 | done |
-| P10 | Synthetic data generation (**last**) | 4/6 | in_progress |
+| P10 | Synthetic data generation (**last**) | 6/6 | done |
 
-**Totals:** 40 / **42** tasks done
+**Totals:** 42 / **42** tasks done
 
 ---
 
@@ -142,7 +127,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P10-T03 | P10 | Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan) | done | P10-T02 | Antigravity | 2026-09-08T11:21:00Z | 2026-09-08T11:45:00Z | Implemented generative HTTP clients in `gotham-datagen` (`com.gotham.newsmediabrowser.datagen.client`): `OllamaClient` (Qwen 7B text + JSON chat format, healthcheck), `KokoroClient` (TTS audio synthesis WAV, healthcheck), `ComfyuiClient` (SDXL-Turbo 1-step T2I PNG + Wan2.1 1.3B 5s T2V MP4, async prompt queue + history polling + view download, healthcheck), `GeneratedMedia` carrier, and `DatagenClientException`. Added Jackson + `maven-assembly-plugin` for runnable fat jar. Unit tests: `OllamaClientTest`(6), `KokoroClientTest`(5), `ComfyuiClientTest`(8) against in-process mock HTTP servers (success, down, non-200, timeout paths). `mvn -pl gotham-datagen test` green (29); full reactor `mvn test` green (228); `mvn -pl gotham-datagen package && java -jar target/gotham-datagen.jar --help` verified. |
 | P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | done | P10-T03, P3-T03, P4-T04, P5-T02, P6-T03 | Antigravity | 2026-09-08T11:46:00Z | 2026-09-08T12:10:00Z | Implemented end-to-end `DatagenOrchestrator` + `DatagenWebClient` (`POST /journalist`, `GET /journalist` for ES id capture, `POST /article` multipart with binary media, tags, metadata, and byline orders/roles). Generates full 15/25/5+5+5 dataset with status mix (PUBLISHED/DRAFT/ARCHIVED) through HTTP only (never ES/GCS direct). Wired `DatagenApplication` main CLI with `--dry-run` support. Unit tests: `DatagenWebClientTest`(6), `DatagenOrchestratorTest`(6), `DatagenApplicationTest`(4) passing. `mvn -pl gotham-datagen test` green (42); full reactor `mvn test` green (241); `mvn -pl gotham-datagen package && java -jar target/gotham-datagen.jar --dry-run` verified. |
 | P10-T05 | P10 | Datagen runbook + verification report | done | P10-T04 | Antigravity | 2026-09-08T12:11:00Z | 2026-09-08T12:20:00Z | Created operator runbook (`docs/datagen-runbook.md`) covering prerequisites, memory budgets, Compose profile startup, model warm-up, CLI dry-run and full run commands, skip flags, and troubleshooting matrix. Created verification report (`docs/datagen-verification-report.md`) detailing offline stub verification, mocked integration flows, data ingress validation through HTTP CRUD only, asset distribution, and lab execution targets. Full reactor `mvn test` green (241 tests). |
-| P10-T06 | P10 | Integration tests: datagen helpers + orchestrator | pending | P10-T05, P10-T02, P9-T03 | | | | |
+| P10-T06 | P10 | Integration tests: datagen helpers + orchestrator | done | P10-T05, P10-T02, P9-T03 | Cursor Grok 4.6 | 2026-09-08T05:05:00Z | 2026-09-08T05:20:00Z | Failsafe profile `it-datagen-helpers` (`@Tag("datagen")`; `it-es` excludes it). ITs: OllamaClientIT, ComfyuiClientIT (T2V stub/`DATAGEN_IT_VIDEO`), KokoroClientIT, DatagenOrchestratorIT (1+1 HTTP, cleanup deletes). `DatagenWebClient` list/delete helpers + 3 unit tests. `mvn test` green (244; datagen 45). `mvn -Pit-datagen-helpers verify` green (5 ITs skipped, 0 failures — helpers down). **P10 complete (6/6).** |
 
 ---
 

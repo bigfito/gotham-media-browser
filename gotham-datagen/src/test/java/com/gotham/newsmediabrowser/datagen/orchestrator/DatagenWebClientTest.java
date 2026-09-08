@@ -195,4 +195,47 @@ class DatagenWebClientTest {
                 .isInstanceOf(DatagenClientException.class)
                 .hasMessageContaining("HTTP 400");
     }
+
+    @Test
+    void listArticleIds_extractsFromDeleteForm() {
+        server.createContext("/article", exchange -> {
+            String html = """
+                    <html>
+                    <body>
+                      <form action="/article/art-1/delete" method="post"></form>
+                      <form action="/article/art-2/delete" method="post"></form>
+                    </body>
+                    </html>
+                    """;
+            byte[] resp = html.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, resp.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(resp);
+            }
+        });
+
+        DatagenWebClient client = new DatagenWebClient(baseUrl);
+        assertThat(client.listArticleIds()).containsExactly("art-1", "art-2");
+    }
+
+    @Test
+    void deleteJournalist_acceptsRedirect() {
+        server.createContext("/journalist/j-1/delete", exchange -> {
+            exchange.getResponseHeaders().set("Location", "/journalist");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
+
+        new DatagenWebClient(baseUrl).deleteJournalist("j-1");
+    }
+
+    @Test
+    void deleteArticle_treats404AsAlreadyGone() {
+        server.createContext("/article/gone/delete", exchange -> {
+            exchange.sendResponseHeaders(404, -1);
+            exchange.close();
+        });
+
+        new DatagenWebClient(baseUrl).deleteArticle("gone");
+    }
 }
