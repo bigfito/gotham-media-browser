@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.gotham</groupId>
+        <artifactId>gotham-news-media-browser</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>gotham-datagen</artifactId>
+    <packaging>jar</packaging>
+
+    <name>gotham-datagen</name>
+    <description>
+        Plain Java console app (public static void main — NOT Spring Boot) that generates synthetic
+        journalists + articles with IMAGE/AUDIO/VIDEO and loads them ONLY through the live HTTP CRUD
+        (POST /journalist, POST /article). Generative helpers (Qwen/SDXL-Turbo/Kokoro/Wan) and the
+        orchestrator arrive in P10-T02…T04; this module is the skeleton (config + CLI).
+    </description>
+
+    <!--
+      Deliberately NO Spring Boot dependencies and NO spring-boot-maven-plugin: this is a standalone
+      console tool. It uses only the JDK (java.net.http) at runtime. Versions for the two test
+      libraries are managed by the Spring Boot BOM inherited from the parent, so no <version> here.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>gotham-datagen</finalName>
+        <plugins>
+            <!--
+              Runnable jar: set Main-Class so `java -jar gotham-datagen/target/gotham-datagen.jar`
+              works (pass options such as the help flag after it). The module has no runtime
+              dependencies, so a plain jar is self-contained; a shade plugin can be added later
+              (P10-T03) if a JSON/HTTP library is introduced.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.gotham.newsmediabrowser.datagen.DatagenApplication</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

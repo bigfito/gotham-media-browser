@@ -31,10 +31,11 @@
         <google-cloud-libraries-bom.version>26.50.0</google-cloud-libraries-bom.version>
     </properties>
 
-    <!-- P0 modules. gotham-datagen (Java console) is added in P10, not here. -->
+    <!-- gotham-datagen (P10) is a plain Java console module — NOT a Spring Boot app. -->
     <modules>
         <module>gotham-common</module>
         <module>gotham-web</module>
+        <module>gotham-datagen</module>
     </modules>
 
     <dependencyManagement>

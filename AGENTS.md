@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** **P0–P9 complete (36 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es`/`it-imagebind` green on the lab; global DoD ticked through P9. Next: **P10-T01** Java console `gotham-datagen` skeleton (compact context first — P9 was a phase boundary). Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-08):** **P0–P9 + P10-T01 complete (37 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es`/`it-imagebind` green; the non-Boot `gotham-datagen` console skeleton is in. Next: **P10-T02** Compose profile `datagen` (Ollama · ComfyUI · Kokoro). Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 
@@ -32,7 +32,7 @@ Implement the **Gotham News & Media Browser** prototype from the approved design
 ## Project shape (IntelliJ)
 
 - Open **parent** `pom.xml` in IntelliJ IDEA Ultimate as a **Maven multi-module** project.  
-- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** Java **console** module (not Spring Boot) in **P10**.  
+- Modules: `gotham-common`, `gotham-web` (P0+); **`gotham-datagen`** Java **console** module (not Spring Boot; plain `main`) added in **P10-T01**.  
 - `imagebind-service/` and `comfyui-service/` are in-repo Docker/Python — not Maven modules.  
 - P10 helpers: **mandatory Docker** Compose profile `datagen` — Ollama (Qwen 7B), `comfyui-service` (SDXL-Turbo + Wan 1.3B), Kokoro — see [`docs/synthetic-data-generation.md`](docs/synthetic-data-generation.md).  
 - Lab hardware: **MacBook Pro M4 · 32 GB · no NVIDIA** (CPU inference inside containers).  

@@ -6,7 +6,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 **End-to-end architecture:** [`docs/architecture-end-to-end.md`](docs/architecture-end-to-end.md)  
 **Implementation plan (phased):** [`docs/implementation-plan.md`](docs/implementation-plan.md)  
-**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **36 / 42** tasks done (**P0–P9 complete**: search, demo seed/smoke, ES+ImageBind ITs, hardening; next **P10** synthetic data generation)  
+**Progress / handoff state:** [`docs/implementation-state.md`](docs/implementation-state.md) — **37 / 42** tasks done (P0–P9 + P10-T01 `gotham-datagen` console skeleton; next **P10-T02** Compose `datagen` profile)  
 **Agent instructions:** [`AGENTS.md`](AGENTS.md)
 
 | Area | Path |
@@ -29,7 +29,7 @@ Prototype design package for a single-brand news & multimedia browser on **Elast
 
 ## Locked stack
 
-Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console in P10**) · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`; profile **`datagen`** = Ollama / ComfyUI / Kokoro containers) · ImageBind 1024-d · M4 32 GB lab · **unit + integration tests** (ES / ImageBind / helpers) · **42** implementation tasks (P0–P10)
+Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — plain-`main`, non-Boot; skeleton in P10-T01) · ES Java client · Docker Compose (`gotham-web` + `imagebind-service`; profile **`datagen`** = Ollama / ComfyUI / Kokoro containers) · ImageBind 1024-d · M4 32 GB lab · **unit + integration tests** (ES / ImageBind / helpers) · **42** implementation tasks (P0–P10)
 
 Open the parent `pom.xml` in **IntelliJ IDEA Ultimate** as a Maven project.
 
