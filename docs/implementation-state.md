@@ -5,10 +5,10 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T12:10:00Z  
-**Active phase:** P10 (4/6 done) — next `P10-T05`  
+**Last updated:** 2026-09-08T12:20:00Z  
+**Active phase:** P10 (5/6 done) — next `P10-T06`  
 **Prototype status:** `in_progress`  
-**Next task:** `P10-T05` (Datagen runbook + verification report — dep P10-T04 done)
+**Next task:** `P10-T06` (Integration tests: datagen helpers + orchestrator — dep P10-T05 done)
 
 ---
 
@@ -141,7 +141,7 @@ Titles and **Depends on** must match [`implementation-plan.md`](./implementation
 | P10-T02 | P10 | Compose profile datagen (Ollama · ComfyUI · Kokoro containers) | done | P0-T02, P10-T01 | Antigravity | 2026-09-08T11:00:00Z | 2026-09-08T11:20:00Z | Added `datagen` Compose profile in `docker-compose.yml` (`ollama`, `comfyui`, `kokoro`) + named volumes (`ollama-models`, `comfyui-models`, `comfyui-output`). Created in-repo `comfyui-service/` (CPU multi-arch Dockerfile, entrypoint, requirements, workflow graphs for SDXL-Turbo T2I + Wan2.1 1.3B 5s T2V, and fast deterministic stub server supporting `/system_stats`, `/prompt`, `/history`, `/view`). Verified: `docker compose config` + `docker compose --profile datagen config` valid; built and ran `comfyui-service:stub` container verifying all endpoints (200 on system_stats, prompt queue, history, view); full reactor `mvn test` green (209). |
 | P10-T03 | P10 | Helper HTTP clients (Qwen 7B · SDXL-Turbo · Kokoro · Wan) | done | P10-T02 | Antigravity | 2026-09-08T11:21:00Z | 2026-09-08T11:45:00Z | Implemented generative HTTP clients in `gotham-datagen` (`com.gotham.newsmediabrowser.datagen.client`): `OllamaClient` (Qwen 7B text + JSON chat format, healthcheck), `KokoroClient` (TTS audio synthesis WAV, healthcheck), `ComfyuiClient` (SDXL-Turbo 1-step T2I PNG + Wan2.1 1.3B 5s T2V MP4, async prompt queue + history polling + view download, healthcheck), `GeneratedMedia` carrier, and `DatagenClientException`. Added Jackson + `maven-assembly-plugin` for runnable fat jar. Unit tests: `OllamaClientTest`(6), `KokoroClientTest`(5), `ComfyuiClientTest`(8) against in-process mock HTTP servers (success, down, non-200, timeout paths). `mvn -pl gotham-datagen test` green (29); full reactor `mvn test` green (228); `mvn -pl gotham-datagen package && java -jar target/gotham-datagen.jar --help` verified. |
 | P10-T04 | P10 | Orchestrator → POST /journalist & POST /article | done | P10-T03, P3-T03, P4-T04, P5-T02, P6-T03 | Antigravity | 2026-09-08T11:46:00Z | 2026-09-08T12:10:00Z | Implemented end-to-end `DatagenOrchestrator` + `DatagenWebClient` (`POST /journalist`, `GET /journalist` for ES id capture, `POST /article` multipart with binary media, tags, metadata, and byline orders/roles). Generates full 15/25/5+5+5 dataset with status mix (PUBLISHED/DRAFT/ARCHIVED) through HTTP only (never ES/GCS direct). Wired `DatagenApplication` main CLI with `--dry-run` support. Unit tests: `DatagenWebClientTest`(6), `DatagenOrchestratorTest`(6), `DatagenApplicationTest`(4) passing. `mvn -pl gotham-datagen test` green (42); full reactor `mvn test` green (241); `mvn -pl gotham-datagen package && java -jar target/gotham-datagen.jar --dry-run` verified. |
-| P10-T05 | P10 | Datagen runbook + verification report | pending | P10-T04 | | | | |
+| P10-T05 | P10 | Datagen runbook + verification report | done | P10-T04 | Antigravity | 2026-09-08T12:11:00Z | 2026-09-08T12:20:00Z | Created operator runbook (`docs/datagen-runbook.md`) covering prerequisites, memory budgets, Compose profile startup, model warm-up, CLI dry-run and full run commands, skip flags, and troubleshooting matrix. Created verification report (`docs/datagen-verification-report.md`) detailing offline stub verification, mocked integration flows, data ingress validation through HTTP CRUD only, asset distribution, and lab execution targets. Full reactor `mvn test` green (241 tests). |
 | P10-T06 | P10 | Integration tests: datagen helpers + orchestrator | pending | P10-T05, P10-T02, P9-T03 | | | | |
 
 ---
