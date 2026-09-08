@@ -155,6 +155,7 @@
       if (drop) drop.classList.toggle("is-visible", isVector);
       if (queryField) {
         queryField.hidden = isVector;
+        queryField.style.display = isVector ? "none" : "";
         queryField.querySelectorAll('input[name="q"]').forEach((input) => {
           input.disabled = isVector;
         });

@@ -334,6 +334,7 @@ a:hover { text-decoration: underline; }
 }
 
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
+[data-query-field][hidden] { display: none !important; }
 .field label { font-size: 0.78rem; color: var(--ink-soft); font-weight: 500; }
 
 .field input[type="text"],
