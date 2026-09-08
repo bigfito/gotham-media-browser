@@ -5,10 +5,35 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T10:15:00Z  
+**Last updated:** 2026-09-08T10:55:00Z  
 **Active phase:** P10 (1/6 done) — next `P10-T02`  
 **Prototype status:** `in_progress`  
 **Next task:** `P10-T02` (Compose profile `datagen`: Ollama · ComfyUI · Kokoro containers — dep P0-T02, P10-T01 done)
+
+---
+
+## Handoff notes for the next agent (P10-T02…T06)
+
+All remaining code + docs are implementable and **unit/mock-verifiable offline**. The full generative
+run (375 assets, CPU-in-Docker, "overnight") needs the **M4 lab** — the design already accommodates
+this via skip flags, mocked unit tests, and env-gated `*IT` that skip when containers are absent.
+
+- **Config keys are shipped and fixed** (P10-T01): use the exact keys in
+  `gotham-datagen/src/main/resources/datagen.properties` and the `DatagenConfig` record getters
+  (`ollamaUrl`, `comfyuiUrl`, `kokoroUrl`, `textModel`, `imagesPerArticle`, `audioPerArticle`,
+  `videoPerArticle`, `videoSeconds`, `skip*`). The spec §4 now matches these.
+- **Reference assets to copy from:**
+  - CRUD HTTP contract for the orchestrator (P10-T04) → **`docs/demo/seed.sh`** is a working
+    reference: journalist `POST` + capturing the new ES id from the newest-first list, and the
+    article multipart `POST` with `journalistIds` / `bylineOrder[id]` / `role[id]` / `mediaFiles`.
+  - In-repo CPU container pattern for **`comfyui-service/`** (P10-T02, does not exist yet) →
+    **`imagebind-service/`** (Dockerfile + FastAPI `app.py` + requirements) is the template.
+  - Failsafe profile wiring for `it-datagen-helpers` (P10-T06) → copy `it-es`/`it-imagebind` in the
+    parent `pom.xml`; tag its ITs `@Tag("integration")` + a new datagen tag; run via `verify`.
+- **Highest risk:** P10-T02's `comfyui-service` (CPU multi-arch ComfyUI with SDXL-Turbo T2I + Wan2.1
+  T2V 5 s). CPU ComfyUI/Wan is slow and finicky; validate the image on the lab early, and keep
+  `--skip-video` / `--skip-image` as the documented fallback.
+- **Never** bypass the CRUD (no direct ES/GCS writes from datagen); `gotham-datagen` stays non-Boot.
 
 ---
 

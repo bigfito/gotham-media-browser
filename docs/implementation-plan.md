@@ -470,7 +470,7 @@ Skip flags for IMAGE/AUDIO/VIDEO when helpers are unavailable; **text (Qwen 7B) 
 
 ### P10-T05 — Datagen runbook + verification report
 - **Create:** Operator runbook for **M4 32 GB + Docker Desktop**: `docker compose --profile datagen up`, model pulls, Docker memory settings, expected volumes **15 / 25 / 5+5+5**, overnight notes for CPU video, **IT profile** `it-datagen-helpers`.  
-- **Do:** Sample: `mvn -pl gotham-datagen -am package && java -jar gotham-datagen/target/gotham-datagen-*.jar` (or `exec:java` with `DatagenMain`).  
+- **Do:** Sample: `mvn -pl gotham-datagen -am package && java -jar gotham-datagen/target/gotham-datagen.jar` (or `exec:java` with `DatagenApplication`).  
 - **Verification:** Runbook completes on the M4 lab with containers **or** documents skip-flag path.  
 - **Depends on:** P10-T04
 

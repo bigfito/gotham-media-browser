@@ -24,8 +24,9 @@
 
 ```text
 gotham-datagen/          # plain Java console app (NOT Spring Boot)
-  pom.xml                # jar module; depends on gotham-common; Java HTTP client(s)
-  src/.../DatagenMain.java   # public static void main(String[] args)
+  pom.xml                # jar module; JDK-only runtime (Java HTTP client)
+  src/.../DatagenApplication.java   # public static void main(String[] args) — shipped in P10-T01
+  src/.../DatagenConfig.java        # layered config (defaults -> datagen.properties -> -D -> CLI)
 ```
 
 | Rule | Detail |
@@ -40,9 +41,9 @@ gotham-datagen/          # plain Java console app (NOT Spring Boot)
 
 ```bash
 mvn -pl gotham-datagen -am package
-java -jar gotham-datagen/target/gotham-datagen-*.jar
+java -jar gotham-datagen/target/gotham-datagen.jar --help
 # or during dev:
-mvn -pl gotham-datagen exec:java -Dexec.mainClass="com.gotham.newsmediabrowser.datagen.DatagenMain"
+mvn -pl gotham-datagen exec:java -Dexec.mainClass="com.gotham.newsmediabrowser.datagen.DatagenApplication"
 ```
 
 ---
@@ -112,20 +113,25 @@ host / IDE:
 | Volumes | Persist Ollama models + ComfyUI checkpoints in named Docker volumes |
 | Resource notes | Raise Docker Desktop memory toward **host 32 GB** (leave ~4–8 GB for macOS/IDE); sequential modality generation if OOM |
 
-`gotham-datagen` properties (placeholders):
+`gotham-datagen` properties — these are the **shipped** keys (P10-T01), matching
+`gotham-datagen/src/main/resources/datagen.properties` and the `DatagenConfig` record getters.
+Override via `-Dgotham.datagen.*` or `--key=value` CLI (kebab keys; bare `--skip-*` = true):
 
 ```properties
 gotham.datagen.web-base-url=http://localhost:8080
-gotham.datagen.ollama-base-url=http://localhost:11434
-gotham.datagen.ollama-model=qwen2.5:7b-instruct
-gotham.datagen.comfyui-base-url=http://localhost:8188
-gotham.datagen.kokoro-base-url=http://localhost:8880
+gotham.datagen.ollama-url=http://localhost:11434
+gotham.datagen.comfyui-url=http://localhost:8188
+gotham.datagen.kokoro-url=http://localhost:8880
+gotham.datagen.text-model=qwen2.5:7b-instruct
 gotham.datagen.journalists=15
 gotham.datagen.articles=25
 gotham.datagen.images-per-article=5
-gotham.datagen.audios-per-article=5
-gotham.datagen.videos-per-article=5
-gotham.datagen.video-duration-seconds=5
+gotham.datagen.audio-per-article=5
+gotham.datagen.video-per-article=5
+gotham.datagen.video-seconds=5
+gotham.datagen.skip-image=false
+gotham.datagen.skip-audio=false
+gotham.datagen.skip-video=false
 ```
 
 ---
