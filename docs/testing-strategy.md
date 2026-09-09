@@ -62,6 +62,8 @@ only the `@Tag("imagebind")` ITs (which also need Elasticsearch for the write-pa
 
 **Frontend note:** There is no SPA. “Frontend unit tests” means **controller + Thymeleaf model/view** tests, not Jest/React. Visual mockups under `ui-mockups/` remain the UI reference; MockMvc asserts behavior parity.
 
+**Assertion note:** `containsString` matches the whole document, so a label assertion can silently re-anchor onto another element after a rename and keep passing. Pin controls by something unique to them (an `id`, a `name`, an `aria-label`), never by visible text that also appears in a heading. See [`engineering-notes.md`](./engineering-notes.md).
+
 ---
 
 ## 4. Integration test suites

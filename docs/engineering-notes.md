@@ -156,3 +156,33 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
 ### Shell scripts stay LF
 - `.gitattributes` pins `*.sh` / `mvnw` to `eol=lf` so the seed/smoke scripts run on the macOS lab
   regardless of the contributor's OS.
+
+### `-pl gotham-web` alone does not compile
+- **Symptom:** `mvn -pl gotham-web test` fails with `cannot find symbol` on `gotham-common` types,
+  even though the reactor build is green.
+- **Cause:** `-pl` restricts the reactor to that module and resolves `gotham-common` from the local
+  repository, where the installed jar predates the change you are testing.
+- **Fix:** run the full reactor (`mvn test`) — or `mvn -pl gotham-web -am test` when you really want
+  to narrow the run. Same trap as the Failsafe-goal note above, different cause: there the sibling
+  was never built, here it is built but stale.
+
+### A renamed UI label can leave a test asserting the wrong element
+- **Symptom:** none — this is the dangerous shape. `HomeControllerTest` asserted the body contained
+  `"Article Search"` to pin the submit **button**; when the button was renamed to `Search`, the panel
+  heading (also renamed to `Article Search`) kept the assertion green. The test still passed while no
+  longer testing anything.
+- **Cause:** `content().string(containsString(...))` matches the whole document, so it silently
+  re-anchors onto whichever element happens to carry the text next.
+- **Fix:** assert on something unique to the element under test — here the `aria-label`
+  (`aria-label="Search articles"` / `"Search multimedia"`), which is both stable and the accessible
+  name a screen reader announces. Rule of thumb: if a string appears more than once in the rendered
+  page, it is not an assertion, it is a coincidence.
+
+### Stale docs are a revert vector
+- **Symptom:** after the byline cascade became a partial update, `AGENTS.md` hard constraints, four
+  design docs and every `ui-mockups/` page still described the old behaviour and the old labels.
+- **Cause:** the fix landed in code and tests only. The next agent reads the docs first (that is what
+  `AGENTS.md` tells it to do) and would have "restored consistency" by undoing the fix.
+- **Fix:** treat prose that contradicts a deliberate fix as part of the bug. Corrected the wording,
+  synced `ui-mockups/` with the shipped templates, and added the **Locked invariants** table in
+  `AGENTS.md` so each invariant names the test that pins it.
