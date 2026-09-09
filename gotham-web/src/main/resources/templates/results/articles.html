@@ -4,7 +4,7 @@
   Filter + pagination links preserve IA query params. FTS is wired; other modes notice until P8.
 -->
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/chrome :: head('Article results — Gotham News & Media Browser')}"></head>
+<head th:replace="~{fragments/chrome :: head('Article Search — Gotham News & Media Browser')}"></head>
 <body th:attr="data-page='results-articles'">
 
 <header th:replace="~{fragments/chrome :: header}"></header>
@@ -37,10 +37,8 @@
                 </div>
             </div>
 
-            <div class="field" data-journalist-field th:style="${mode == 'fulltext'} ? 'display:flex' : 'display:none'">
-                <label for="journalist">Journalist (full-text filter)</label>
-                <input id="journalist" type="text" name="journalist" th:value="${journalist}"/>
-            </div>
+            <div th:replace="~{fragments/journalist-filter :: field(${journalistOptions}, ${journalist},
+                              ${mode == 'fulltext'} ? 'display:flex' : 'display:none')}"></div>
         </form>
     </section>
 

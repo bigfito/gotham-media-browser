@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!--
+  Byline filter for the article lane, shared by the landing panel and the results page.
+
+  The option value is the journalist's Elasticsearch _id, not the name: ArticleFullTextService
+  recognises an id and filters with an exact nested term, while a name goes through a text match
+  that would also pull in anyone with a similar name.
+
+  A `selected` value that is not in the roster still renders as its own option, so an older
+  bookmarked URL carrying a free-text name (this control used to be a plain text box) keeps
+  filtering instead of silently resetting to "Any journalist".
+
+  `fieldStyle` is the server-rendered initial display; chrome.js takes over on mode changes.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="field(options, selected, fieldStyle)"
+     class="field"
+     data-journalist-field
+     th:style="${fieldStyle}">
+    <label for="journalist">Journalist (byline filter)</label>
+    <select id="journalist" name="journalist">
+        <option value="" th:selected="${#strings.isEmpty(selected)}">Any journalist</option>
+        <option th:each="option : ${options}"
+                th:value="${option.value}"
+                th:text="${option.label}"
+                th:selected="${option.value == selected}">Name</option>
+        <option th:if="${!#strings.isEmpty(selected) and !#lists.contains(options.![value], selected)}"
+                th:value="${selected}"
+                th:text="${selected} + ' (not in the roster)'"
+                selected="selected">Legacy value</option>
+    </select>
+</div>
+</body>
+</html>

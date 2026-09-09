@@ -18,6 +18,7 @@ import com.gotham.newsmediabrowser.common.error.BadRequestException;
 import com.gotham.newsmediabrowser.common.media.MediaType;
 import com.gotham.newsmediabrowser.common.search.SearchPagination;
 import com.gotham.newsmediabrowser.common.search.SearchSort;
+import com.gotham.newsmediabrowser.web.journalist.JournalistOptions;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -69,6 +70,7 @@ public class ResultsController {
     private final ArticleHybridSearchService articleHybridSearchService;
     private final MultimediaHybridSearchService multimediaHybridSearchService;
     private final MultimediaVectorSearchService multimediaVectorSearchService;
+    private final JournalistOptions journalistOptions;
 
     public ResultsController(ArticleFullTextService articleFullTextService,
                              MultimediaFullTextService multimediaFullTextService,
@@ -76,7 +78,8 @@ public class ResultsController {
                              MultimediaSemanticSearchService multimediaSemanticSearchService,
                              ArticleHybridSearchService articleHybridSearchService,
                              MultimediaHybridSearchService multimediaHybridSearchService,
-                             MultimediaVectorSearchService multimediaVectorSearchService) {
+                             MultimediaVectorSearchService multimediaVectorSearchService,
+                             JournalistOptions journalistOptions) {
         this.articleFullTextService = articleFullTextService;
         this.multimediaFullTextService = multimediaFullTextService;
         this.articleSemanticSearchService = articleSemanticSearchService;
@@ -84,6 +87,7 @@ public class ResultsController {
         this.articleHybridSearchService = articleHybridSearchService;
         this.multimediaHybridSearchService = multimediaHybridSearchService;
         this.multimediaVectorSearchService = multimediaVectorSearchService;
+        this.journalistOptions = journalistOptions;
     }
 
     @GetMapping("/results")
@@ -185,6 +189,10 @@ public class ResultsController {
         model.addAttribute("statusValues", uiStatuses);
         model.addAttribute("mediaTypeValues", uiMediaTypes);
         model.addAttribute("journalist", journalist != null ? journalist : "");
+        // Only the article lane filters by byline; loading the roster for the media lane would be a
+        // wasted Elasticsearch round-trip on every media search.
+        model.addAttribute("journalistOptions",
+                "article".equals(entity) ? journalistOptions.all() : List.<JournalistOptions.Option>of());
         model.addAttribute("section", section != null ? section : "");
         model.addAttribute("language", language != null ? language : "");
         model.addAttribute("publishedFrom", publishedFrom != null ? publishedFrom : "");

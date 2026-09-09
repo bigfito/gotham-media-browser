@@ -47,11 +47,11 @@
             </div>
             <nav class="header-nav" aria-label="Primary">
                 <a class="nav-link" th:classappend="${activePage == 'search'} ? ' is-active' : ''"
-                   th:href="@{/}" href="/">Search</a>
+                   th:href="@{/}" href="/">Home</a>
                 <a class="nav-link" th:classappend="${activePage == 'results-articles'} ? ' is-active' : ''"
-                   th:href="@{/results(entity='article')}" href="/results?entity=article">Article results</a>
+                   th:href="@{/results(entity='article')}" href="/results?entity=article">Article Search</a>
                 <a class="nav-link" th:classappend="${activePage == 'results-multimedia'} ? ' is-active' : ''"
-                   th:href="@{/results(entity='multimedia')}" href="/results?entity=multimedia">Media results</a>
+                   th:href="@{/results(entity='multimedia')}" href="/results?entity=multimedia">Media Search</a>
                 <a class="nav-link" th:classappend="${activePage == 'journalist'} ? ' is-active' : ''"
                    th:href="@{/journalist}" href="/journalist">Journalists</a>
                 <a class="nav-link" th:classappend="${activePage == 'article'} ? ' is-active' : ''"
@@ -78,7 +78,7 @@
             </p>
         </div>
         <div class="site-footer__nav">
-            <a th:href="@{/}" href="/">Search</a> ·
+            <a th:href="@{/}" href="/">Home</a> ·
             <a th:href="@{/journalist}" href="/journalist">Journalists</a> ·
             <a th:href="@{/article}" href="/article">Articles</a> ·
             <a href="https://opensource.org/licenses/MIT" rel="license">MIT</a>

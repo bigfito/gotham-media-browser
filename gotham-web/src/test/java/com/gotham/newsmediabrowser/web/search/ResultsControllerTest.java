@@ -74,6 +74,9 @@ class ResultsControllerTest {
     @MockitoBean
     private MultimediaVectorSearchService multimediaVectorSearchService;
 
+    @MockitoBean
+    private com.gotham.newsmediabrowser.web.journalist.JournalistOptions journalistOptions;
+
     private Article sampleArticle() {
         Journalist lois = new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace", null, null);
         return Article.newArticle(
@@ -110,7 +113,30 @@ class ResultsControllerTest {
                 .andExpect(content().string(containsString("Lois Lane")))
                 .andExpect(content().string(containsString("Gotham Transit Expansion")))
                 .andExpect(content().string(containsString("/article/art-1")))
-                .andExpect(content().string(containsString("Journalist (full-text filter)")));
+                .andExpect(content().string(containsString("Journalist (byline filter)")))
+                // "Lois Lane" is a free-text value from before this control became a dropdown, and the
+                // mocked roster does not contain it. It must still round-trip as its own option rather
+                // than silently resetting the filter to "Any journalist".
+                .andExpect(content().string(containsString("Lois Lane (not in the roster)")));
+    }
+
+    @Test
+    void journalistDropdownPreselectsTheChosenRosterEntry() throws Exception {
+        when(journalistOptions.all()).thenReturn(List.of(
+                new com.gotham.newsmediabrowser.web.journalist.JournalistOptions.Option("j_lois", "Lois Lane"),
+                new com.gotham.newsmediabrowser.web.journalist.JournalistOptions.Option("j_clark", "Clark Kent")));
+        when(articleFullTextService.search(any())).thenReturn(new ArticlePage(List.of(), 0));
+
+        mockMvc.perform(get("/results")
+                        .param("entity", "article")
+                        .param("mode", "fulltext")
+                        .param("q", "transit")
+                        .param("journalist", "j_clark"))
+                .andExpect(status().isOk())
+                // Thymeleaf keeps the source line break between the attributes, so assert them apart.
+                .andExpect(content().string(containsString("value=\"j_clark\"")))
+                .andExpect(content().string(containsString("selected=\"selected\">Clark Kent")))
+                .andExpect(content().string(not(containsString("not in the roster"))));
     }
 
     @Test

@@ -11,13 +11,19 @@
 <header th:replace="~{fragments/chrome :: header}"></header>
 
 <main class="shell">
-    <p class="hero-line">Search the desk in two lanes — articles for the story, multimedia for the asset.</p>
+    <!--
+      The two lanes are already obvious from the panels; what is not obvious is that each lane can be
+      ranked four different ways. The clauses run in the same order as the mode chips below:
+      keywords = full-text, meaning = semantic, both = hybrid, a dropped file = vector.
+    -->
+    <p class="hero-line">Articles for the story, multimedia for the asset — ranked by keywords, by
+        meaning, by both at once, or by a media file you drop in.</p>
 
     <section class="panels" aria-label="Search panels">
         <form class="panel panel--articles" th:action="@{/results}" action="/results" method="get" data-search-panel>
             <div>
                 <div class="panel__eyebrow">Panel 1</div>
-                <h1 class="panel__title">Articles</h1>
+                <h1 class="panel__title">Article Search</h1>
                 <p class="panel__hint">Full-text searches selected denormalized text attributes. Semantic and hybrid use embeddings.</p>
             </div>
 
@@ -54,21 +60,18 @@
                 </div>
             </div>
 
-            <div class="field" data-journalist-field>
-                <label for="journalist">Journalist (full-text filter)</label>
-                <input id="journalist" type="text" name="journalist" placeholder="Name or id"/>
-            </div>
+            <div th:replace="~{fragments/journalist-filter :: field(${journalistOptions}, '', 'display:flex')}"></div>
 
             <input type="hidden" name="entity" value="article"/>
             <div class="panel__footer">
-                <button class="btn btn-sky" type="submit">Search articles</button>
+                <button class="btn btn-sky" type="submit" aria-label="Search articles">Search</button>
             </div>
         </form>
 
         <form class="panel panel--media" th:action="@{/results}" action="/results" method="get" data-search-panel>
             <div>
                 <div class="panel__eyebrow">Panel 2</div>
-                <h1 class="panel__title">Multimedia</h1>
+                <h1 class="panel__title">Media Search</h1>
                 <p class="panel__hint">Full-text uses nested media text fields. Vector opens a media file picker.</p>
             </div>
 
@@ -108,7 +111,7 @@
 
             <input type="hidden" name="entity" value="multimedia"/>
             <div class="panel__footer">
-                <button class="btn btn-coral" type="submit">Search multimedia</button>
+                <button class="btn btn-coral" type="submit" aria-label="Search multimedia">Search</button>
             </div>
         </form>
     </section>
