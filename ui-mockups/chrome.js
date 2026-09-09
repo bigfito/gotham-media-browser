@@ -37,9 +37,9 @@
         ${statusLegend("status-elasticsearch", "Elasticsearch", elasticsearchState)}
       </div>
       <nav class="header-nav" aria-label="Primary">
-        <a class="nav-link${page === "home" ? " is-active" : ""}" href="index.html">Search</a>
-        <a class="nav-link${page === "results-articles" ? " is-active" : ""}" href="results-articles.html">Article results</a>
-        <a class="nav-link${page === "results-multimedia" ? " is-active" : ""}" href="results-multimedia.html">Media results</a>
+        <a class="nav-link${page === "home" ? " is-active" : ""}" href="index.html">Home</a>
+        <a class="nav-link${page === "results-articles" ? " is-active" : ""}" href="results-articles.html">Article Search</a>
+        <a class="nav-link${page === "results-multimedia" ? " is-active" : ""}" href="results-multimedia.html">Media Search</a>
         <a class="nav-link${page === "journalist" ? " is-active" : ""}" href="journalist.html">Journalists</a>
         <a class="nav-link${page === "article" ? " is-active" : ""}" href="article.html">Articles</a>
       </nav>
@@ -66,7 +66,7 @@
       </p>
     </div>
     <div class="site-footer__nav">
-      <a href="index.html">Search</a> ·
+      <a href="index.html">Home</a> ·
       <a href="journalist.html">Journalists</a> ·
       <a href="article.html">Articles</a> ·
       <a href="https://opensource.org/licenses/MIT" rel="license">MIT</a>

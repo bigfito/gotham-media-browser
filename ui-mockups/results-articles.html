@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Article results — Gotham News & Media Browser</title>
+  <title>Article Search — Gotham News & Media Browser</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -51,9 +51,20 @@
           </div>
         </div>
 
+        <!-- Option value is the journalist ES _id (an exact nested term filter), label is the name. -->
         <div class="field" data-journalist-field>
-          <label for="journalist">Journalist (full-text filter)</label>
-          <input id="journalist" type="text" name="journalist" value="Lois Lane" />
+          <label for="journalist">Journalist (byline filter)</label>
+          <select id="journalist" name="journalist">
+            <option value="">Any journalist</option>
+            <option value="kO2tf6ABu3RGiYO5mWYH">Alexander Knox</option>
+            <option value="xO2uf6ABu3RGiYO5gmZd">Chase Meridian</option>
+            <option value="pu2uf6ABu3RGiYO5NGY0">Clark Kent</option>
+            <option value="mu2tf6ABu3RGiYO56WaV">Jack Ryder</option>
+            <option value="oe2uf6ABu3RGiYO5DmZ5" selected>Lois Lane</option>
+            <option value="r-2uf6ABu3RGiYO5VGb7">Sarah Essen</option>
+            <option value="le2tf6ABu3RGiYO5wmZE">Summer Gleeson</option>
+            <option value="fe2tf6ABu3RGiYO5c2Z5">Vicki Vale</option>
+          </select>
         </div>
       </form>
     </section>
@@ -64,7 +75,7 @@
           <input type="hidden" name="entity" value="article" />
           <input type="hidden" name="mode" value="fulltext" />
           <input type="hidden" name="q" value="transit funding" />
-          <input type="hidden" name="journalist" value="Lois Lane" />
+          <input type="hidden" name="journalist" value="oe2uf6ABu3RGiYO5DmZ5" />
           <input type="hidden" name="page" value="1" />
           <h2>Filters</h2>
           <div class="field">
