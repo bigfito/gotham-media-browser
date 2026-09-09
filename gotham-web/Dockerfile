@@ -28,6 +28,11 @@ RUN ./mvnw -q -B -pl gotham-web -am -DskipTests package
 # ---- Stage 2: slim runtime ----
 FROM eclipse-temurin:25-jdk AS run
 WORKDIR /app
+
+# ffprobe (ffmpeg package) measures upload duration for the AUDIO/VIDEO time caps. Without it the app
+# still runs — it falls back to the JDK WAV/MP4 parsers — but MP3/OGG/WebM would go unmeasured.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /src/gotham-web/target/gotham-web-*.jar /app/gotham-web.jar
 
 # Real secrets are provided at runtime (mounted secrets/ + env vars), never baked in.

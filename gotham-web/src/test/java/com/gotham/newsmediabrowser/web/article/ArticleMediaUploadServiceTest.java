@@ -11,8 +11,11 @@ import static org.mockito.Mockito.when;
 import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
 import com.gotham.newsmediabrowser.common.imagebind.ImageBindClient;
 import com.gotham.newsmediabrowser.common.imagebind.StubImageBindClient;
+import com.gotham.newsmediabrowser.common.config.MediaProbeProperties;
 import com.gotham.newsmediabrowser.common.media.GcsStorageService;
+import com.gotham.newsmediabrowser.common.media.MediaDurationProbe;
 import com.gotham.newsmediabrowser.common.media.MediaType;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,9 +32,12 @@ class ArticleMediaUploadServiceTest {
     private GcsStorageService storageService;
 
     private final ImageBindClient imageBindClient = new StubImageBindClient();
+    /** ffprobe disabled: these tests cover upload wiring, not duration measurement. */
+    private final MediaDurationProbe durationProbe =
+            new MediaDurationProbe(new MediaProbeProperties(false, "ffprobe", Duration.ofSeconds(5)));
 
     private ArticleMediaUploadService service() {
-        return new ArticleMediaUploadService(storageService, imageBindClient);
+        return new ArticleMediaUploadService(storageService, imageBindClient, durationProbe);
     }
 
     private ArticleMultimedia element(String id, String uri) {

@@ -138,7 +138,7 @@
         <section class="form-section">
             <h2>Multimedia</h2>
             <p class="form-section__hint">IMAGE ≤ 10&nbsp;MiB · AUDIO ≤ 20&nbsp;MiB / 5&nbsp;min · VIDEO ≤ 50&nbsp;MiB / 90&nbsp;s
-                (duration is checked when the container reports it — WAV, MP4).
+                (duration is measured when the file reports one).
                 Files upload to public GCS on save; ImageBind embeddings are stored with each asset.</p>
 
             <div class="media-grid" th:if="${!existingMultimedia.isEmpty()}">

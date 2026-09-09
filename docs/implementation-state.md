@@ -5,7 +5,7 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-09T05:10:00Z  
+**Last updated:** 2026-09-09T06:30:00Z  
 **Active phase:** P10 (6/6 done) — plan complete  
 **Prototype status:** `done`  
 **Next task:** none (42/42). Optional lab: full overnight `gotham-datagen` run on the M4 with Compose profile `datagen`.
@@ -28,7 +28,15 @@ The implementation plan is closed. Operator docs were synced to **42 / 42**. Rem
 - **Removed media is purged from GCS after the document commits**, not before.
 - `removeMediaIds` binds through `ArticleForm` again (its setter had been dropped, and a duplicate `@RequestParam` was compensating); `ImageBindHealthChecker` matches the JSON member instead of scanning the whole body; the Dockerfile copies `elasticsearch/` after `dependency:go-offline`.
 
-Verified live against ES Serverless + GCS: smoke green; rename with ImageBind on a dead port kept `article_embedding` and all six `asset_vector`s; an MP3 upload stored, captioned and purged on delete; vector session cleared on mode switch. **273 unit tests green.**
+Verified live against ES Serverless + GCS: smoke green; rename with ImageBind on a dead port kept `article_embedding` and all six `asset_vector`s; an MP3 upload stored, captioned and purged on delete; vector session cleared on mode switch.
+
+**Post-plan hardening, pass 3 (2026-09-09):**
+
+- **Real duration measurement.** `MediaDurationProbe` became a two-tier Spring bean: `ffprobe` first (reads MP3/OGG/FLAC/WebM/MOV/MKV), the old pure-Java parser — now `ContainerDurationParser` — as fallback. Config under `gotham.media.probe.*`; the `gotham-web` image installs `ffmpeg`. An undeterminable duration is still accepted, because the binary is not guaranteed on every host.
+- **Locked invariants in [`AGENTS.md`](../AGENTS.md).** Ten regression fixes are now listed with their rationale and the named test that pins each, plus a "do not revert" rule — the `Hard constraints` line that still told agents to *reindex* articles on a journalist cascade was itself repaired, since it would have walked the next agent straight back into the vector wipe.
+- **`mvnw` had CRLF in the working tree**, so `docker build` failed with `./mvnw: not found` (exit 127). Repo and `.gitattributes` were already correct; the checkout predated the rule. Fixed locally with `git checkout -- mvnw`; noted in [`engineering-notes.md`](./engineering-notes.md).
+
+**281 unit tests green** (149 / 85 / 47).
 
 Lab still optional:
 

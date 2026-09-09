@@ -78,15 +78,41 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
   opt-in) and adding databind for one flag would switch on JSON message conversion app-wide.
 - **Where:** `ImageBindHealthChecker`; `imagebind-service` `/health`.
 
+### `docker build` dies with `./mvnw: not found` on a Windows checkout
+- **Symptom:** the image build fails at `RUN chmod +x mvnw && ./mvnw ...` with exit 127, even though
+  `mvnw` is right there in the build context.
+- **Cause:** CRLF. `git ls-files --eol mvnw` showed `i/lf w/crlf` — the repo stores LF and
+  `.gitattributes` pins `mvnw text eol=lf`, but the working tree was checked out **before** that rule
+  existed, so `core.autocrlf` left CRLF on disk. Docker builds from the working tree, and `/bin/sh`
+  cannot find the interpreter `"/bin/sh"`.
+- **Fix (local working copy, not a repo change):** `rm mvnw && git checkout -- mvnw`, then confirm
+  `git ls-files --eol mvnw` reads `w/lf`. `git add --renormalize .` fixes a whole stale checkout.
+- **Watch for:** any file `.gitattributes` marks `eol=lf` that a container executes — check with
+  `git ls-files --eol | grep "eol=lf" | grep "w/crlf"` before blaming the Dockerfile.
+- **Where:** `mvnw`, `.gitattributes`, `gotham-web/Dockerfile`; hit 2026-09-09 on Windows.
+
 ### Upload duration limits can only be best-effort
 - **Symptom:** every MP3 upload was refused with a branded 413 — "duration could not be determined".
 - **Cause:** `MediaDurationProbe` reads WAV/AIFF/AU (Java Sound SPI) and the MP4/MOV `mvhd` box only,
   but `MediaType.fromContentType` accepts any `audio/*` / `video/*` and the form offers the same. Making
   an unknown duration a hard rejection therefore banned MP3, OGG, FLAC and WebM.
-- **Fix:** `GcsStorageService` enforces the duration cap when a duration was parsed and otherwise stores
-  the object on its size cap alone, logging a WARN. The size cap (20 MB audio / 50 MB video) already
-  bounds the file; a demo-only time cap is not worth refusing formats the UI invites.
-- **Where:** `GcsStorageService.enforceLimits`, `MediaDurationProbe`; relaxed 2026-09-09.
+- **Fix, part 1:** `GcsStorageService` enforces the duration cap when a duration was parsed and
+  otherwise stores the object on its size cap alone, logging a WARN. The size cap (20 MB audio /
+  50 MB video) already bounds the file; a demo-only time cap is not worth refusing formats the UI
+  invites.
+- **Fix, part 2 — real measurement:** `MediaDurationProbe` is now a two-tier Spring bean. Tier 1 is an
+  **`ffprobe` subprocess** (`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1`),
+  which reads MP3/OGG/FLAC/WebM/MOV/MKV; tier 2 is the old pure-Java `ContainerDurationParser` for
+  hosts with no ffmpeg. Configured under `gotham.media.probe.*`; the `gotham-web` image installs
+  `ffmpeg` so the containerized path always has it. Unknown stays *accepted* — ffprobe makes unknown
+  rare, it does not make the binary a hard dependency.
+- **Subprocess hygiene (the part that bites):** build the command as an argument **list**, never a
+  shell string; close stdin so the child cannot block waiting on input; send stderr to
+  `Redirect.DISCARD` so a file that provokes pages of diagnostics cannot fill an undrained pipe and
+  wedge the writer; drain stdout *before* `waitFor`; use the timeout overload of `waitFor` and
+  `destroyForcibly` in a `finally`. Skip any one of these and a bad upload hangs a request thread.
+- **Where:** `GcsStorageService.enforceLimits`, `MediaDurationProbe`, `ContainerDurationParser`,
+  `MediaProbeProperties`, `gotham-web/Dockerfile`; relaxed then properly measured 2026-09-09.
 
 
 ### `java.net.http` defaults to HTTP/2 and drops the POST body against uvicorn

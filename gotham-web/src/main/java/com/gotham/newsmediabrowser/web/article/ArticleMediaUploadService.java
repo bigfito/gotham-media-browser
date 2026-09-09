@@ -20,9 +20,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Turns uploaded article files into nested {@link ArticleMultimedia} elements: each file is stored in
- * GCS and given an app-assigned id and a position. Image dimensions and audio/video duration are
- * filled in best-effort so GCS duration limits can be enforced. ImageBind embeddings are attached
- * when the embedder is up.
+ * GCS and given an app-assigned id and a position. Image dimensions come from ImageIO and audio/video
+ * duration from {@link MediaDurationProbe} (ffprobe, falling back to the JDK container parsers), so
+ * {@link GcsStorageService} can apply its time caps. ImageBind embeddings are attached when the
+ * embedder is up.
  */
 @Service
 public class ArticleMediaUploadService {
@@ -31,10 +32,13 @@ public class ArticleMediaUploadService {
 
     private final GcsStorageService storageService;
     private final ImageBindClient imageBindClient;
+    private final MediaDurationProbe durationProbe;
 
-    public ArticleMediaUploadService(GcsStorageService storageService, ImageBindClient imageBindClient) {
+    public ArticleMediaUploadService(GcsStorageService storageService, ImageBindClient imageBindClient,
+                                     MediaDurationProbe durationProbe) {
         this.storageService = storageService;
         this.imageBindClient = imageBindClient;
+        this.durationProbe = durationProbe;
     }
 
     /** Uploads files with no descriptive metadata. */
@@ -124,7 +128,8 @@ public class ArticleMediaUploadService {
     }
 
     private ArticleMultimedia store(PreparedUpload item) {
-        Duration duration = MediaDurationProbe.probe(item.type(), item.data()).orElse(null);
+        Duration duration = durationProbe.probe(item.type(), item.data(), item.originalFilename())
+                .orElse(null);
         String storageUri = storageService.upload(
                 item.type(), item.originalFilename(), item.contentType(), item.data(), duration);
 

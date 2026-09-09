@@ -131,7 +131,8 @@ Status `DRAFT` | `PUBLISHED` | `ARCHIVED` is filterable on public search.
 **Shipped through P8:** landing + article/multimedia **full-text** (`ArticleFullTextService` / `MultimediaFullTextService`), **semantic kNN** (`ArticleSemanticSearchService` / `MultimediaSemanticSearchService`), **hybrid RRF** (`ArticleHybridSearchService` / `MultimediaHybridSearchService`), and multimedia **file→vector** (`MultimediaVectorSearchService`) — all on `GET/POST /results` Thymeleaf. Article `mode=vector` → HTTP 400 branded page.
 
 Local upload limits (ImageBind CPU): IMAGE 10 MiB · AUDIO 20 MiB / 5 min · VIDEO 50 MiB / 90 s.
-Size is always enforced; duration only when the container can be parsed (WAV/AIFF/AU, MP4/MOV).
+Size is always enforced; duration is measured with `ffprobe` (JDK WAV/MP4 parsers as fallback) and skipped
+when it cannot be determined.
 
 ---
 

@@ -119,9 +119,10 @@ Chosen for **local CPU** synchronous ImageBind:
 
 Reject uploads over limit on `/article` forms with clear validation messages.
 
-The **size** caps are absolute. The **duration** caps are best-effort: `MediaDurationProbe` reads WAV/AIFF/AU
-and the MP4/MOV `mvhd` box, and a container it cannot parse (MP3, OGG, WebM) is stored on its size cap alone
-with a WARN rather than refused.
+The **size** caps are absolute. The **duration** caps are measured by `MediaDurationProbe`, which runs
+`ffprobe` (bundled in the `gotham-web` image) and falls back to pure-Java WAV/MP4 parsing when ffmpeg is not
+installed. A duration that still cannot be determined is stored on its size cap alone with a WARN, never
+refused — see [`engineering-notes.md`](./engineering-notes.md).
 
 ## Article status
 

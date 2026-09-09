@@ -125,8 +125,8 @@ Full-text UI checkbox values such as `section` / `tags` / `location` / `source` 
 | AUDIO | 20 MiB / 5 min* |
 | VIDEO | 50 MiB / 90 s* |
 
-\* Duration is enforced only when it can be parsed from the container (WAV/AIFF/AU, MP4/MOV). An MP3, OGG or
-WebM upload is accepted on its size cap.
+\* Duration is measured with `ffprobe` (shipped in the app image), falling back to pure-Java WAV/MP4 parsing
+on a host without ffmpeg. If it still cannot be determined the upload is accepted on its size cap alone.
 
 ## Wireflow
 

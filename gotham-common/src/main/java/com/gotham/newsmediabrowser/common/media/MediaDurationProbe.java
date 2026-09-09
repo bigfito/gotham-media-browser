@@ -1,187 +1,201 @@
 package com.gotham.newsmediabrowser.common.media;
 
-import java.io.ByteArrayInputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import com.gotham.newsmediabrowser.common.config.MediaProbeProperties;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
- * Best-effort playback duration for upload limit checks. Images have no duration. Audio prefers the
- * Java Sound SPI (WAV/AIFF/AU); WAV is also parsed directly. Video reads an MP4/MOV {@code mvhd}
- * box when present.
+ * Measures the playback duration of an uploaded asset so {@link GcsStorageService} can enforce the
+ * per-type time caps.
+ *
+ * <p>Two tiers, in order:
+ *
+ * <ol>
+ *   <li><strong>{@code ffprobe}</strong> — the real measurement. Handles every container the demo can
+ *       receive (MP3, OGG, FLAC, WebM, MOV, MKV), not just the two the JDK can parse. Run as a
+ *       subprocess over a temp file, with a hard timeout and the process destroyed on the way out.</li>
+ *   <li><strong>{@link ContainerDurationParser}</strong> — pure-Java fallback for when ffprobe is
+ *       absent or disabled. WAV/AIFF/AU and MP4/MOV only.</li>
+ * </ol>
+ *
+ * <p>An empty result still means "unknown", and an unknown duration is <em>not</em> a rejection: the
+ * caller stores the object on its size cap alone. ffprobe makes unknown rare; it does not make the
+ * cap mandatory, because the binary is not guaranteed to be on every host that runs this app.
+ *
+ * <p>The subprocess is built from an argument list (never a shell string), and its only variable
+ * argument is a temp file this class created — nothing user-supplied reaches the command line.
  */
-public final class MediaDurationProbe {
+@Component
+public class MediaDurationProbe {
 
     private static final Logger log = LoggerFactory.getLogger(MediaDurationProbe.class);
 
-    private MediaDurationProbe() {
+    private final MediaProbeProperties properties;
+    /** Tri-state cache of the availability check: null = not probed yet. */
+    private volatile Boolean ffprobeAvailable;
+
+    public MediaDurationProbe(MediaProbeProperties properties) {
+        this.properties = properties != null ? properties : MediaProbeProperties.defaults();
     }
 
     /**
-     * @return empty when the type has no duration (IMAGE) or the container cannot be parsed
+     * @param type             media kind; IMAGE always returns empty (no duration)
+     * @param data             the uploaded bytes
+     * @param originalFilename used only for the temp file extension, which helps ffprobe pick a
+     *                         demuxer for containers it cannot sniff; may be {@code null}
+     * @return the measured duration, or empty when it could not be determined
      */
-    public static Optional<Duration> probe(MediaType type, byte[] data) {
+    public Optional<Duration> probe(MediaType type, byte[] data, String originalFilename) {
         if (type == null || type == MediaType.IMAGE || data == null || data.length == 0) {
             return Optional.empty();
         }
-        if (type == MediaType.AUDIO) {
-            Optional<Duration> fromSpi = fromAudioSystem(data);
-            if (fromSpi.isPresent()) {
-                return fromSpi;
+        if (properties.enabled() && ffprobeAvailable()) {
+            Optional<Duration> measured = runFfprobe(data, originalFilename);
+            if (measured.isPresent()) {
+                return measured;
             }
-            return wavDuration(data);
+            log.debug("ffprobe reported no duration for {} ({} bytes); falling back to the container parser",
+                    type, data.length);
         }
-        return mp4Duration(data);
+        return ContainerDurationParser.probe(type, data);
     }
 
-    private static Optional<Duration> fromAudioSystem(byte[] data) {
-        try {
-            AudioFileFormat format = AudioSystem.getAudioFileFormat(new ByteArrayInputStream(data));
-            long frames = format.getFrameLength();
-            float frameRate = format.getFormat().getFrameRate();
-            if (frames > 0 && frameRate > 0) {
-                return Optional.of(Duration.ofMillis(Math.round(frames / frameRate * 1000.0)));
-            }
-        } catch (UnsupportedAudioFileException | java.io.IOException e) {
-            log.debug("Java Sound could not read audio duration: {}", e.toString());
+    /** True once {@code <path> -version} has run successfully; the result is cached for the JVM. */
+    boolean ffprobeAvailable() {
+        Boolean cached = ffprobeAvailable;
+        if (cached != null) {
+            return cached;
         }
-        return Optional.empty();
-    }
-
-    static Optional<Duration> wavDuration(byte[] data) {
-        if (data.length < 44 || !ascii(data, 0, 4).equals("RIFF") || !ascii(data, 8, 4).equals("WAVE")) {
-            return Optional.empty();
-        }
-        int offset = 12;
-        Integer byteRate = null;
-        Integer dataBytes = null;
-        while (offset + 8 <= data.length) {
-            String chunk = ascii(data, offset, 4);
-            int size = leU32(data, offset + 4);
-            int body = offset + 8;
-            if ("fmt ".equals(chunk) && body + 16 <= data.length) {
-                byteRate = leU32(data, body + 8);
-            } else if ("data".equals(chunk)) {
-                dataBytes = size;
-            }
-            long next = (long) body + Integer.toUnsignedLong(size);
-            if ((size & 1) == 1) {
-                next++;
-            }
-            if (next <= offset || next > data.length) {
-                break;
-            }
-            offset = (int) next;
-        }
-        if (byteRate != null && byteRate > 0 && dataBytes != null && dataBytes >= 0) {
-            long millis = Math.round(dataBytes * 1000.0 / byteRate);
-            return Optional.of(Duration.ofMillis(millis));
-        }
-        return Optional.empty();
-    }
-
-    static Optional<Duration> mp4Duration(byte[] data) {
-        try {
-            return findMvhd(data, 0, data.length);
-        } catch (RuntimeException e) {
-            log.debug("MP4 duration parse failed: {}", e.toString());
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<Duration> findMvhd(byte[] data, int start, int end) {
-        int offset = start;
-        while (offset + 8 <= end) {
-            long size = u32(data, offset);
-            String type = ascii(data, offset + 4, 4);
-            int header = 8;
-            if (size == 1) {
-                if (offset + 16 > end) {
-                    return Optional.empty();
+        synchronized (this) {
+            if (ffprobeAvailable == null) {
+                ffprobeAvailable = execute(List.of(properties.path(), "-version")).isPresent();
+                if (!ffprobeAvailable) {
+                    log.info("ffprobe ({}) is not available; duration checks fall back to the WAV/MP4 "
+                            + "parser and other containers upload on their size cap alone.", properties.path());
                 }
-                size = u64(data, offset + 8);
-                header = 16;
-            } else if (size == 0) {
-                size = end - offset;
             }
-            if (size < header) {
-                return Optional.empty();
-            }
-            int boxEnd = (int) Math.min(end, offset + size);
-            int payload = offset + header;
-            if ("moov".equals(type) || "trak".equals(type) || "mdia".equals(type)) {
-                Optional<Duration> nested = findMvhd(data, payload, boxEnd);
-                if (nested.isPresent()) {
-                    return nested;
-                }
-            } else if ("mvhd".equals(type)) {
-                return parseMvhd(data, payload, boxEnd);
-            }
-            if (size > Integer.MAX_VALUE - offset) {
-                break;
-            }
-            offset += (int) size;
-            if (offset <= start) {
-                break;
-            }
+            return ffprobeAvailable;
         }
-        return Optional.empty();
     }
 
-    private static Optional<Duration> parseMvhd(byte[] data, int payload, int boxEnd) {
-        if (payload >= boxEnd) {
+    private Optional<Duration> runFfprobe(byte[] data, String originalFilename) {
+        Path temp = null;
+        try {
+            temp = Files.createTempFile("gotham-probe-", extensionOf(originalFilename));
+            Files.write(temp, data);
+            return execute(List.of(
+                    properties.path(),
+                    "-v", "error",
+                    "-show_entries", "format=duration",
+                    "-of", "default=noprint_wrappers=1:nokey=1",
+                    temp.toAbsolutePath().toString()))
+                    .flatMap(MediaDurationProbe::parseSeconds);
+        } catch (IOException e) {
+            log.warn("Could not stage the upload for ffprobe: {}", e.toString());
+            return Optional.empty();
+        } finally {
+            deleteQuietly(temp);
+        }
+    }
+
+    /**
+     * Runs the command and returns its stdout, or empty on a non-zero exit, a timeout, or a missing
+     * binary.
+     *
+     * <p>Three things keep a stuck subprocess from becoming a stuck request thread: stdin is closed so
+     * ffprobe can never wait on input, stderr is discarded by the OS so a file that provokes pages of
+     * diagnostics cannot fill an undrained pipe and block the writer, and stdout is fully drained
+     * before {@code waitFor}. The process is destroyed on every exit path.
+     */
+    private Optional<String> execute(List<String> command) {
+        Process process = null;
+        try {
+            process = new ProcessBuilder(command)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .start();
+            process.getOutputStream().close();
+            String stdout;
+            try (InputStream in = process.getInputStream()) {
+                stdout = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            }
+            if (!process.waitFor(properties.timeout().toMillis(), TimeUnit.MILLISECONDS)) {
+                log.warn("ffprobe timed out after {}s", properties.timeout().toSeconds());
+                return Optional.empty();
+            }
+            if (process.exitValue() != 0) {
+                log.debug("ffprobe exited {} for command {}", process.exitValue(), command.get(0));
+                return Optional.empty();
+            }
+            return Optional.of(stdout);
+        } catch (IOException e) {
+            log.debug("Could not run {}: {}", command.get(0), e.toString());
+            return Optional.empty();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.debug("Interrupted while waiting for ffprobe");
+            return Optional.empty();
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+            }
+        }
+    }
+
+    /** Parses the ffprobe {@code format=duration} output (seconds as a decimal, or {@code N/A}). */
+    static Optional<Duration> parseSeconds(String output) {
+        if (output == null) {
             return Optional.empty();
         }
-        int version = data[payload] & 0xff;
-        int timescale;
-        long durationUnits;
-        if (version == 1) {
-            if (payload + 3 + 8 + 8 + 4 + 8 > boxEnd) {
-                return Optional.empty();
-            }
-            int p = payload + 4;
-            p += 16;
-            timescale = (int) u32(data, p);
-            durationUnits = u64(data, p + 4);
-        } else {
-            if (payload + 4 + 4 + 4 + 4 + 4 > boxEnd) {
-                return Optional.empty();
-            }
-            int p = payload + 4;
-            p += 8;
-            timescale = (int) u32(data, p);
-            durationUnits = u32(data, p + 4);
-        }
-        if (timescale <= 0 || durationUnits <= 0) {
+        String value = output.strip();
+        if (value.isEmpty() || "n/a".equals(value.toLowerCase(Locale.ROOT))) {
             return Optional.empty();
         }
-        long millis = Math.round(durationUnits * 1000.0 / timescale);
-        return Optional.of(Duration.ofMillis(millis));
-    }
-
-    private static String ascii(byte[] data, int offset, int len) {
-        if (offset < 0 || offset + len > data.length) {
-            return "";
+        try {
+            double seconds = Double.parseDouble(value);
+            if (!Double.isFinite(seconds) || seconds <= 0) {
+                return Optional.empty();
+            }
+            return Optional.of(Duration.ofMillis(Math.round(seconds * 1000.0)));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
         }
-        return new String(data, offset, len, StandardCharsets.US_ASCII);
     }
 
-    private static int leU32(byte[] data, int offset) {
-        return ByteBuffer.wrap(data, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+    /** Lower-cased dot-extension of the upload, or {@code .bin}; never anything but [a-z0-9]. */
+    static String extensionOf(String originalFilename) {
+        if (originalFilename == null) {
+            return ".bin";
+        }
+        int dot = originalFilename.lastIndexOf('.');
+        if (dot < 0 || dot == originalFilename.length() - 1) {
+            return ".bin";
+        }
+        String extension = originalFilename.substring(dot + 1).toLowerCase(Locale.ROOT);
+        if (extension.length() > 5 || !extension.matches("[a-z0-9]+")) {
+            return ".bin";
+        }
+        return "." + extension;
     }
 
-    private static long u32(byte[] data, int offset) {
-        return ByteBuffer.wrap(data, offset, 4).order(ByteOrder.BIG_ENDIAN).getInt() & 0xffff_ffffL;
-    }
-
-    private static long u64(byte[] data, int offset) {
-        return ByteBuffer.wrap(data, offset, 8).order(ByteOrder.BIG_ENDIAN).getLong();
+    private static void deleteQuietly(Path path) {
+        if (path == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.debug("Could not delete probe temp file {}: {}", path, e.toString());
+        }
     }
 }
