@@ -23,7 +23,7 @@
 | GCS credentials | Bucket/project: placeholders in properties (real values in untracked override); SA JSON **secret file** `secrets/gcp-sa.json` |
 | Landing | `/` — two panels: articles · multimedia |
 | Journalist CRUD | `/journalist` — full CRUD on `gotham-journalists` |
-| Journalist delete | **Cascade-strip** nested bylines + reindex articles, then delete master |
+| Journalist delete | **Cascade-strip** nested bylines via a partial byline update (never a full reindex), then delete master |
 | Article CRUD | `/article` — full CRUD on denormalized `gotham-media-browser` docs (status: DRAFT / PUBLISHED / ARCHIVED) |
 | Results | `/results` — filters (incl. **status** + **journalist** on article FTS), sort, pagination |
 | Fault tolerance | Branded error pages with reason on **all** endpoints |

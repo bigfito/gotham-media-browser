@@ -93,8 +93,9 @@ _id  (ES auto)
 | Event | Actions |
 |-------|---------|
 | Journalist create | Index `gotham-journalists` (auto `_id`) |
-| Journalist update | Update journalist doc; reindex all articles nesting that `journalist_id` |
-| Journalist delete | **Cascade-strip** nested bylines from articles, rebuild projections, reindex, then delete journalist |
+| Journalist update | Update journalist doc, then patch the bylines on every article nesting that `journalist_id` |
+| Journalist delete | **Cascade-strip** nested bylines from articles, then delete journalist |
+| *(both cascades)* | **Partial** `update` carrying only `journalists`, `journalist_names`, `journalist_bios`, `updated_at` — a full reindex would recompute `article_embedding` and can wipe it when ImageBind is down |
 | Article create | Resolve journalists by id; upload media; embed; index article (auto `_id`) |
 | Article update | Same; reuse article `_id` |
 | Media add/update/delete | GCS + embed + reindex parent article `_id` |

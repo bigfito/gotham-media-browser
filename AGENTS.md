@@ -6,7 +6,7 @@ Instructions for AI coding agents (Claude Code, Google Antigravity, Cursor, Code
 
 Implement the **Gotham News & Media Browser** prototype from the approved design under `gotham-news-media-browser/`.
 
-**Progress (2026-09-08):** **P0–P10 complete (42 / 42)** — all four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es` / `it-imagebind` / `it-datagen-helpers` wired; `gotham-datagen` console + Compose profile `datagen` load via HTTP CRUD. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
+**Progress (2026-09-09):** **P0–P10 complete (42 / 42)** plus three post-plan hardening passes — read **[Locked invariants](#locked-invariants--do-not-simplify-these)** below before touching the journalist cascade, media uploads, or vector search. All four search modes ship; `docs/demo/` has fixtures + `seed.sh` + `smoke.sh` + `runbook.md`; Failsafe `it-es` / `it-imagebind` / `it-datagen-helpers` wired; `gotham-datagen` console + Compose profile `datagen` load via HTTP CRUD. Always re-read [`docs/implementation-state.md`](docs/implementation-state.md) before picking work.
 
 ## Read in this order
 

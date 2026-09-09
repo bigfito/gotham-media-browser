@@ -159,7 +159,7 @@ JOURNALIST ——< ARTICLE_AUTHORSHIP >—— ARTICLE
 ### Cascades (logical → ES write rules)
 - Delete `ARTICLE` → remove nested multimedia (+ GCS objects) and the article document  
 - Delete nested multimedia element → drop from parent article + delete GCS object  
-- Delete `JOURNALIST` → **cascade-strip**: remove nested `journalists[]` entries with that `journalist_id` from all articles, rebuild journalist projections, reindex those articles, then delete the `gotham-journalists` document
+- Delete `JOURNALIST` → **cascade-strip**: remove nested `journalists[]` entries with that `journalist_id` from all articles and rebuild the journalist projections — as a **partial** update of just those fields, never a full reindex — then delete the `gotham-journalists` document
 
 ## Enumerations
 

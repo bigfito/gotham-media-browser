@@ -106,7 +106,7 @@ Total page count = `ceil(hits.total.value / size)`. Changing `size` resets `page
 | `bio` | Optional text |
 | `_id` | Elasticsearch auto-id (read-only in UI) |
 
-Delete: **cascade-strip** — remove this `journalist_id` from all nesting articles, rebuild journalist projections, reindex those articles, then delete the `gotham-journalists` document.
+Delete: **cascade-strip** — remove this `journalist_id` from all nesting articles and rebuild the journalist projections (a **partial** update of just the byline fields, never a full reindex), then delete the `gotham-journalists` document.
 
 ## 4. Article CRUD (`/article`) → `gotham-media-browser`
 

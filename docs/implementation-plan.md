@@ -279,7 +279,13 @@ See [`testing-strategy.md`](./testing-strategy.md).
 - **Do:** `GET/POST /journalist/{id}` for updates; on update, reindex nested byline snapshots in every article nesting that `journalist_id`.  
 - **Do:** `POST /journalist/{id}/delete` **cascade-strips**: find articles with nested `journalists.journalist_id` = id (via the P4-T02 nested query) → remove nested element → rebuild journalist projections → reindex articles → delete journalist master doc.  
 - **Verification:** Update persists and refreshes article snapshots; after delete the journalist is gone and previously linked articles no longer nest that id; failures use the branded error page.  
-- **Depends on:** P4-T02, P3-T03
+- **Depends on:** P4-T02, P3-T03  
+- **Superseded 2026-09-09 (post-plan hardening):** the word *reindex* above is now wrong. Both cascades
+  write a **partial** update (`ArticleRepository.updateJournalistBylines`) carrying only the byline
+  fields. Reindexing whole documents re-ran `toDocument`, which recomputes `article_embedding` from
+  ImageBind and therefore wiped it on every affected article whenever the embedder was down. See
+  invariant 1 in [`AGENTS.md`](../AGENTS.md) and [`engineering-notes.md`](./engineering-notes.md);
+  the task itself stays as executed, this note only corrects the mechanism.
 
 ### P4-T04 — Article list + create/edit (text + metadata + bylines)
 - **Do:** Port forms without media upload (or disabled). Nest journalist snapshots on save. Match `ui-mockups/article*.html` (media fields deferred to P5).  
