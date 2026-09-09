@@ -15,10 +15,12 @@ COPY mvnw pom.xml ./
 COPY gotham-common/pom.xml gotham-common/pom.xml
 COPY gotham-web/pom.xml gotham-web/pom.xml
 COPY gotham-datagen/pom.xml gotham-datagen/pom.xml
-COPY elasticsearch/ elasticsearch/
 RUN chmod +x mvnw && ./mvnw -q -B -pl gotham-web -am -DskipTests dependency:go-offline
 
 # Now copy sources and package (skip tests: image builds must not require live ES/GCS).
+# elasticsearch/*.mapping.json is a gotham-common build resource, so it must be in the context;
+# it lands after go-offline so editing a mapping does not invalidate the dependency layer.
+COPY elasticsearch/ elasticsearch/
 COPY gotham-common/src gotham-common/src
 COPY gotham-web/src gotham-web/src
 RUN ./mvnw -q -B -pl gotham-web -am -DskipTests package

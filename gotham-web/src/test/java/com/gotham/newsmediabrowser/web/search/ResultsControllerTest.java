@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -393,6 +394,46 @@ class ResultsControllerTest {
         verify(multimediaVectorSearchService, never()).embed(any());
         verify(multimediaVectorSearchService).search(eq(stored), any(), any(), any(), any(), any(), any(), eq(2),
                 anyInt());
+    }
+
+    @Test
+    void leavingVectorModeDropsTheSessionVector() throws Exception {
+        float[] stored = new float[] {0.1f, 0.2f};
+        when(multimediaFullTextService.search(any()))
+                .thenReturn(new MultimediaSearchPage(List.of(), 0));
+
+        // A text search while a vector is parked in session must clear it, so returning to vector
+        // mode later cannot silently re-rank by a file the user has moved on from.
+        mockMvc.perform(get("/results")
+                        .param("entity", "multimedia")
+                        .param("mode", "fulltext")
+                        .param("q", "transit")
+                        .sessionAttr(ResultsController.VECTOR_QUERY_SESSION, stored))
+                .andExpect(status().isOk())
+                .andExpect(request().sessionAttributeDoesNotExist(ResultsController.VECTOR_QUERY_SESSION));
+
+        verify(multimediaVectorSearchService, never()).search(any(float[].class), any(), any(), any(), any(),
+                any(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void vectorModeNamesTheFileItIsRankingBy() throws Exception {
+        when(multimediaVectorSearchService.embed(any())).thenReturn(new float[8]);
+        when(multimediaVectorSearchService.search(any(float[].class), any(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt()))
+                .thenReturn(new MultimediaSearchPage(List.of(), 0));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "media", "chamber.png", "image/png", new byte[] {1, 2, 3, 4});
+
+        mockMvc.perform(multipart("/results")
+                        .file(file)
+                        .param("entity", "multimedia")
+                        .param("mode", "vector"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("chamber.png")))
+                .andExpect(request().sessionAttribute(
+                        ResultsController.VECTOR_QUERY_NAME_SESSION, "chamber.png"));
     }
 
     @Test

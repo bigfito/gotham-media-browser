@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.gotham.newsmediabrowser.common.error.DependencyException;
 import com.gotham.newsmediabrowser.common.imagebind.ImageBindClient;
@@ -33,6 +34,11 @@ import org.springframework.stereotype.Repository;
  * without the article vector (logged at WARN), so Elasticsearch stays the only hard CRUD dependency.
  * Writes refresh immediately for a consistent list view at this prototype's volume; any Elasticsearch
  * failure surfaces as a {@link DependencyException} (HTTP 503).
+ *
+ * <p>The journalist cascade is the one write that does <em>not</em> go through {@link #update(Article)}:
+ * {@link #updateJournalistBylines(String, List)} patches only the byline fields, so neither
+ * {@code article_embedding} nor the nested {@code asset_vector}s are rewritten when a journalist is
+ * renamed or stripped.
  */
 @Repository
 public class ArticleRepository {
@@ -110,6 +116,52 @@ public class ArticleRepository {
     }
 
     /**
+     * Replaces only the byline data of one article: the nested {@code journalists[]} array, the two
+     * denormalized projections derived from it, and {@code updated_at}.
+     *
+     * <p>This is a <strong>partial</strong> update on purpose. The journalist cascade (edit / delete)
+     * touches every article a journalist bylines, and a full reindex through {@link #update(Article)}
+     * would re-run {@link #toDocument(Article)} — which recomputes {@code article_embedding} from
+     * ImageBind and rewrites the whole {@code multimedia[]} array. With the embedder down that wipes
+     * every affected article's semantic vector, and any gap in the read path wipes the per-asset
+     * {@code asset_vector}s. Writing just these four fields leaves both vector fields untouched no
+     * matter what ImageBind is doing.
+     *
+     * @param articleId   the article to patch
+     * @param journalists the complete new byline list (replaces the stored array)
+     */
+    public void updateJournalistBylines(String articleId, List<ArticleJournalist> journalists) {
+        if (articleId == null || articleId.isBlank()) {
+            throw new IllegalArgumentException("Cannot update bylines without an article id.");
+        }
+        int bylineCount = journalists != null ? journalists.size() : 0;
+        Map<String, Object> partial = bylinePatch(journalists);
+        try {
+            client.update(request -> request
+                    .index(INDEX)
+                    .id(articleId)
+                    .doc(partial)
+                    .refresh(Refresh.True), Map.class);
+            log.info("Refreshed bylines on article id {} ({} byline(s))", articleId, bylineCount);
+        } catch (IOException | ElasticsearchException e) {
+            throw new DependencyException(SERVICE, e);
+        }
+    }
+
+    /** Builds the byline-only partial document written by {@link #updateJournalistBylines}. */
+    Map<String, Object> bylinePatch(List<ArticleJournalist> journalists) {
+        List<ArticleJournalist> safe = journalists != null ? journalists : List.of();
+        Map<String, Object> patch = new LinkedHashMap<>();
+        patch.put("journalists", ArticleProjections.orderedByByline(safe).stream()
+                .map(this::toNestedJournalist)
+                .toList());
+        patch.put("journalist_names", ArticleProjections.journalistNames(safe));
+        patch.put("journalist_bios", ArticleProjections.journalistBios(safe));
+        patch.put("updated_at", toIso(Instant.now()));
+        return patch;
+    }
+
+    /**
      * Deletes an article by id.
      *
      * @return {@code true} if a document was deleted, {@code false} if none existed
@@ -136,14 +188,15 @@ public class ArticleRepository {
 
     /**
      * Returns every article that nests the given journalist id, sweeping all pages. Used by journalist
-     * update and cascade-strip. Vectors are included so a reindex does not wipe {@code asset_vector}
-     * (ES 9 serverless omits dense_vector from {@code _source} unless requested).
+     * update and cascade-strip, both of which rewrite bylines through
+     * {@link #updateJournalistBylines(String, List)} — a partial update that never rewrites the vector
+     * fields — so the sweep itself does not need to carry them.
      */
     public List<Article> findByJournalistId(String journalistId) {
         List<Article> all = new ArrayList<>();
         int from = 0;
         while (true) {
-            ArticlePage page = findAll(null, journalistId, from, SWEEP_PAGE_SIZE, true);
+            ArticlePage page = findAll(null, journalistId, from, SWEEP_PAGE_SIZE, false);
             all.addAll(page.items());
             from += SWEEP_PAGE_SIZE;
             if (from >= page.total() || page.items().isEmpty()) {
@@ -168,9 +221,8 @@ public class ArticleRepository {
         }
     }
 
-    co.elastic.clients.elasticsearch.core.SearchRequest buildListRequest(
-            Query query, int from, int size, boolean includeVectors) {
-        return co.elastic.clients.elasticsearch.core.SearchRequest.of(request -> request
+    SearchRequest buildListRequest(Query query, int from, int size, boolean includeVectors) {
+        return SearchRequest.of(request -> request
                 .index(INDEX)
                 .query(query)
                 .from(from)

@@ -167,7 +167,6 @@ public class ArticleController {
             @RequestParam(name = "newMediaDescription", required = false) List<String> newMediaDescription,
             @RequestParam(name = "newMediaAltText", required = false) List<String> newMediaAltText,
             @RequestParam(name = "newMediaCredit", required = false) List<String> newMediaCredit,
-            @RequestParam(name = "removeMediaIds", required = false) List<String> requestedRemoveIds,
             Model model,
             RedirectAttributes redirectAttributes) {
 
@@ -175,10 +174,7 @@ public class ArticleController {
                 .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
 
         Map<String, Journalist> journalists = journalistsById();
-        List<String> removeSource = requestedRemoveIds != null && !requestedRemoveIds.isEmpty()
-                ? requestedRemoveIds
-                : articleForm.getRemoveMediaIds();
-        Set<String> removeIds = Set.copyOf(removeSource);
+        Set<String> removeIds = Set.copyOf(articleForm.getRemoveMediaIds());
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
             addFormChrome(model, "Edit article", "/article/" + id, id);
@@ -203,20 +199,26 @@ public class ArticleController {
         List<ArticleMultimedia> removed = existing.multimedia().stream()
                 .filter(m -> removeIds.contains(m.multimediaElementId()))
                 .toList();
-        mediaUploadService.remove(removed);
         List<ArticleMultimedia> merged = new ArrayList<>(retained);
         merged.addAll(uploaded);
         Article toSave = built.get().withId(id)
                 .withTimestamps(existing.createdAt(), existing.updatedAt())
                 .withMultimedia(merged);
+
+        Article saved;
         try {
-            Article saved = articleRepository.update(toSave);
-            redirectAttributes.addFlashAttribute("flash", saveFlash("Updated", saved.title(), merged));
-            return "redirect:/article";
+            saved = articleRepository.update(toSave);
         } catch (RuntimeException e) {
+            // The document still references every object it did before, so roll back only this
+            // request's uploads and leave the removed ones in the bucket for the retry to purge.
             mediaUploadService.remove(uploaded);
             throw e;
         }
+        // Purge the de-selected objects only once the document that pointed at them is committed; a
+        // failure here leaves unreferenced objects behind, which is cheaper than broken media links.
+        mediaUploadService.remove(removed);
+        redirectAttributes.addFlashAttribute("flash", saveFlash("Updated", saved.title(), merged));
+        return "redirect:/article";
     }
 
     /**

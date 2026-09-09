@@ -119,6 +119,10 @@ Chosen for **local CPU** synchronous ImageBind:
 
 Reject uploads over limit on `/article` forms with clear validation messages.
 
+The **size** caps are absolute. The **duration** caps are best-effort: `MediaDurationProbe` reads WAV/AIFF/AU
+and the MP4/MOV `mvhd` box, and a container it cannot parse (MP3, OGG, WebM) is stored on its size cap alone
+with a WARN rather than refused.
+
 ## Article status
 
 `DRAFT` | `PUBLISHED` | `ARCHIVED`
@@ -145,8 +149,9 @@ Journalist: **not** a results entity. On article full-text, `journalist` param f
 
 ### Journalist CRUD
 - Create/Update/Delete on `gotham-journalists`  
-- On update: find articles with that `journalists.journalist_id` and reindex nested snapshots  
-- On delete: **cascade-strip** nested bylines from all referencing articles, rebuild projections, reindex, then delete journalist
+- On update: save the master, then find articles with that `journalists.journalist_id` and refresh their nested snapshots  
+- On delete: **cascade-strip** nested bylines from all referencing articles, then delete the journalist  
+- Both cascades write a **partial** update (nested `journalists` + the two projections + `updated_at`), never a full reindex — a reindex would recompute `article_embedding` and could wipe it when ImageBind is down
 
 ### Article CRUD
 - Load journalists from `gotham-journalists` by id  

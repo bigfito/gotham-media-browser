@@ -37,12 +37,28 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
 - **Symptom:** reading a document back returns `null` for `article_embedding` / `asset_vector`, and an
   edit re-save would wipe a stored asset vector.
 - **Cause:** ES 9 Serverless excludes indexed `dense_vector` from `_source` retrieval by default.
-- **Fix:** request it explicitly — `sourceIncludes("*")` on the get/read path. `article_embedding` is
-  recomputed on every write, so it needs no round-trip; per-asset `asset_vector` is preserved via the
-  `*` include on `findById`. Journalist update/cascade-strip uses `findByJournalistId`, which must
-  **not** reuse the list query that excludes `multimedia.asset_vector` — a full reindex without that
-  field wipes nested vectors. Sweep reads use `sourceIncludes("*")` as well.
-- **Where:** `ArticleRepository.findById`, `findByJournalistId`, `ArticleEmbeddingImageBindIT`; found in P6-T03; sweep hole closed 2026-09-09.
+- **Fix:** request it explicitly — `sourceIncludes("*")` on the get/read path, so the edit round-trip
+  (`findById` → form → save) carries each `asset_vector` back into the write instead of dropping it.
+- **Where:** `ArticleRepository.findById`, `ArticleEmbeddingImageBindIT`; found in P6-T03.
+
+### A full reindex is the wrong write for a journalist cascade
+- **Symptom:** renaming (or cascade-deleting) a journalist silently emptied `article_embedding` on every
+  article they byline. A first fix made the sweep read vectors back with `sourceIncludes("*")`, which
+  rescued `multimedia.asset_vector` but not the article vector.
+- **Cause:** the cascade was reindexing whole documents through `ArticleRepository.update`, and
+  `toDocument` **recomputes** `article_embedding` from ImageBind on every write. With the embedder down
+  that recompute returns `null` and the field is simply omitted — so a rename with ImageBind unavailable
+  wiped the semantic vector of every affected article. Reading vectors back cannot fix that half: the
+  article vector is never read, it is always regenerated.
+- **Fix:** don't reindex at all. `ArticleRepository.updateJournalistBylines` issues a **partial** ES
+  `update` carrying only `journalists`, `journalist_names`, `journalist_bios` and `updated_at`. Fields
+  it does not name are untouched, so both vector fields survive regardless of ImageBind, and the sweep
+  goes back to excluding vectors (nothing needs them). Verified live with ImageBind pointed at a dead
+  port: rename propagated, `article_embedding` and all six `asset_vector`s intact.
+- **Where:** `ArticleRepository.updateJournalistBylines` / `bylinePatch`, `JournalistService`; the
+  reindex hole was found and closed 2026-09-09.
+- **Rule of thumb:** any write whose purpose is to change field X must not travel through a code path
+  that regenerates field Y from a service that can be down.
 
 ### `copy_to` must sit on the parent keyword, not a `.text` sub-field
 - **Symptom:** index create rejected — `copy_to` inside a multi-field is forbidden.
@@ -57,8 +73,20 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
 - **Symptom:** header shows ImageBind Available while embeds return 503.
 - **Cause:** `GET /health` is 200 as soon as uvicorn is up; `model_loaded` stays false until the
   background load finishes.
-- **Fix:** `ImageBindHealthChecker` requires 2xx and `model_loaded` not false.
+- **Fix:** `ImageBindHealthChecker` requires 2xx and `model_loaded` not false. The check is an anchored
+  regex on the quoted JSON key, not a parse: `gotham-web` carries no Jackson (Spring Boot 4 makes JSON
+  opt-in) and adding databind for one flag would switch on JSON message conversion app-wide.
 - **Where:** `ImageBindHealthChecker`; `imagebind-service` `/health`.
+
+### Upload duration limits can only be best-effort
+- **Symptom:** every MP3 upload was refused with a branded 413 — "duration could not be determined".
+- **Cause:** `MediaDurationProbe` reads WAV/AIFF/AU (Java Sound SPI) and the MP4/MOV `mvhd` box only,
+  but `MediaType.fromContentType` accepts any `audio/*` / `video/*` and the form offers the same. Making
+  an unknown duration a hard rejection therefore banned MP3, OGG, FLAC and WebM.
+- **Fix:** `GcsStorageService` enforces the duration cap when a duration was parsed and otherwise stores
+  the object on its size cap alone, logging a WARN. The size cap (20 MB audio / 50 MB video) already
+  bounds the file; a demo-only time cap is not worth refusing formats the UI invites.
+- **Where:** `GcsStorageService.enforceLimits`, `MediaDurationProbe`; relaxed 2026-09-09.
 
 
 ### `java.net.http` defaults to HTTP/2 and drops the POST body against uvicorn

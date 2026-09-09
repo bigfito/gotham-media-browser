@@ -111,15 +111,27 @@ public class ArticleForm {
                 bylines);
     }
 
-    /** Applies edit-form caption fields onto an existing nested asset. */
+    /**
+     * Applies the edit-form caption fields onto an existing nested asset.
+     *
+     * <p>Each field is overlaid only when the submission actually carried it. The browser form renders
+     * an input for all five, so clearing one there still clears it here; but a caller that posts to
+     * {@code /article/{id}} without the {@code media*[id]} params (datagen, curl, the smoke script)
+     * leaves the stored text alone instead of silently nulling every caption on the article.
+     */
     public ArticleMultimedia overlayMetadata(ArticleMultimedia media) {
         String id = media.multimediaElementId();
         return media.withDescriptiveText(
-                strip(mediaTitle.get(id)),
-                strip(mediaCaption.get(id)),
-                strip(mediaDescription.get(id)),
-                strip(mediaAltText.get(id)),
-                strip(mediaCredit.get(id)));
+                overlay(mediaTitle, id, media.title()),
+                overlay(mediaCaption, id, media.caption()),
+                overlay(mediaDescription, id, media.description()),
+                overlay(mediaAltText, id, media.altText()),
+                overlay(mediaCredit, id, media.credit()));
+    }
+
+    /** Submitted value for this asset, or the stored one when the field was not part of the post. */
+    private String overlay(Map<String, String> submitted, String id, String current) {
+        return submitted.containsKey(id) ? strip(submitted.get(id)) : current;
     }
 
     /** True when at least one selected journalist actually resolves to a master record. */
@@ -346,6 +358,10 @@ public class ArticleForm {
 
     public List<String> getRemoveMediaIds() {
         return removeMediaIds;
+    }
+
+    public void setRemoveMediaIds(List<String> removeMediaIds) {
+        this.removeMediaIds = removeMediaIds != null ? removeMediaIds : new ArrayList<>();
     }
 
     public Map<String, String> getMediaTitle() {

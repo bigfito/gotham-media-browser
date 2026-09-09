@@ -156,7 +156,9 @@ class ArticleRepositoryTest {
     }
 
     @Test
-    void journalistSweepIncludesDenseVectorSource() throws Exception {
+    void journalistSweepSkipsVectorsBecauseTheCascadeNeverRewritesThem() throws Exception {
+        // The cascade writes through updateJournalistBylines (a partial update that leaves both
+        // vector fields alone), so the sweep does not have to drag dense vectors over the wire.
         ElasticsearchClient client = Mockito.mock(ElasticsearchClient.class);
         ArticleRepository scanning = new ArticleRepository(client, new StubImageBindClient());
         when(client.search(any(SearchRequest.class), eq(Map.class))).thenReturn(emptyHits());
@@ -165,8 +167,22 @@ class ArticleRepositoryTest {
 
         ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
         verify(client).search(captor.capture(), eq(Map.class));
-        assertThat(captor.getValue().source().filter().includes()).contains("*");
-        assertThat(captor.getValue().source().filter().excludes()).isNullOrEmpty();
+        assertThat(captor.getValue().source().filter().excludes())
+                .contains("article_embedding", "multimedia.asset_vector");
+    }
+
+    @Test
+    void bylinePatchWritesOnlyBylineFields() {
+        ArticleJournalist byline = new ArticleJournalist("j_lois", "Lois", "Lane", "lois@x", "bio",
+                0, ContributionRole.AUTHOR);
+
+        Map<String, Object> patch = repository.bylinePatch(List.of(byline));
+
+        // Nothing else may appear here: any extra key would be rewritten on every cascade, and
+        // article_embedding / multimedia are exactly what must survive one untouched.
+        assertThat(patch).containsOnlyKeys(
+                "journalists", "journalist_names", "journalist_bios", "updated_at");
+        assertThat(patch).extracting("journalist_names").isEqualTo(List.of("Lois Lane"));
     }
 
     @Test

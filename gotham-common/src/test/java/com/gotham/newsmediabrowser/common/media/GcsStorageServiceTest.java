@@ -77,10 +77,21 @@ class GcsStorageServiceTest {
     }
 
     @Test
-    void audioWithoutDurationIsRejectedBeforeUpload() {
-        assertThatThrownBy(() -> service().upload(MediaType.AUDIO, "clip.mp3", "audio/mpeg", new byte[10], null))
+    void audioWithoutParsedDurationIsStoredOnItsSizeCap() {
+        // MP3/OGG/WebM have no duration MediaDurationProbe can read. The form's accept="audio/*"
+        // invites them, so an unparsable container is stored on the size cap rather than refused.
+        String uri = service().upload(MediaType.AUDIO, "clip.mp3", "audio/mpeg", new byte[10], null);
+
+        assertThat(uri).startsWith("https://storage.googleapis.com/test-bucket/media/audio/");
+        verify(storage).create(any(BlobInfo.class), any(byte[].class));
+    }
+
+    @Test
+    void overlongAudioIsStillRejectedWhenDurationIsKnown() {
+        assertThatThrownBy(() ->
+                service().upload(MediaType.AUDIO, "clip.wav", "audio/wav", new byte[10], Duration.ofMinutes(9)))
                 .isInstanceOf(MediaLimitException.class)
-                .hasMessageContaining("could not be determined");
+                .hasMessageContaining("over the");
 
         verify(storage, never()).create(any(BlobInfo.class), any(byte[].class));
     }

@@ -54,6 +54,11 @@
 
     <div class="flash flash--error" role="status" th:if="${queryNotice}" th:text="${queryNotice}">Enter a search query.</div>
     <div class="flash flash--ok" role="status" th:if="${modeNotice}" th:text="${modeNotice}">Later phase.</div>
+    <!-- Vector mode paginates off the embedding held in session; name the file so the ranking basis is visible. -->
+    <div class="flash flash--ok" role="status" th:if="${vectorQueryName}">
+        Ranking by similarity to <strong th:text="${vectorQueryName}">the uploaded file</strong>.
+        Pick another file to replace it, or switch search method to clear it.
+    </div>
 
     <div class="layout">
         <aside class="filters" aria-label="Filters">

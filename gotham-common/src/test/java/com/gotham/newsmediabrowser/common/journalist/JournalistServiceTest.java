@@ -2,7 +2,10 @@ package com.gotham.newsmediabrowser.common.journalist;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +35,7 @@ class JournalistServiceTest {
     private ArticleRepository articleRepository;
 
     @Captor
-    private ArgumentCaptor<Article> articleCaptor;
+    private ArgumentCaptor<List<ArticleJournalist>> bylineCaptor;
 
     private Article articleWith(List<ArticleJournalist> bylines) {
         return new Article("art1", "T", null, null, null, "t", ArticleStatus.PUBLISHED, "en",
@@ -54,13 +57,17 @@ class JournalistServiceTest {
 
         service().update(updated);
 
+        // The master is saved first: a mid-sweep failure then leaves articles lagging a journalist
+        // that exists, rather than stamping them with a version the master never accepted.
         InOrder inOrder = inOrder(articleRepository, journalistRepository);
-        inOrder.verify(articleRepository).findByJournalistId("j_lois");
-        inOrder.verify(articleRepository).update(any(Article.class));
         inOrder.verify(journalistRepository).update(updated);
+        inOrder.verify(articleRepository).findByJournalistId("j_lois");
+        inOrder.verify(articleRepository).updateJournalistBylines(eq("art1"), anyList());
 
-        verify(articleRepository).update(articleCaptor.capture());
-        List<ArticleJournalist> saved = articleCaptor.getValue().journalists();
+        // Bylines go through the partial update, so the cascade never rewrites the vector fields.
+        verify(articleRepository, never()).update(any(Article.class));
+        verify(articleRepository).updateJournalistBylines(eq("art1"), bylineCaptor.capture());
+        List<ArticleJournalist> saved = bylineCaptor.getValue();
         ArticleJournalist refreshed = saved.stream().filter(b -> b.journalistId().equals("j_lois")).findFirst().orElseThrow();
         assertThat(refreshed.firstName()).isEqualTo("Louise");
         assertThat(refreshed.lastName()).isEqualTo("Lane-Kent");
@@ -80,13 +87,14 @@ class JournalistServiceTest {
 
         service().cascadeDelete("j_lois");
 
-        verify(articleRepository).update(articleCaptor.capture());
-        List<ArticleJournalist> remaining = articleCaptor.getValue().journalists();
+        verify(articleRepository).updateJournalistBylines(eq("art1"), bylineCaptor.capture());
+        List<ArticleJournalist> remaining = bylineCaptor.getValue();
         assertThat(remaining).extracting(ArticleJournalist::journalistId).containsExactly("j_clark");
+        verify(articleRepository, never()).update(any(Article.class));
 
-        // Articles are reindexed before the master is removed (safe to retry on failure).
+        // Articles are stripped before the master is removed (safe to retry on failure).
         InOrder inOrder = inOrder(articleRepository, journalistRepository);
-        inOrder.verify(articleRepository).update(any(Article.class));
+        inOrder.verify(articleRepository).updateJournalistBylines(eq("art1"), anyList());
         inOrder.verify(journalistRepository).deleteById("j_lois");
     }
 

@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import com.gotham.newsmediabrowser.common.article.ArticleJournalist;
 import com.gotham.newsmediabrowser.common.article.ArticleMetadata;
 import com.gotham.newsmediabrowser.common.article.ArticlePage;
 import com.gotham.newsmediabrowser.common.article.ArticleRepository;
+import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
 import com.gotham.newsmediabrowser.common.article.ArticleStatus;
 import com.gotham.newsmediabrowser.common.article.ContributionRole;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
@@ -30,7 +32,10 @@ import com.gotham.newsmediabrowser.common.journalist.JournalistRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import com.gotham.newsmediabrowser.common.error.DependencyException;
+import com.gotham.newsmediabrowser.common.media.MediaType;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -383,5 +388,115 @@ class ArticleControllerTest {
         assertThat(captor.getValue().multimedia())
                 .extracting(com.gotham.newsmediabrowser.common.article.ArticleMultimedia::multimediaElementId)
                 .containsExactly("m_keep");
+    }
+
+    /** Existing element carrying every descriptive field, used by the edit round-trip tests. */
+    private ArticleMultimedia captioned() {
+        return new ArticleMultimedia(
+                "m_keep", MediaType.IMAGE, "https://storage.googleapis.com/b/media/image/keep.png",
+                "image/png", 0, "Council chamber after the vote", "Vicki Vale", "Chamber",
+                "Wide shot of the chamber", "alt chamber", "keep.png", 10L, null,
+                800, 500, null, null, null, null, null, null, null);
+    }
+
+    private Article articleWithMedia(List<ArticleMultimedia> media) {
+        return new Article("a1", "Transit vote", null, "s", "b", "transit",
+                ArticleStatus.PUBLISHED, "en", null, null, null,
+                new ArticleMetadata("Politics", List.of(), null, null, null, null, null, null),
+                List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)),
+                media);
+    }
+
+    private org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder editRequest() {
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/article/a1")
+                .param("title", "Transit vote")
+                .param("summary", "s")
+                .param("body", "b")
+                .param("status", "PUBLISHED")
+                .param("journalistIds", "j_lois")
+                .param("bylineOrder[j_lois]", "1")
+                .param("role[j_lois]", "AUTHOR");
+    }
+
+    @Test
+    void editPostWithoutCaptionParamsKeepsStoredDescriptiveText() throws Exception {
+        // Datagen, curl and the smoke script post the article fields without the media*[id] maps.
+        // Those assets must keep their stored text instead of being silently blanked.
+        oneJournalistAvailable();
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(articleWithMedia(List.of(captioned()))));
+        when(mediaUploadService.upload(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(List.of());
+        when(articleRepository.update(any(Article.class))).thenAnswer(i -> i.getArgument(0));
+
+        mockMvc.perform(editRequest())
+                .andExpect(status().is3xxRedirection());
+
+        ArgumentCaptor<Article> captor = ArgumentCaptor.forClass(Article.class);
+        verify(articleRepository).update(captor.capture());
+        ArticleMultimedia saved = captor.getValue().multimedia().get(0);
+        assertThat(saved.caption()).isEqualTo("Council chamber after the vote");
+        assertThat(saved.title()).isEqualTo("Chamber");
+        assertThat(saved.description()).isEqualTo("Wide shot of the chamber");
+        assertThat(saved.altText()).isEqualTo("alt chamber");
+        assertThat(saved.credit()).isEqualTo("Vicki Vale");
+    }
+
+    @Test
+    void editPostWithCaptionParamsStillClearsAndUpdatesThem() throws Exception {
+        // The browser form does render every field, so blanking one there must still blank it.
+        oneJournalistAvailable();
+        when(articleRepository.findById("a1")).thenReturn(Optional.of(articleWithMedia(List.of(captioned()))));
+        when(mediaUploadService.upload(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(List.of());
+        when(articleRepository.update(any(Article.class))).thenAnswer(i -> i.getArgument(0));
+
+        mockMvc.perform(editRequest()
+                        .param("mediaCaption[m_keep]", "Reworded caption")
+                        .param("mediaTitle[m_keep]", "")
+                        .param("mediaDescription[m_keep]", "Wide shot of the chamber")
+                        .param("mediaAltText[m_keep]", "alt chamber")
+                        .param("mediaCredit[m_keep]", "Vicki Vale"))
+                .andExpect(status().is3xxRedirection());
+
+        ArgumentCaptor<Article> captor = ArgumentCaptor.forClass(Article.class);
+        verify(articleRepository).update(captor.capture());
+        ArticleMultimedia saved = captor.getValue().multimedia().get(0);
+        assertThat(saved.caption()).isEqualTo("Reworded caption");
+        assertThat(saved.title()).isNull();
+    }
+
+    @Test
+    void editPurgesRemovedObjectsOnlyAfterTheDocumentIsSaved() throws Exception {
+        oneJournalistAvailable();
+        ArticleMultimedia drop = ArticleMultimedia.uploaded("m_drop", MediaType.IMAGE,
+                "https://storage.googleapis.com/b/media/image/drop.png", "image/png", 1, "drop.png", 10L);
+        when(articleRepository.findById("a1"))
+                .thenReturn(Optional.of(articleWithMedia(List.of(captioned(), drop))));
+        when(mediaUploadService.upload(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(List.of());
+        when(articleRepository.update(any(Article.class))).thenAnswer(i -> i.getArgument(0));
+
+        mockMvc.perform(editRequest().param("removeMediaIds", "m_drop"))
+                .andExpect(status().is3xxRedirection());
+
+        // Purging first would leave the document pointing at deleted objects if the save failed.
+        InOrder order = inOrder(articleRepository, mediaUploadService);
+        order.verify(articleRepository).update(any(Article.class));
+        order.verify(mediaUploadService).remove(List.of(drop));
+    }
+
+    @Test
+    void editKeepsRemovedObjectsWhenTheSaveFails() throws Exception {
+        oneJournalistAvailable();
+        ArticleMultimedia drop = ArticleMultimedia.uploaded("m_drop", MediaType.IMAGE,
+                "https://storage.googleapis.com/b/media/image/drop.png", "image/png", 1, "drop.png", 10L);
+        when(articleRepository.findById("a1"))
+                .thenReturn(Optional.of(articleWithMedia(List.of(captioned(), drop))));
+        when(mediaUploadService.upload(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(List.of());
+        when(articleRepository.update(any(Article.class)))
+                .thenThrow(new DependencyException("Elasticsearch", new RuntimeException("boom")));
+
+        mockMvc.perform(editRequest().param("removeMediaIds", "m_drop"))
+                .andExpect(status().isServiceUnavailable());
+
+        // The stored document still references drop.png, so its object must survive for the retry.
+        verify(mediaUploadService, never()).remove(List.of(drop));
     }
 }

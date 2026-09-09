@@ -1,6 +1,6 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Implementation snapshot 2026-09-09 — **P0–P10 done** (42/42). Post-plan hardening: journalist sweep preserves vectors, media captions, vector session, ImageBind `model_loaded` health. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
+**Status:** Implementation snapshot 2026-09-09 — **P0–P10 done** (42/42). Post-plan hardening (2 passes): journalist cascade is a partial update that cannot wipe vectors, media captions round-trip, vector-search session is scoped to vector mode, ImageBind `model_loaded` health. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
 **App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — non-Boot) · Elasticsearch Java API Client · Docker Compose  
@@ -131,6 +131,7 @@ Status `DRAFT` | `PUBLISHED` | `ARCHIVED` is filterable on public search.
 **Shipped through P8:** landing + article/multimedia **full-text** (`ArticleFullTextService` / `MultimediaFullTextService`), **semantic kNN** (`ArticleSemanticSearchService` / `MultimediaSemanticSearchService`), **hybrid RRF** (`ArticleHybridSearchService` / `MultimediaHybridSearchService`), and multimedia **file→vector** (`MultimediaVectorSearchService`) — all on `GET/POST /results` Thymeleaf. Article `mode=vector` → HTTP 400 branded page.
 
 Local upload limits (ImageBind CPU): IMAGE 10 MiB · AUDIO 20 MiB / 5 min · VIDEO 50 MiB / 90 s.
+Size is always enforced; duration only when the container can be parsed (WAV/AIFF/AU, MP4/MOV).
 
 ---
 
@@ -157,8 +158,9 @@ sequenceDiagram
   WEB->>AI: index denormalized doc (auto _id)
 ```
 
-Journalist update reindexes articles nesting that `journalist_id`.  
-Journalist **delete cascade-strips** nested bylines from all referencing articles, rebuilds journalist projections, reindexes those articles, then deletes the `gotham-journalists` document.  
+Journalist update saves the master, then refreshes the nested byline on every article nesting that `journalist_id`.  
+Journalist **delete cascade-strips** nested bylines from all referencing articles, then deletes the `gotham-journalists` document.  
+Both cascades issue a **partial** ES update carrying only `journalists`, `journalist_names`, `journalist_bios` and `updated_at`, so `article_embedding` and every nested `asset_vector` are left untouched.  
 Article delete removes GCS objects + article doc.
 
 ---

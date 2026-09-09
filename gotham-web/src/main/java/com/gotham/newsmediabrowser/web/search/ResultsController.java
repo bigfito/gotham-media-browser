@@ -18,6 +18,7 @@ import com.gotham.newsmediabrowser.common.error.BadRequestException;
 import com.gotham.newsmediabrowser.common.media.MediaType;
 import com.gotham.newsmediabrowser.common.search.SearchPagination;
 import com.gotham.newsmediabrowser.common.search.SearchSort;
+import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -35,8 +36,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.servlet.http.HttpSession;
-
 /**
  * Public {@code /results} pages: article and multimedia FTS (P7-T02/T03) with filters, sort, and
  * pagination that round-trip the IA query params. Semantic / hybrid / vector ranking is P8.
@@ -44,7 +43,10 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 public class ResultsController {
 
+    /** Session-held embedding of the last uploaded vector-search file, so paging needs no re-upload. */
     static final String VECTOR_QUERY_SESSION = "gotham.vectorQuery";
+    /** Filename that produced {@link #VECTOR_QUERY_SESSION}, shown so the ranking basis is never invisible. */
+    static final String VECTOR_QUERY_NAME_SESSION = "gotham.vectorQueryName";
 
     private static final DateTimeFormatter DISPLAY_DATE =
             DateTimeFormatter.ofPattern("MMM d yyyy", Locale.US).withZone(ZoneOffset.UTC);
@@ -202,7 +204,16 @@ public class ResultsController {
         boolean textMode = fulltext || semantic || hybrid;
         boolean hasQuery = q != null && !q.isBlank();
         boolean hasFile = media != null && !media.isEmpty();
-        float[] storedVector = session != null ? (float[]) session.getAttribute(VECTOR_QUERY_SESSION) : null;
+        // The uploaded file's embedding is kept in session so filter/pagination GETs do not have to
+        // re-upload it. It belongs to vector mode only: leaving any other mode drops it, so coming
+        // back to vector never silently re-ranks by a file the user has moved on from.
+        if (!vector && session != null) {
+            session.removeAttribute(VECTOR_QUERY_SESSION);
+            session.removeAttribute(VECTOR_QUERY_NAME_SESSION);
+        }
+        float[] storedVector = vector && session != null
+                ? (float[]) session.getAttribute(VECTOR_QUERY_SESSION)
+                : null;
         if (vector) {
             if (!hasFile && storedVector == null) {
                 model.addAttribute("queryNotice", "Choose an image, audio, or video file for vector search.");
@@ -253,9 +264,13 @@ public class ResultsController {
                 queryVector = multimediaVectorSearchService.embed(media);
                 if (session != null) {
                     session.setAttribute(VECTOR_QUERY_SESSION, queryVector);
+                    session.setAttribute(VECTOR_QUERY_NAME_SESSION, displayName(media));
                 }
             }
             if (queryVector != null) {
+                if (session != null) {
+                    model.addAttribute("vectorQueryName", session.getAttribute(VECTOR_QUERY_NAME_SESSION));
+                }
                 MultimediaSearchPage result = multimediaVectorSearchService.search(
                         queryVector, statuses, blankToNull(section), blankToNull(language),
                         publishedStart, publishedEnd, mediaTypes, page, size);
@@ -384,6 +399,12 @@ public class ResultsController {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.strip();
+    }
+
+    /** Label for the file currently ranking a vector search, shown above the results. */
+    private static String displayName(MultipartFile file) {
+        String name = file != null ? blankToNull(file.getOriginalFilename()) : null;
+        return name != null ? name : "the uploaded file";
     }
 
     public record ArticleResultRow(

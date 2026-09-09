@@ -122,8 +122,11 @@ Full-text UI checkbox values such as `section` / `tags` / `location` / `source` 
 
 ### Local upload limits
 | IMAGE | 10 MiB |
-| AUDIO | 20 MiB / 5 min |
-| VIDEO | 50 MiB / 90 s |
+| AUDIO | 20 MiB / 5 min* |
+| VIDEO | 50 MiB / 90 s* |
+
+\* Duration is enforced only when it can be parsed from the container (WAV/AIFF/AU, MP4/MOV). An MP3, OGG or
+WebM upload is accepted on its size cap.
 
 ## Wireflow
 

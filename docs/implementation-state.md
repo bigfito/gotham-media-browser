@@ -5,7 +5,7 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-09T04:00:00Z  
+**Last updated:** 2026-09-09T05:10:00Z  
 **Active phase:** P10 (6/6 done) — plan complete  
 **Prototype status:** `done`  
 **Next task:** none (42/42). Optional lab: full overnight `gotham-datagen` run on the M4 with Compose profile `datagen`.
@@ -16,7 +16,19 @@
 
 The implementation plan is closed. Operator docs were synced to **42 / 42**. Remaining work is **lab**, not a numbered task.
 
-**Post-plan hardening (2026-09-09):** journalist cascade/update preserves `asset_vector`; Compose `gotham-web` image copies `elasticsearch/` + `gotham-datagen/pom.xml`; media captions round-trip on CRUD + datagen; GCS uploads run only after form validation and roll back a failed batch; vector search keeps the query embedding in HTTP session for pagination; ImageBind chrome health honors `model_loaded`; audio/video duration is probed (WAV/MP4) and unknown duration is rejected; journalist master update reindexes articles first.
+**Post-plan hardening, pass 1 (2026-09-09):** Compose `gotham-web` image copies `elasticsearch/` + `gotham-datagen/pom.xml`; media captions round-trip on CRUD + datagen; GCS uploads run only after form validation and roll back a failed batch; vector search keeps the query embedding in HTTP session for pagination; ImageBind chrome health honors `model_loaded`; audio/video duration is probed (WAV/MP4).
+
+**Post-plan hardening, pass 2 (2026-09-09):** review of pass 1 found the vector-wipe fix only covered half the problem and the duration check had banned a common format. Changes:
+
+- **Journalist cascade no longer reindexes.** `ArticleRepository.updateJournalistBylines` writes a partial ES `update` (`journalists`, the two projections, `updated_at`). Reindexing recomputed `article_embedding` from ImageBind, so a rename with the embedder down wiped the article vector on every affected document — a hole reading vectors back could not close. The sweep goes back to excluding vectors. See [`engineering-notes.md`](./engineering-notes.md).
+- **Journalist update saves the master first** (cascade-delete still strips articles first). Each order is now documented on `JournalistService` with its failure mode.
+- **Unparsable audio/video duration is accepted, not refused.** MP3/OGG/WebM were getting a 413; the size cap already bounds the file and the form's `accept` invites those formats.
+- **Vector-search session state is scoped to vector mode** — leaving the mode drops it, and the results page names the file it is ranking by.
+- **Media captions are only overwritten when the request carried them**, so a non-browser POST to `/article/{id}` no longer blanks every asset's descriptive text.
+- **Removed media is purged from GCS after the document commits**, not before.
+- `removeMediaIds` binds through `ArticleForm` again (its setter had been dropped, and a duplicate `@RequestParam` was compensating); `ImageBindHealthChecker` matches the JSON member instead of scanning the whole body; the Dockerfile copies `elasticsearch/` after `dependency:go-offline`.
+
+Verified live against ES Serverless + GCS: smoke green; rename with ImageBind on a dead port kept `article_embedding` and all six `asset_vector`s; an MP3 upload stored, captioned and purged on delete; vector session cleared on mode switch. **273 unit tests green.**
 
 Lab still optional:
 

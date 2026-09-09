@@ -12,10 +12,22 @@ import org.springframework.stereotype.Service;
  * Journalist operations that ripple into the denormalized article documents.
  *
  * <p>Because bylines are snapshotted onto articles, editing or deleting a journalist must also fix
- * every article that nests it. Elasticsearch has no multi-document transaction, so these run as a
- * best-effort sweep: the article reindexing happens first and the master change is finished last, so
- * a mid-sweep failure (surfaced as a {@code DependencyException} / 503) leaves the operation safe to
- * retry rather than leaving a deleted journalist with stale bylines still referencing it.
+ * every article that nests it. Elasticsearch has no multi-document transaction, so both run as a
+ * best-effort sweep that is safe to retry — but they order the master write differently, on purpose:
+ *
+ * <ul>
+ *   <li><strong>update</strong> saves the master <em>first</em>. A mid-sweep failure then leaves some
+ *       articles with a stale byline for a journalist that does exist — the ordinary lagging-copy
+ *       state, which a retry converges. Sweeping first would instead stamp articles with a version of
+ *       the journalist the master never accepted.</li>
+ *   <li><strong>cascade-delete</strong> strips the articles <em>first</em>. A mid-sweep failure leaves
+ *       the master alive with some bylines still pointing at it, which a retry converges; deleting the
+ *       master first would leave dangling bylines with nothing to re-derive them from.</li>
+ * </ul>
+ *
+ * <p>Both sweeps write through {@link ArticleRepository#updateJournalistBylines}, a partial update
+ * that rewrites only the byline fields — so a cascade never recomputes {@code article_embedding} and
+ * never rewrites the nested multimedia, and therefore cannot wipe either vector field.
  */
 @Service
 public class JournalistService {
@@ -35,17 +47,16 @@ public class JournalistService {
      * preserving each byline's order and role.
      */
     public Journalist update(Journalist journalist) {
-        List<Article> affected = articleRepository.findByJournalistId(journalist.id());
+        Journalist saved = journalistRepository.update(journalist);
+        List<Article> affected = articleRepository.findByJournalistId(saved.id());
         for (Article article : affected) {
             List<ArticleJournalist> refreshed = article.journalists().stream()
-                    .map(byline -> journalist.id().equals(byline.journalistId())
-                            ? ArticleJournalist.fromJournalist(
-                                    journalist, byline.bylineOrder(), byline.contributionRole())
+                    .map(byline -> saved.id().equals(byline.journalistId())
+                            ? ArticleJournalist.fromJournalist(saved, byline.bylineOrder(), byline.contributionRole())
                             : byline)
                     .toList();
-            articleRepository.update(article.withJournalists(refreshed));
+            articleRepository.updateJournalistBylines(article.id(), refreshed);
         }
-        Journalist saved = journalistRepository.update(journalist);
         log.info("Updated journalist {} and refreshed bylines on {} article(s)", saved.id(), affected.size());
         return saved;
     }
@@ -63,7 +74,7 @@ public class JournalistService {
             List<ArticleJournalist> remaining = article.journalists().stream()
                     .filter(byline -> !journalistId.equals(byline.journalistId()))
                     .toList();
-            articleRepository.update(article.withJournalists(remaining));
+            articleRepository.updateJournalistBylines(article.id(), remaining);
         }
         boolean deleted = journalistRepository.deleteById(journalistId);
         log.info("Cascade-deleted journalist {} (master removed: {}) from {} article(s)",
