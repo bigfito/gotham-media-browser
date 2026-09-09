@@ -35,12 +35,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpSession;
+
 /**
  * Public {@code /results} pages: article and multimedia FTS (P7-T02/T03) with filters, sort, and
  * pagination that round-trip the IA query params. Semantic / hybrid / vector ranking is P8.
  */
 @Controller
 public class ResultsController {
+
+    static final String VECTOR_QUERY_SESSION = "gotham.vectorQuery";
 
     private static final DateTimeFormatter DISPLAY_DATE =
             DateTimeFormatter.ofPattern("MMM d yyyy", Locale.US).withZone(ZoneOffset.UTC);
@@ -96,9 +100,10 @@ public class ResultsController {
             @RequestParam(name = "sort", required = false) String sort,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "25") int size,
+            HttpSession session,
             Model model) {
         return render(entity, mode, q, fields, status, journalist, section, language, mediaType,
-                publishedFrom, publishedTo, sort, page, size, null, model);
+                publishedFrom, publishedTo, sort, page, size, null, session, model);
     }
 
     /** Vector mode posts multipart (the uploaded {@code media} file); text modes still use GET. */
@@ -119,9 +124,10 @@ public class ResultsController {
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "25") int size,
             @RequestParam(name = "media", required = false) MultipartFile media,
+            HttpSession session,
             Model model) {
         return render(entity, mode, q, fields, status, journalist, section, language, mediaType,
-                publishedFrom, publishedTo, sort, page, size, media, model);
+                publishedFrom, publishedTo, sort, page, size, media, session, model);
     }
 
     private String render(
@@ -140,6 +146,7 @@ public class ResultsController {
             int requestedPage,
             int requestedSize,
             MultipartFile media,
+            HttpSession session,
             Model model) {
 
         String entity = normalizeEntity(entityRaw);
@@ -195,10 +202,9 @@ public class ResultsController {
         boolean textMode = fulltext || semantic || hybrid;
         boolean hasQuery = q != null && !q.isBlank();
         boolean hasFile = media != null && !media.isEmpty();
+        float[] storedVector = session != null ? (float[]) session.getAttribute(VECTOR_QUERY_SESSION) : null;
         if (vector) {
-            // Vector mode ranks by an uploaded file, not the q text (multimedia only — article
-            // vector is rejected above).
-            if (!hasFile) {
+            if (!hasFile && storedVector == null) {
                 model.addAttribute("queryNotice", "Choose an image, audio, or video file for vector search.");
             }
         } else if (!hasQuery) {
@@ -241,12 +247,21 @@ public class ResultsController {
                 total = result.total();
                 mediaHits = result.items();
             }
-        } else if (vector && hasFile) {
-            MultimediaSearchPage result = multimediaVectorSearchService.search(
-                    media, statuses, blankToNull(section), blankToNull(language),
-                    publishedStart, publishedEnd, mediaTypes, page, size);
-            total = result.total();
-            mediaHits = result.items();
+        } else if (vector) {
+            float[] queryVector = storedVector;
+            if (hasFile) {
+                queryVector = multimediaVectorSearchService.embed(media);
+                if (session != null) {
+                    session.setAttribute(VECTOR_QUERY_SESSION, queryVector);
+                }
+            }
+            if (queryVector != null) {
+                MultimediaSearchPage result = multimediaVectorSearchService.search(
+                        queryVector, statuses, blankToNull(section), blankToNull(language),
+                        publishedStart, publishedEnd, mediaTypes, page, size);
+                total = result.total();
+                mediaHits = result.items();
+            }
         }
 
         int totalPages = (int) Math.max(1, Math.ceil((double) Math.max(total, 1) / size));

@@ -7,13 +7,15 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
  * Health check for the ImageBind embedding service via {@code GET {base-url}/health}.
- * A 2xx response means "up"; timeouts/errors mean "down" (logged at DEBUG).
+ * Up means HTTP 2xx <strong>and</strong> {@code model_loaded} is not {@code false} (the process can
+ * answer 200 while the real model is still warming).
  */
 @Component
 public class ImageBindHealthChecker {
@@ -29,15 +31,18 @@ public class ImageBindHealthChecker {
         this.healthUri = URI.create(properties.baseUrl().replaceAll("/+$", "") + "/health");
     }
 
-    /** @return {@code true} when {@code /health} returns 2xx, {@code false} otherwise. */
+    /** @return {@code true} when {@code /health} is 2xx and the model is loaded (or the field is absent). */
     public boolean isUp() {
         HttpRequest request = HttpRequest.newBuilder(healthUri)
                 .timeout(REQUEST_TIMEOUT)
                 .GET()
                 .build();
         try {
-            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-            return response.statusCode() >= 200 && response.statusCode() < 300;
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                return false;
+            }
+            return modelLoaded(response.body());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.debug("ImageBind health check interrupted: {}", e.toString());
@@ -46,5 +51,13 @@ public class ImageBindHealthChecker {
             log.debug("ImageBind health check failed: {}", e.toString());
             return false;
         }
+    }
+
+    static boolean modelLoaded(String body) {
+        if (body == null || body.isBlank()) {
+            return true;
+        }
+        String compact = body.toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+        return !compact.contains("\"model_loaded\":false");
     }
 }

@@ -35,16 +35,17 @@ public class JournalistService {
      * preserving each byline's order and role.
      */
     public Journalist update(Journalist journalist) {
-        Journalist saved = journalistRepository.update(journalist);
-        List<Article> affected = articleRepository.findByJournalistId(saved.id());
+        List<Article> affected = articleRepository.findByJournalistId(journalist.id());
         for (Article article : affected) {
             List<ArticleJournalist> refreshed = article.journalists().stream()
-                    .map(byline -> saved.id().equals(byline.journalistId())
-                            ? ArticleJournalist.fromJournalist(saved, byline.bylineOrder(), byline.contributionRole())
+                    .map(byline -> journalist.id().equals(byline.journalistId())
+                            ? ArticleJournalist.fromJournalist(
+                                    journalist, byline.bylineOrder(), byline.contributionRole())
                             : byline)
                     .toList();
             articleRepository.update(article.withJournalists(refreshed));
         }
+        Journalist saved = journalistRepository.update(journalist);
         log.info("Updated journalist {} and refreshed bylines on {} article(s)", saved.id(), affected.size());
         return saved;
     }

@@ -1,6 +1,6 @@
 # Gotham News & Media Browser — End-to-End Architecture
 
-**Status:** Implementation snapshot 2026-09-08 — **P0–P10 done** (42/42). Authoritative board: [`implementation-state.md`](./implementation-state.md).  
+**Status:** Implementation snapshot 2026-09-09 — **P0–P10 done** (42/42). Post-plan hardening: journalist sweep preserves vectors, media captions, vector session, ImageBind `model_loaded` health. Authoritative board: [`implementation-state.md`](./implementation-state.md).  
 **Product:** Single-brand online news & multimedia browser prototype  
 **Persistence:** Elastic Cloud Serverless + public GCS (no RDBMS)  
 **App:** Java 25 · Spring Boot 4.1.1 · Thymeleaf · **Maven multi-module** (`gotham-common` + `gotham-web` + **`gotham-datagen` console** — non-Boot) · Elasticsearch Java API Client · Docker Compose  

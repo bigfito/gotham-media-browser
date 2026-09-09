@@ -23,7 +23,7 @@ class ImageBindHealthCheckerTest {
     private HttpClient httpClient;
 
     @Mock
-    private HttpResponse<Void> response;
+    private HttpResponse<String> response;
 
     private ImageBindHealthChecker checker;
 
@@ -34,11 +34,19 @@ class ImageBindHealthCheckerTest {
     }
 
     @Test
-    void reportsUpOn2xx() throws Exception {
+    void reportsUpOn2xxWhenModelLoaded() throws Exception {
         when(response.statusCode()).thenReturn(200);
-        // doReturn avoids generic-inference issues on the typed send(...) method.
+        when(response.body()).thenReturn("{\"status\":\"UP\",\"model_loaded\":true}");
         doReturn(response).when(httpClient).send(any(), any());
         assertThat(checker.isUp()).isTrue();
+    }
+
+    @Test
+    void reportsDownWhenModelStillLoading() throws Exception {
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn("{\"status\":\"UP\",\"model_loaded\": false}");
+        doReturn(response).when(httpClient).send(any(), any());
+        assertThat(checker.isUp()).isFalse();
     }
 
     @Test

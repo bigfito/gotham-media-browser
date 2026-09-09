@@ -3,6 +3,7 @@ package com.gotham.newsmediabrowser.web.article;
 import com.gotham.newsmediabrowser.common.article.Article;
 import com.gotham.newsmediabrowser.common.article.ArticleJournalist;
 import com.gotham.newsmediabrowser.common.article.ArticleMetadata;
+import com.gotham.newsmediabrowser.common.article.ArticleMultimedia;
 import com.gotham.newsmediabrowser.common.article.ArticleStatus;
 import com.gotham.newsmediabrowser.common.article.ContributionRole;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
@@ -75,9 +76,13 @@ public class ArticleForm {
     /** Contribution role per journalist id. */
     private Map<String, String> role = new LinkedHashMap<>();
 
-    // --- Multimedia removal (edit only) ---
-    /** Ids of existing multimedia elements the user checked for removal on the edit screen. */
+    // --- Multimedia (edit: captions + removal) ---
     private List<String> removeMediaIds = new ArrayList<>();
+    private Map<String, String> mediaTitle = new LinkedHashMap<>();
+    private Map<String, String> mediaCaption = new LinkedHashMap<>();
+    private Map<String, String> mediaDescription = new LinkedHashMap<>();
+    private Map<String, String> mediaAltText = new LinkedHashMap<>();
+    private Map<String, String> mediaCredit = new LinkedHashMap<>();
 
     /**
      * Builds a not-yet-persisted article, snapshotting the selected journalists (resolved via the
@@ -104,6 +109,17 @@ public class ArticleForm {
                 new ArticleMetadata(strip(section), splitTags(), strip(location), strip(source),
                         strip(seoTitle), strip(seoDescription), strip(seoKeywords), strip(canonicalUrl)),
                 bylines);
+    }
+
+    /** Applies edit-form caption fields onto an existing nested asset. */
+    public ArticleMultimedia overlayMetadata(ArticleMultimedia media) {
+        String id = media.multimediaElementId();
+        return media.withDescriptiveText(
+                strip(mediaTitle.get(id)),
+                strip(mediaCaption.get(id)),
+                strip(mediaDescription.get(id)),
+                strip(mediaAltText.get(id)),
+                strip(mediaCredit.get(id)));
     }
 
     /** True when at least one selected journalist actually resolves to a master record. */
@@ -162,6 +178,14 @@ public class ArticleForm {
             form.bylineOrder.put(byline.journalistId(), byline.bylineOrder());
             form.role.put(byline.journalistId(),
                     byline.contributionRole() != null ? byline.contributionRole().name() : "");
+        }
+        for (var media : article.multimedia()) {
+            String id = media.multimediaElementId();
+            form.mediaTitle.put(id, media.title() != null ? media.title() : "");
+            form.mediaCaption.put(id, media.caption() != null ? media.caption() : "");
+            form.mediaDescription.put(id, media.description() != null ? media.description() : "");
+            form.mediaAltText.put(id, media.altText() != null ? media.altText() : "");
+            form.mediaCredit.put(id, media.credit() != null ? media.credit() : "");
         }
         return form;
     }
@@ -324,7 +348,43 @@ public class ArticleForm {
         return removeMediaIds;
     }
 
-    public void setRemoveMediaIds(List<String> removeMediaIds) {
-        this.removeMediaIds = removeMediaIds != null ? removeMediaIds : new ArrayList<>();
+    public Map<String, String> getMediaTitle() {
+        return mediaTitle;
+    }
+
+    public void setMediaTitle(Map<String, String> mediaTitle) {
+        this.mediaTitle = mediaTitle != null ? mediaTitle : new LinkedHashMap<>();
+    }
+
+    public Map<String, String> getMediaCaption() {
+        return mediaCaption;
+    }
+
+    public void setMediaCaption(Map<String, String> mediaCaption) {
+        this.mediaCaption = mediaCaption != null ? mediaCaption : new LinkedHashMap<>();
+    }
+
+    public Map<String, String> getMediaDescription() {
+        return mediaDescription;
+    }
+
+    public void setMediaDescription(Map<String, String> mediaDescription) {
+        this.mediaDescription = mediaDescription != null ? mediaDescription : new LinkedHashMap<>();
+    }
+
+    public Map<String, String> getMediaAltText() {
+        return mediaAltText;
+    }
+
+    public void setMediaAltText(Map<String, String> mediaAltText) {
+        this.mediaAltText = mediaAltText != null ? mediaAltText : new LinkedHashMap<>();
+    }
+
+    public Map<String, String> getMediaCredit() {
+        return mediaCredit;
+    }
+
+    public void setMediaCredit(Map<String, String> mediaCredit) {
+        this.mediaCredit = mediaCredit != null ? mediaCredit : new LinkedHashMap<>();
     }
 }

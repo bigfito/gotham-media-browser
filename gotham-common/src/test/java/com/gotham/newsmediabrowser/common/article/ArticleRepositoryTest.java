@@ -1,12 +1,23 @@
 package com.gotham.newsmediabrowser.common.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ShardStatistics;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.TotalHitsRelation;
+import com.gotham.newsmediabrowser.common.imagebind.StubImageBindClient;
 import com.gotham.newsmediabrowser.common.journalist.Journalist;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 /**
@@ -16,8 +27,8 @@ import org.mockito.Mockito;
 class ArticleRepositoryTest {
 
     private final ArticleRepository repository = new ArticleRepository(
-            Mockito.mock(co.elastic.clients.elasticsearch.ElasticsearchClient.class),
-            new com.gotham.newsmediabrowser.common.imagebind.StubImageBindClient());
+            Mockito.mock(ElasticsearchClient.class),
+            new StubImageBindClient());
 
     private final Journalist lois =
             new Journalist("j_lois", "Lois", "Lane", "lois@gotham.news", "Ace reporter", null, null);
@@ -142,5 +153,42 @@ class ArticleRepositoryTest {
         assertThat(document).extracting("journalist_names").isEqualTo(List.of());
         assertThat(document).extracting("journalists").isEqualTo(List.of());
         assertThat(repository.fromSource("x", document).journalists()).isEmpty();
+    }
+
+    @Test
+    void journalistSweepIncludesDenseVectorSource() throws Exception {
+        ElasticsearchClient client = Mockito.mock(ElasticsearchClient.class);
+        ArticleRepository scanning = new ArticleRepository(client, new StubImageBindClient());
+        when(client.search(any(SearchRequest.class), eq(Map.class))).thenReturn(emptyHits());
+
+        scanning.findByJournalistId("j_lois");
+
+        ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
+        verify(client).search(captor.capture(), eq(Map.class));
+        assertThat(captor.getValue().source().filter().includes()).contains("*");
+        assertThat(captor.getValue().source().filter().excludes()).isNullOrEmpty();
+    }
+
+    @Test
+    void listExcludesVectorFields() throws Exception {
+        ElasticsearchClient client = Mockito.mock(ElasticsearchClient.class);
+        ArticleRepository listing = new ArticleRepository(client, new StubImageBindClient());
+        when(client.search(any(SearchRequest.class), eq(Map.class))).thenReturn(emptyHits());
+
+        listing.findAll(null, null, 0, 25);
+
+        ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
+        verify(client).search(captor.capture(), eq(Map.class));
+        assertThat(captor.getValue().source().filter().excludes())
+                .contains("article_embedding", "multimedia.asset_vector");
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static SearchResponse<Map> emptyHits() {
+        return SearchResponse.of(r -> r
+                .took(1)
+                .timedOut(false)
+                .shards(ShardStatistics.of(s -> s.total(1).successful(1).failed(0)))
+                .hits(h -> h.total(t -> t.value(0).relation(TotalHitsRelation.Eq)).hits(List.of())));
     }
 }

@@ -115,7 +115,8 @@ BASE_URL=http://localhost:8080 ./docs/demo/smoke.sh   # green = every route work
 **Other ways to run** (details in the [runbook](docs/demo/runbook.md)):
 
 ```bash
-# Whole stack in Docker (app :8080 + imagebind-service :8081), no local Java needed to run:
+# Whole stack in Docker (app :8080 + imagebind-service :8081). The gotham-web image copies
+# elasticsearch/*.mapping.json and gotham-datagen/pom.xml so the Maven reactor can package:
 IMAGEBIND_BACKEND=stub docker compose up --build
 
 # Integration tests against live dependencies (ITs skip when creds / helpers are absent):

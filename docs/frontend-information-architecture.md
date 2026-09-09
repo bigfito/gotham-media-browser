@@ -115,7 +115,7 @@ Denormalized document form covers:
 - Core: title, subtitle, summary, body, slug, status, language, published_at  
 - Metadata: section, tags, location, source, seo_*, canonical_url  
 - Nested **journalists[]**: pick from `gotham-journalists` (`journalist_id`, byline_order, contribution_role ∈ `AUTHOR` \| `CO_AUTHOR` \| `CONTRIBUTING`); snapshot names/bio/email at write  
-- Nested **multimedia[]**: upload IMAGE/AUDIO/VIDEO within local limits; app-assigned `multimedia_element_id`; public GCS `storage_uri`; ImageBind `asset_vector`  
+- Nested **multimedia[]**: upload IMAGE/AUDIO/VIDEO within local limits; title/caption/alt/credit on the form and via datagen `newMedia*` fields; app-assigned `multimedia_element_id`; public GCS `storage_uri`; ImageBind `asset_vector`  
 - Projections refreshed on write: `journalist_*`, `multimedia_*`, `article_search_text`, `article_embedding`
 
 Full-text UI checkbox values such as `section` / `tags` / `location` / `source` are remapped by the backend to analyzable `*.text` subfields (keyword parents keep exact filters/facets).

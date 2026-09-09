@@ -131,16 +131,31 @@ public class ArticleRepository {
      * @param journalistId optional nested journalist filter ({@code null} = any)
      */
     public ArticlePage findAll(ArticleStatus status, String journalistId, int from, int size) {
+        return findAll(status, journalistId, from, size, false);
+    }
+
+    /**
+     * Returns every article that nests the given journalist id, sweeping all pages. Used by journalist
+     * update and cascade-strip. Vectors are included so a reindex does not wipe {@code asset_vector}
+     * (ES 9 serverless omits dense_vector from {@code _source} unless requested).
+     */
+    public List<Article> findByJournalistId(String journalistId) {
+        List<Article> all = new ArrayList<>();
+        int from = 0;
+        while (true) {
+            ArticlePage page = findAll(null, journalistId, from, SWEEP_PAGE_SIZE, true);
+            all.addAll(page.items());
+            from += SWEEP_PAGE_SIZE;
+            if (from >= page.total() || page.items().isEmpty()) {
+                return all;
+            }
+        }
+    }
+
+    ArticlePage findAll(ArticleStatus status, String journalistId, int from, int size, boolean includeVectors) {
         Query query = listQuery(status, journalistId);
         try {
-            SearchResponse<Map> response = client.search(request -> request
-                    .index(INDEX)
-                    .query(query)
-                    .from(from)
-                    .size(size)
-                    .source(src -> src.filter(f -> f.excludes(VECTOR_FIELDS)))
-                    .trackTotalHits(track -> track.enabled(true))
-                    .sort(sort -> sort.field(field -> field.field("created_at").order(SortOrder.Desc))),
+            SearchResponse<Map> response = client.search(buildListRequest(query, from, size, includeVectors),
                     Map.class);
 
             List<Article> items = response.hits().hits().stream()
@@ -153,21 +168,18 @@ public class ArticleRepository {
         }
     }
 
-    /**
-     * Returns every article that nests the given journalist id, sweeping all pages. Used by the
-     * cascade-strip delete (P4-T03) to find the articles whose bylines must be rebuilt.
-     */
-    public List<Article> findByJournalistId(String journalistId) {
-        List<Article> all = new ArrayList<>();
-        int from = 0;
-        while (true) {
-            ArticlePage page = findAll(null, journalistId, from, SWEEP_PAGE_SIZE);
-            all.addAll(page.items());
-            from += SWEEP_PAGE_SIZE;
-            if (from >= page.total() || page.items().isEmpty()) {
-                return all;
-            }
-        }
+    co.elastic.clients.elasticsearch.core.SearchRequest buildListRequest(
+            Query query, int from, int size, boolean includeVectors) {
+        return co.elastic.clients.elasticsearch.core.SearchRequest.of(request -> request
+                .index(INDEX)
+                .query(query)
+                .from(from)
+                .size(size)
+                .source(src -> includeVectors
+                        ? src.filter(f -> f.includes("*"))
+                        : src.filter(f -> f.excludes(VECTOR_FIELDS)))
+                .trackTotalHits(track -> track.enabled(true))
+                .sort(sort -> sort.field(field -> field.field("created_at").order(SortOrder.Desc))));
     }
 
     // --- Query building ---

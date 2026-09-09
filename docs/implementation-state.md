@@ -5,7 +5,7 @@
 **ES search DSL:** [`elasticsearch-search-methods.md`](./elasticsearch-search-methods.md)  
 **Synthetic data (P10):** [`synthetic-data-generation.md`](./synthetic-data-generation.md)  
 **Testing:** [`testing-strategy.md`](./testing-strategy.md)  
-**Last updated:** 2026-09-08T05:35:00Z  
+**Last updated:** 2026-09-09T04:00:00Z  
 **Active phase:** P10 (6/6 done) — plan complete  
 **Prototype status:** `done`  
 **Next task:** none (42/42). Optional lab: full overnight `gotham-datagen` run on the M4 with Compose profile `datagen`.
@@ -14,8 +14,11 @@
 
 ## Handoff notes (P10 complete)
 
-The implementation plan is closed. Operator docs (README, architecture status lines, demo runbook,
-datagen runbook) were synced to **42 / 42** on 2026-09-08. Remaining work is **lab**, not a numbered task:
+The implementation plan is closed. Operator docs were synced to **42 / 42**. Remaining work is **lab**, not a numbered task.
+
+**Post-plan hardening (2026-09-09):** journalist cascade/update preserves `asset_vector`; Compose `gotham-web` image copies `elasticsearch/` + `gotham-datagen/pom.xml`; media captions round-trip on CRUD + datagen; GCS uploads run only after form validation and roll back a failed batch; vector search keeps the query embedding in HTTP session for pagination; ImageBind chrome health honors `model_loaded`; audio/video duration is probed (WAV/MP4) and unknown duration is rejected; journalist master update reindexes articles first.
+
+Lab still optional:
 
 - Full generative run (15 / 25 / 5+5+5 = 375 assets) on the M4 — see [`datagen-runbook.md`](./datagen-runbook.md). CPU Wan video is overnight; `--skip-video` is the daytime path.
 - Live `mvn -Pit-datagen-helpers verify` against Compose profile `datagen` + `gotham-web` (this task verified the skip path: 5 ITs skipped, 0 failures).

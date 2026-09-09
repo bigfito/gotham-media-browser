@@ -77,6 +77,15 @@ class GcsStorageServiceTest {
     }
 
     @Test
+    void audioWithoutDurationIsRejectedBeforeUpload() {
+        assertThatThrownBy(() -> service().upload(MediaType.AUDIO, "clip.mp3", "audio/mpeg", new byte[10], null))
+                .isInstanceOf(MediaLimitException.class)
+                .hasMessageContaining("could not be determined");
+
+        verify(storage, never()).create(any(BlobInfo.class), any(byte[].class));
+    }
+
+    @Test
     void deleteParsesObjectNameFromOurUri() {
         String uri = "https://storage.googleapis.com/test-bucket/media/audio/uuid-clip.mp3";
         when(storage.delete(any(BlobId.class))).thenReturn(true);

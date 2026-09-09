@@ -151,7 +151,36 @@
                     <th:block th:case="'VIDEO'">
                         <a th:replace="~{fragments/media-original :: preview(${m.storageUri()}, ${m.width()}, ${m.height()}, ${m.altText() != null ? m.altText() : m.originalFilename()}, 'VIDEO')}"></a>
                     </th:block>
-                    <figcaption th:text="${m.originalFilename()} ?: ${m.mediaType()}">file</figcaption>
+                    <figcaption>
+                        <span th:text="${m.originalFilename()} ?: ${m.mediaType()}">file</span>
+                    </figcaption>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label th:for="|mt-${m.multimediaElementId()}|">Title</label>
+                            <input th:id="|mt-${m.multimediaElementId()}|"
+                                   th:field="*{mediaTitle[__${m.multimediaElementId()}__]}" type="text"/>
+                        </div>
+                        <div class="field">
+                            <label th:for="|mc-${m.multimediaElementId()}|">Caption</label>
+                            <input th:id="|mc-${m.multimediaElementId()}|"
+                                   th:field="*{mediaCaption[__${m.multimediaElementId()}__]}" type="text"/>
+                        </div>
+                        <div class="field form-grid__full">
+                            <label th:for="|md-${m.multimediaElementId()}|">Description</label>
+                            <input th:id="|md-${m.multimediaElementId()}|"
+                                   th:field="*{mediaDescription[__${m.multimediaElementId()}__]}" type="text"/>
+                        </div>
+                        <div class="field">
+                            <label th:for="|ma-${m.multimediaElementId()}|">Alt text</label>
+                            <input th:id="|ma-${m.multimediaElementId()}|"
+                                   th:field="*{mediaAltText[__${m.multimediaElementId()}__]}" type="text"/>
+                        </div>
+                        <div class="field">
+                            <label th:for="|mcr-${m.multimediaElementId()}|">Credit</label>
+                            <input th:id="|mcr-${m.multimediaElementId()}|"
+                                   th:field="*{mediaCredit[__${m.multimediaElementId()}__]}" type="text"/>
+                        </div>
+                    </div>
                     <label class="media-card__remove">
                         <input type="checkbox" th:field="*{removeMediaIds}" th:value="${m.multimediaElementId()}"/>
                         Remove on save (deletes the file from GCS)
@@ -162,6 +191,30 @@
             <div class="field">
                 <label for="media_files">Add media files</label>
                 <input id="media_files" name="mediaFiles" type="file" accept="image/*,audio/*,video/*" multiple="multiple"/>
+            </div>
+            <p class="form-section__hint">Optional text for newly added files (same order as the file picker; one
+                value is applied to every new file).</p>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="new_media_title">New file title</label>
+                    <input id="new_media_title" name="newMediaTitle" type="text"/>
+                </div>
+                <div class="field">
+                    <label for="new_media_caption">New file caption</label>
+                    <input id="new_media_caption" name="newMediaCaption" type="text"/>
+                </div>
+                <div class="field form-grid__full">
+                    <label for="new_media_description">New file description</label>
+                    <input id="new_media_description" name="newMediaDescription" type="text"/>
+                </div>
+                <div class="field">
+                    <label for="new_media_alt">New file alt text</label>
+                    <input id="new_media_alt" name="newMediaAltText" type="text"/>
+                </div>
+                <div class="field">
+                    <label for="new_media_credit">New file credit</label>
+                    <input id="new_media_credit" name="newMediaCredit" type="text"/>
+                </div>
             </div>
         </section>
 

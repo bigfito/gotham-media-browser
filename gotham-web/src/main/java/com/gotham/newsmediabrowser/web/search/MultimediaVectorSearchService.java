@@ -59,15 +59,34 @@ public class MultimediaVectorSearchService {
                                        List<MediaType> mediaTypes,
                                        int page,
                                        int size) {
+        return search(embed(file), statuses, section, language, publishedFrom, publishedTo, mediaTypes, page, size);
+    }
+
+    /**
+     * Classifies, size-checks, and embeds an uploaded file. The vector can be stored in the HTTP
+     * session so pagination/filter GETs do not require re-uploading the file.
+     */
+    public float[] embed(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("Choose an image, audio, or video file for vector search.");
         }
         MediaType type = classify(file.getContentType());
         byte[] data = readBytes(file);
         enforceSize(type, data);
-
         float[] vector = imageBindClient.embedMedia(type, data, file.getOriginalFilename(), file.getContentType());
         log.debug("Vector search: embedded {} upload ({} bytes)", type, data.length);
+        return vector;
+    }
+
+    public MultimediaSearchPage search(float[] vector,
+                                       List<ArticleStatus> statuses,
+                                       String section,
+                                       String language,
+                                       Instant publishedFrom,
+                                       Instant publishedTo,
+                                       List<MediaType> mediaTypes,
+                                       int page,
+                                       int size) {
         return multimediaSemanticSearchService.searchByVector(
                 vector, statuses, section, language, publishedFrom, publishedTo, mediaTypes, page, size);
     }

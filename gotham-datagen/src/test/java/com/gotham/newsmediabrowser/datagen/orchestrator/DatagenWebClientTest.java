@@ -175,6 +175,8 @@ class DatagenWebClientTest {
         assertThat(receivedBody.get()).contains("name=\"journalistIds\"");
         assertThat(receivedBody.get()).contains("id-1");
         assertThat(receivedBody.get()).contains("name=\"mediaFiles\"; filename=\"photo.png\"");
+        assertThat(receivedBody.get()).contains("name=\"newMediaCaption\"");
+        assertThat(receivedBody.get()).contains("Press photo");
         assertThat(receivedBody.get()).contains("MOCK_PNG_DATA");
         assertThat(receivedBody.get()).contains("name=\"slug\"");
         assertThat(receivedBody.get()).contains("name=\"publishedAt\"");

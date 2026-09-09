@@ -5,7 +5,7 @@
 **Theme:** Light pastel (shared chrome)  
 **Mockups:** `ui-mockups/journalist*.html`, `ui-mockups/article*.html`  
 **Related:** [`frontend-information-architecture.md`](./frontend-information-architecture.md) · [`architecture-end-to-end.md`](./architecture-end-to-end.md) · [`ui-design-errors.md`](./ui-design-errors.md)  
-**Implementation:** `/journalist` and `/article` CRUD, GCS media, and ImageBind embeddings on write are live (P3–P6).
+**Implementation:** `/journalist` and `/article` CRUD, GCS media, ImageBind embeddings, and per-asset title/caption/alt/credit on the article form are live.
 
 ## Endpoints
 

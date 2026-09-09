@@ -276,6 +276,11 @@ public class DatagenWebClient {
 
         // Binary media files
         for (GeneratedMedia media : mediaFiles) {
+            addTextField(out, boundary, "newMediaTitle", media.title());
+            addTextField(out, boundary, "newMediaCaption", media.caption());
+            addTextField(out, boundary, "newMediaDescription", media.description());
+            addTextField(out, boundary, "newMediaAltText", media.altText());
+            addTextField(out, boundary, "newMediaCredit", media.credit());
             addBinaryField(out, boundary, "mediaFiles", media.filename(), media.mimeType(), media.bytes());
         }
 

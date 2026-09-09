@@ -150,6 +150,7 @@ class ArticleControllerTest {
                 .andExpect(model().attributeHasFieldErrors("articleForm", "title"));
 
         verify(articleRepository, never()).create(any());
+        verify(mediaUploadService, never()).upload(any(), anyInt(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -166,6 +167,7 @@ class ArticleControllerTest {
                 .andExpect(model().attributeHasFieldErrors("articleForm", "journalistIds"));
 
         verify(articleRepository, never()).create(any());
+        verify(mediaUploadService, never()).upload(any(), anyInt(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -278,7 +280,8 @@ class ArticleControllerTest {
                 com.gotham.newsmediabrowser.common.article.ArticleMultimedia.uploaded(
                         "m1", com.gotham.newsmediabrowser.common.media.MediaType.IMAGE,
                         "https://storage.googleapis.com/b/media/image/x.png", "image/png", 0, "x.png", 10L);
-        when(mediaUploadService.upload(any(), org.mockito.ArgumentMatchers.eq(0))).thenReturn(java.util.List.of(uploaded));
+        when(mediaUploadService.upload(any(), org.mockito.ArgumentMatchers.eq(0), any(), any(), any(), any(), any()))
+                .thenReturn(java.util.List.of(uploaded));
         when(articleRepository.create(any(Article.class)))
                 .thenAnswer(invocation -> ((Article) invocation.getArgument(0)).withId("a_new"));
 
@@ -291,6 +294,7 @@ class ArticleControllerTest {
                         .param("summary", "s")
                         .param("body", "b")
                         .param("status", "DRAFT")
+                        .param("newMediaCaption", "Press photo")
                         .param("journalistIds", "j_lois")
                         .param("bylineOrder[j_lois]", "1")
                         .param("role[j_lois]", "AUTHOR"))
@@ -356,11 +360,11 @@ class ArticleControllerTest {
                 List.of(ArticleJournalist.fromJournalist(lois, 0, ContributionRole.AUTHOR)),
                 List.of(keep, drop));
         when(articleRepository.findById("a1")).thenReturn(Optional.of(existing));
-        when(mediaUploadService.upload(any(), anyInt())).thenReturn(List.of());
+        when(mediaUploadService.upload(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(List.of());
         when(articleRepository.update(any(Article.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        mockMvc.perform(post("/article/a1")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/article/a1")
                         .param("title", "Transit vote")
                         .param("summary", "s")
                         .param("body", "b")
@@ -376,6 +380,8 @@ class ArticleControllerTest {
         verify(mediaUploadService).remove(List.of(drop));
         ArgumentCaptor<Article> captor = ArgumentCaptor.forClass(Article.class);
         verify(articleRepository).update(captor.capture());
-        assertThat(captor.getValue().multimedia()).containsExactly(keep);
+        assertThat(captor.getValue().multimedia())
+                .extracting(com.gotham.newsmediabrowser.common.article.ArticleMultimedia::multimediaElementId)
+                .containsExactly("m_keep");
     }
 }

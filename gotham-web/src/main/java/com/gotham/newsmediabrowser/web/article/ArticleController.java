@@ -102,11 +102,15 @@ public class ArticleController {
             @Valid @ModelAttribute("articleForm") ArticleForm articleForm,
             BindingResult bindingResult,
             @RequestParam(name = "mediaFiles", required = false) MultipartFile[] mediaFiles,
+            @RequestParam(name = "newMediaTitle", required = false) List<String> newMediaTitle,
+            @RequestParam(name = "newMediaCaption", required = false) List<String> newMediaCaption,
+            @RequestParam(name = "newMediaDescription", required = false) List<String> newMediaDescription,
+            @RequestParam(name = "newMediaAltText", required = false) List<String> newMediaAltText,
+            @RequestParam(name = "newMediaCredit", required = false) List<String> newMediaCredit,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         Map<String, Journalist> journalists = journalistsById();
-        List<ArticleMultimedia> uploaded = uploadOrReject(mediaFiles, 0, bindingResult);
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
             addFormChrome(model, "New article", "/article", null);
@@ -114,9 +118,23 @@ public class ArticleController {
             return "article/form";
         }
 
-        Article created = articleRepository.create(built.get().withMultimedia(uploaded));
-        redirectAttributes.addFlashAttribute("flash", "Created “" + created.title() + "”.");
-        return "redirect:/article";
+        List<ArticleMultimedia> uploaded = uploadOrReject(
+                mediaFiles, 0, newMediaTitle, newMediaCaption, newMediaDescription, newMediaAltText,
+                newMediaCredit, bindingResult);
+        if (bindingResult.hasErrors()) {
+            addFormChrome(model, "New article", "/article", null);
+            model.addAttribute("existingMultimedia", List.of());
+            return "article/form";
+        }
+
+        try {
+            Article created = articleRepository.create(built.get().withMultimedia(uploaded));
+            redirectAttributes.addFlashAttribute("flash", saveFlash("Created", created.title(), uploaded));
+            return "redirect:/article";
+        } catch (RuntimeException e) {
+            mediaUploadService.remove(uploaded);
+            throw e;
+        }
     }
 
     @GetMapping("/article/{id}/view")
@@ -144,6 +162,12 @@ public class ArticleController {
             @Valid @ModelAttribute("articleForm") ArticleForm articleForm,
             BindingResult bindingResult,
             @RequestParam(name = "mediaFiles", required = false) MultipartFile[] mediaFiles,
+            @RequestParam(name = "newMediaTitle", required = false) List<String> newMediaTitle,
+            @RequestParam(name = "newMediaCaption", required = false) List<String> newMediaCaption,
+            @RequestParam(name = "newMediaDescription", required = false) List<String> newMediaDescription,
+            @RequestParam(name = "newMediaAltText", required = false) List<String> newMediaAltText,
+            @RequestParam(name = "newMediaCredit", required = false) List<String> newMediaCredit,
+            @RequestParam(name = "removeMediaIds", required = false) List<String> requestedRemoveIds,
             Model model,
             RedirectAttributes redirectAttributes) {
 
@@ -151,12 +175,10 @@ public class ArticleController {
                 .orElseThrow(() -> new NotFoundException("Article " + id + " was not found."));
 
         Map<String, Journalist> journalists = journalistsById();
-        Set<String> removeIds = Set.copyOf(articleForm.getRemoveMediaIds());
-        List<ArticleMultimedia> retained = existing.multimedia().stream()
-                .filter(m -> !removeIds.contains(m.multimediaElementId()))
-                .toList();
-        int nextPosition = retained.size();
-        List<ArticleMultimedia> uploaded = uploadOrReject(mediaFiles, nextPosition, bindingResult);
+        List<String> removeSource = requestedRemoveIds != null && !requestedRemoveIds.isEmpty()
+                ? requestedRemoveIds
+                : articleForm.getRemoveMediaIds();
+        Set<String> removeIds = Set.copyOf(removeSource);
         Optional<Article> built = buildOrReject(articleForm, bindingResult, journalists);
         if (built.isEmpty()) {
             addFormChrome(model, "Edit article", "/article/" + id, id);
@@ -164,8 +186,20 @@ public class ArticleController {
             return "article/form";
         }
 
-        // Only now that the save is committed do we purge GCS objects for the removed elements, then
-        // rebuild the nested list from the retained ones plus any new uploads.
+        List<ArticleMultimedia> retained = existing.multimedia().stream()
+                .filter(m -> !removeIds.contains(m.multimediaElementId()))
+                .map(articleForm::overlayMetadata)
+                .toList();
+        int nextPosition = retained.size();
+        List<ArticleMultimedia> uploaded = uploadOrReject(
+                mediaFiles, nextPosition, newMediaTitle, newMediaCaption, newMediaDescription,
+                newMediaAltText, newMediaCredit, bindingResult);
+        if (bindingResult.hasErrors()) {
+            addFormChrome(model, "Edit article", "/article/" + id, id);
+            model.addAttribute("existingMultimedia", existing.multimedia());
+            return "article/form";
+        }
+
         List<ArticleMultimedia> removed = existing.multimedia().stream()
                 .filter(m -> removeIds.contains(m.multimediaElementId()))
                 .toList();
@@ -175,22 +209,45 @@ public class ArticleController {
         Article toSave = built.get().withId(id)
                 .withTimestamps(existing.createdAt(), existing.updatedAt())
                 .withMultimedia(merged);
-        Article saved = articleRepository.update(toSave);
-        redirectAttributes.addFlashAttribute("flash", "Updated “" + saved.title() + "”.");
-        return "redirect:/article";
+        try {
+            Article saved = articleRepository.update(toSave);
+            redirectAttributes.addFlashAttribute("flash", saveFlash("Updated", saved.title(), merged));
+            return "redirect:/article";
+        } catch (RuntimeException e) {
+            mediaUploadService.remove(uploaded);
+            throw e;
+        }
     }
 
     /**
      * Uploads any attached media, or registers an in-form error and returns an empty list if a file
      * has an unsupported content type. Size/duration violations propagate as the branded 413 page.
      */
-    private List<ArticleMultimedia> uploadOrReject(MultipartFile[] mediaFiles, int startPosition, BindingResult bindingResult) {
+    private List<ArticleMultimedia> uploadOrReject(
+            MultipartFile[] mediaFiles,
+            int startPosition,
+            List<String> titles,
+            List<String> captions,
+            List<String> descriptions,
+            List<String> altTexts,
+            List<String> credits,
+            BindingResult bindingResult) {
         try {
-            return mediaUploadService.upload(mediaFiles, startPosition);
+            return mediaUploadService.upload(mediaFiles, startPosition, titles, captions, descriptions, altTexts,
+                    credits);
         } catch (IllegalArgumentException e) {
             bindingResult.reject("media.unsupported", e.getMessage());
             return List.of();
         }
+    }
+
+    private static String saveFlash(String verb, String title, List<ArticleMultimedia> media) {
+        String base = verb + " “" + title + "”.";
+        boolean missing = media.stream().anyMatch(m -> m.assetVector() == null);
+        if (missing) {
+            return base + " ImageBind did not embed every asset; re-save when the service is ready.";
+        }
+        return base;
     }
 
     /**

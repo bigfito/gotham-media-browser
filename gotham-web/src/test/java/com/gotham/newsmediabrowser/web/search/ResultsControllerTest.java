@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -369,8 +370,29 @@ class ResultsControllerTest {
                 .andExpect(content().string(containsString("results-search__row--file-only")))
                 .andExpect(content().string(containsString("disabled=\"disabled\"")));
 
-        verify(multimediaVectorSearchService, never()).search(any(), any(), any(), any(), any(), any(), any(),
-                anyInt(), anyInt());
+        verify(multimediaVectorSearchService, never()).embed(any());
+        verify(multimediaVectorSearchService, never()).search(any(float[].class), any(), any(), any(), any(), any(),
+                any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void multimediaVectorModeReusesSessionVectorOnGetPagination() throws Exception {
+        float[] stored = new float[] {0.1f, 0.2f};
+        when(multimediaVectorSearchService.search(any(float[].class), any(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt()))
+                .thenReturn(new MultimediaSearchPage(List.of(), 0));
+
+        mockMvc.perform(get("/results")
+                        .param("entity", "multimedia")
+                        .param("mode", "vector")
+                        .param("page", "2")
+                        .sessionAttr(ResultsController.VECTOR_QUERY_SESSION, stored))
+                .andExpect(status().isOk())
+                .andExpect(view().name("results/multimedia"));
+
+        verify(multimediaVectorSearchService, never()).embed(any());
+        verify(multimediaVectorSearchService).search(eq(stored), any(), any(), any(), any(), any(), any(), eq(2),
+                anyInt());
     }
 
     @Test
@@ -382,7 +404,9 @@ class ResultsControllerTest {
         MultimediaSearchHit hit = new MultimediaSearchHit(
                 "art-1", "Gotham Transit Expansion", ArticleStatus.PUBLISHED, "Politics", "transit",
                 Instant.parse("2026-09-06T00:00:00Z"), image);
-        when(multimediaVectorSearchService.search(any(), any(), any(), any(), any(), any(), any(),
+        float[] vector = new float[8];
+        when(multimediaVectorSearchService.embed(any())).thenReturn(vector);
+        when(multimediaVectorSearchService.search(any(float[].class), any(), any(), any(), any(), any(), any(),
                 anyInt(), anyInt()))
                 .thenReturn(new MultimediaSearchPage(List.of(hit), 1));
 
@@ -397,8 +421,9 @@ class ResultsControllerTest {
                 .andExpect(view().name("results/multimedia"))
                 .andExpect(content().string(containsString("https://storage.googleapis.com/b/media/image/x.png")));
 
-        verify(multimediaVectorSearchService).search(any(), any(), any(), any(), any(), any(), any(),
-                anyInt(), anyInt());
+        verify(multimediaVectorSearchService).embed(any());
+        verify(multimediaVectorSearchService).search(eq(vector), any(), any(), any(), any(), any(), any(), anyInt(),
+                anyInt());
         verify(multimediaSemanticSearchService, never()).search(any());
         verify(multimediaHybridSearchService, never()).search(any());
     }

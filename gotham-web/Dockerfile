@@ -14,6 +14,8 @@ COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 COPY gotham-common/pom.xml gotham-common/pom.xml
 COPY gotham-web/pom.xml gotham-web/pom.xml
+COPY gotham-datagen/pom.xml gotham-datagen/pom.xml
+COPY elasticsearch/ elasticsearch/
 RUN chmod +x mvnw && ./mvnw -q -B -pl gotham-web -am -DskipTests dependency:go-offline
 
 # Now copy sources and package (skip tests: image builds must not require live ES/GCS).

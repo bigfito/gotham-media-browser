@@ -20,7 +20,8 @@ import org.springframework.stereotype.Service;
  * Uploads and deletes public media objects in Google Cloud Storage.
  *
  * <p>Enforces the per-type size and duration limits before any upload, so an over-limit file is
- * rejected ({@link MediaLimitException}, HTTP 413) without touching the bucket. Uploaded objects are
+ * rejected ({@link MediaLimitException}, HTTP 413) without touching the bucket. AUDIO/VIDEO must
+ * supply a parsed duration; unknown duration is refused so the time cap cannot be skipped.
  * public-read (the bucket is configured for public access), so their {@code storage_uri} is a plain
  * {@code https://storage.googleapis.com/<bucket>/<object>} URL that plays directly in the browser.
  * Storage failures surface as a {@link DependencyException} (HTTP 503) naming the service.
@@ -103,9 +104,15 @@ public class GcsStorageService {
             throw new MediaLimitException(type + " file is " + data.length + " bytes, over the "
                     + limit.maxSize().toMegabytes() + " MB limit.");
         }
-        if (limit.maxDuration() != null && duration != null && duration.compareTo(limit.maxDuration()) > 0) {
-            throw new MediaLimitException(type + " runs " + duration.toSeconds() + "s, over the "
-                    + limit.maxDuration().toSeconds() + "s limit.");
+        if (limit.maxDuration() != null) {
+            if (duration == null) {
+                throw new MediaLimitException(type + " duration could not be determined; refusing the upload "
+                        + "(limit " + limit.maxDuration().toSeconds() + "s). Use WAV or MP4.");
+            }
+            if (duration.compareTo(limit.maxDuration()) > 0) {
+                throw new MediaLimitException(type + " runs " + duration.toSeconds() + "s, over the "
+                        + limit.maxDuration().toSeconds() + "s limit.");
+            }
         }
     }
 

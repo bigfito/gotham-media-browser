@@ -39,8 +39,10 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
 - **Cause:** ES 9 Serverless excludes indexed `dense_vector` from `_source` retrieval by default.
 - **Fix:** request it explicitly — `sourceIncludes("*")` on the get/read path. `article_embedding` is
   recomputed on every write, so it needs no round-trip; per-asset `asset_vector` is preserved via the
-  `*` include on `findById`.
-- **Where:** `ArticleRepository.findById`, `ArticleEmbeddingImageBindIT`; found in P6-T03.
+  `*` include on `findById`. Journalist update/cascade-strip uses `findByJournalistId`, which must
+  **not** reuse the list query that excludes `multimedia.asset_vector` — a full reindex without that
+  field wipes nested vectors. Sweep reads use `sourceIncludes("*")` as well.
+- **Where:** `ArticleRepository.findById`, `findByJournalistId`, `ArticleEmbeddingImageBindIT`; found in P6-T03; sweep hole closed 2026-09-09.
 
 ### `copy_to` must sit on the parent keyword, not a `.text` sub-field
 - **Symptom:** index create rejected — `copy_to` inside a multi-field is forbidden.
@@ -51,7 +53,13 @@ buried in the [`implementation-state.md`](./implementation-state.md) task log. E
 - Serverless ignores/refuses `number_of_shards` / `number_of_replicas`; the bootstrap strips them
   before create while the mapping files keep them for portability. `IndexBootstrapper.serverlessSafe()`.
 
-## ImageBind service (FastAPI / uvicorn)
+### Chrome ImageBind legend vs model warmup
+- **Symptom:** header shows ImageBind Available while embeds return 503.
+- **Cause:** `GET /health` is 200 as soon as uvicorn is up; `model_loaded` stays false until the
+  background load finishes.
+- **Fix:** `ImageBindHealthChecker` requires 2xx and `model_loaded` not false.
+- **Where:** `ImageBindHealthChecker`; `imagebind-service` `/health`.
+
 
 ### `java.net.http` defaults to HTTP/2 and drops the POST body against uvicorn
 - **Symptom:** FastAPI returns `422` with an empty body; embeds fail.

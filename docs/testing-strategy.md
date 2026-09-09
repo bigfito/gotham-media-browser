@@ -104,7 +104,7 @@ do not run on the ES profile).
 | Index bootstrap | Idempotent create of `gotham-journalists` + `gotham-media-browser` |
 | Journalist CRUD | Index/get/update/delete against live ES |
 | Article CRUD + nest | Bylines + projections persisted |
-| Cascade-strip | Delete journalist removes nested byline from articles |
+| Cascade-strip | Delete journalist removes nested byline from articles **without wiping** `asset_vector` |
 | FTS / filters | Article + multimedia queries from cookbook smoke set |
 | kNN / hybrid (when embeddings present) | Semantic/hybrid smoke with 1024-d vectors |
 

@@ -49,10 +49,15 @@ class JournalistServiceTest {
         ArticleJournalist other = new ArticleJournalist("j_clark", "Clark", "Kent", "clark@x", "bio",
                 0, ContributionRole.AUTHOR);
 
-        when(journalistRepository.update(updated)).thenReturn(updated);
         when(articleRepository.findByJournalistId("j_lois")).thenReturn(List.of(articleWith(List.of(staleLois, other))));
+        when(journalistRepository.update(updated)).thenReturn(updated);
 
         service().update(updated);
+
+        InOrder inOrder = inOrder(articleRepository, journalistRepository);
+        inOrder.verify(articleRepository).findByJournalistId("j_lois");
+        inOrder.verify(articleRepository).update(any(Article.class));
+        inOrder.verify(journalistRepository).update(updated);
 
         verify(articleRepository).update(articleCaptor.capture());
         List<ArticleJournalist> saved = articleCaptor.getValue().journalists();

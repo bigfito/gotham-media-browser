@@ -1,6 +1,7 @@
 package com.gotham.newsmediabrowser.web.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -47,6 +48,50 @@ class ArticleMediaUploadServiceTest {
 
         assertThat(uploaded).hasSize(1);
         assertThat(uploaded.get(0).assetVector()).hasSize(1024);
+    }
+
+    @Test
+    void uploadAppliesDescriptiveMetadataInFileOrder() {
+        when(storageService.upload(eq(MediaType.IMAGE), any(), any(), any(), any()))
+                .thenReturn("https://storage.googleapis.com/b/media/image/x.png");
+        MultipartFile file = new MockMultipartFile("mediaFiles", "x.png", "image/png", new byte[] {1, 2, 3});
+
+        List<ArticleMultimedia> uploaded = service().upload(
+                new MultipartFile[] {file}, 0,
+                List.of("Chamber"), List.of("After the vote"), List.of(), List.of("alt"), List.of("Desk"));
+
+        assertThat(uploaded.get(0).title()).isEqualTo("Chamber");
+        assertThat(uploaded.get(0).caption()).isEqualTo("After the vote");
+        assertThat(uploaded.get(0).altText()).isEqualTo("alt");
+        assertThat(uploaded.get(0).credit()).isEqualTo("Desk");
+    }
+
+    @Test
+    void uploadDeletesEarlierObjectsWhenALaterFileFails() {
+        when(storageService.upload(eq(MediaType.IMAGE), any(), any(), any(), any()))
+                .thenReturn("https://storage.googleapis.com/b/media/image/a.png")
+                .thenThrow(new IllegalStateException("GCS down"));
+        MultipartFile a = new MockMultipartFile("mediaFiles", "a.png", "image/png", new byte[] {1});
+        MultipartFile b = new MockMultipartFile("mediaFiles", "b.png", "image/png", new byte[] {2});
+
+        try {
+            service().upload(new MultipartFile[] {a, b}, 0);
+        } catch (IllegalStateException ignored) {
+            // expected
+        }
+
+        verify(storageService).delete("https://storage.googleapis.com/b/media/image/a.png");
+    }
+
+    @Test
+    void unsupportedTypeIsRejectedBeforeAnyUpload() {
+        MultipartFile pdf = new MockMultipartFile("mediaFiles", "x.pdf", "application/pdf", new byte[] {1});
+        MultipartFile png = new MockMultipartFile("mediaFiles", "x.png", "image/png", new byte[] {2});
+
+        assertThatThrownBy(() -> service().upload(new MultipartFile[] {pdf, png}, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verifyNoInteractions(storageService);
     }
 
     @Test

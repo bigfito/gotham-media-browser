@@ -1,7 +1,7 @@
 # Gotham News & Media Browser — Component Architecture
 
 **Status:** Locked for prototype (local Docker Compose). **Implementation:** P0–P10 done (42/42) — [`implementation-state.md`](./implementation-state.md).  
-**Date:** 2026-09-08  
+**Date:** 2026-09-09  
 **Persistence:** Elastic Cloud Serverless + Google Cloud Storage only (no RDBMS)  
 **Canonical overview:** [`architecture-end-to-end.md`](./architecture-end-to-end.md)
 

@@ -56,6 +56,14 @@ public record ArticleMultimedia(
                 null, null, null, null, null, null, null, null, null);
     }
 
+    /** Returns a copy with searchable caption fields (CRUD edit / datagen). */
+    public ArticleMultimedia withDescriptiveText(
+            String title, String caption, String description, String altText, String credit) {
+        return new ArticleMultimedia(multimediaElementId, mediaType, storageUri, mimeType, position,
+                caption, credit, title, description, altText, originalFilename, fileSizeBytes, checksum,
+                width, height, durationMs, codec, bitrateKbps, frameRate, sampleRateHz, channels, assetVector);
+    }
+
     /** Returns a copy with the given ImageBind embedding attached. */
     public ArticleMultimedia withAssetVector(List<Float> assetVector) {
         return new ArticleMultimedia(multimediaElementId, mediaType, storageUri, mimeType, position,
